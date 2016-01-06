@@ -1,0 +1,65 @@
+package usace.rowcps.headless;
+
+import usace.rowcps.headless.calculator.CalcFactoryRegistry;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.logging.Logger;
+import rma.util.lookup.Lookup;
+
+/**
+ *
+ * @author ryan
+ */
+public class SimpleFactoryRegistry extends CalcFactoryRegistry
+{
+
+	private static final Logger logger = Logger.getLogger(SimpleFactoryRegistry.class.getName());
+
+	@Override
+	public Collection<ScriptableCalcFactory> getFactories()
+	{
+		Collection<? extends ScriptableCalcFactory> lookupAll = Lookup.getDefault().lookupAll(
+			ScriptableCalcFactory.class);
+		List<ScriptableCalcFactory> factories = new ArrayList<>();
+		factories.addAll(lookupAll);
+		return factories;
+	}
+
+//	public void printNames()
+//	{
+//		CalcFactoryRegistry aDefault = getRegistry(DEFAULT_VERSION);
+//		Collection<ScriptableCalcFactory> factories = aDefault.getFactories();
+//		for (ScriptableCalcFactory factory : factories) {
+//			//System.out.println("Found factory:" + factory.getName());
+//			logger.log(Level.FINE, "Found factory:" + factory.getName());
+//		}
+//	}
+
+	@Override
+	public ScriptableCalcFactory getFactory(String name)
+	{
+		ScriptableCalcFactory retval = null;
+		Collection<ScriptableCalcFactory> factories = getFactories();
+		for (ScriptableCalcFactory factory : factories) {
+			if (name.equals(factory.getName())) {
+				retval = factory;
+				break;
+			}
+		}
+
+		return retval;
+	}
+
+	@Override
+	public Collection<String> getNames()
+	{
+		List<String> names = new ArrayList<>();
+		Collection<ScriptableCalcFactory> factories = getFactories();
+		for (ScriptableCalcFactory factory : factories) {
+			names.add(factory.getName());
+		}
+
+		return names;
+	}
+}
