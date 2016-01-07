@@ -25,7 +25,6 @@ import usace.rowcps.computation.inflow.InflowAdjustedTypeModel;
 import usace.rowcps.computation.inflow.InflowCache;
 import usace.rowcps.computation.inflow.InflowComputation;
 import usace.rowcps.computation.inflow.ZeroNegativeAdjustedInflowsAction;
-import usace.rowcps.data.CacheInitializationException;
 import usace.rowcps.data.project.AtProjectDescriptor;
 import usace.rowcps.headless.calculator.AbstractScriptableCalc;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
@@ -210,7 +209,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	}
 
 	public InflowCache getCache(LocationTemplate locRef, Date startDate) throws DbConnectionException, DbIoException,
-		InterruptedException, CacheInitializationException
+		InterruptedException
 	{
 		RegiDomain domain = getRegiDomain();
 		AtProjectManager atProjectManager = domain.getAtProjectManager(getManagerId());
