@@ -131,7 +131,7 @@ public class HeadlessRegiDomainFactory
 		return managerId;
 	}
 
-	ManagerId getManagerId(CLIOptions opt)
+	public ManagerId getManagerId(CLIOptions opt)
 	{
 		ManagerId retval = null;
 		Object property = opt.getProperty("managerId");
