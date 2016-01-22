@@ -11,9 +11,9 @@ import usace.rowcps.regi.model.RegiDomain;
  */
 public interface ScriptableCalcFactory<T extends ScriptableCalc>
 {
-	public String getName();
-	public String getDescription();
-	public String getUsage();
+	String getName();
+	String getDescription();
+	String getUsage();
 
-	public T build(RegiDomain regiDomain, ManagerId managerid);
+	T build(RegiDomain regiDomain, ManagerId managerid);
 }
