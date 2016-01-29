@@ -35,7 +35,7 @@ public class GateSettingsCalcFactory implements ScriptableCalcFactory
 	@Override
 	public ScriptableCalc build(RegiDomain regiDomain, ManagerId managerid)
 	{
-		return new ScriptableGateSettings(regiDomain, managerid);
+		return new ScriptableGateSettingsImpl(regiDomain, managerid);
 	}
 
 }
