@@ -20,7 +20,6 @@ import hec.hecmath.HecMath;
 import hec.hecmath.HecMathException;
 import hec.hecmath.TimeSeriesMath;
 import hec.io.TimeSeriesContainer;
-import hec.lang.Const;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -30,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
@@ -38,6 +38,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import rma.util.RMAConst;
 import usace.rowcps.computation.common.IEventThreadExceptionProcessor;
 import usace.rowcps.computation.common.IThreadedBlockRetriever;
 import usace.rowcps.computation.common.grouping.IControlledOutlet;
@@ -49,7 +50,6 @@ import usace.rowcps.computation.gatesettings.common.GateCache;
 import usace.rowcps.computation.gatesettings.common.GateMergeException;
 import usace.rowcps.computation.gatesettings.common.GateOpeningEntry;
 import usace.rowcps.computation.gatesettings.common.GateSettingsBlock;
-import usace.rowcps.computation.gatesettings.common.Outlet;
 import usace.rowcps.computation.gatesettings.common.OutletGroup;
 import usace.rowcps.data.CacheInitializationException;
 import usace.rowcps.headless.calculator.AbstractScriptableCalc;
@@ -60,7 +60,7 @@ import usace.rowcps.data.association.IAssociationCatalog;
 import usace.rowcps.data.association.IAssociationProvider;
 import usace.rowcps.data.association.ITimeSeriesAssociation;
 import usace.rowcps.data.outlet.IOutlet;
-import usace.rowcps.data.physicalstructure.PhysicalStructure;
+import usace.rowcps.data.physicalstructure.IPhysicalStructure;
 import usace.rowcps.data.project.AtProjectDescriptor;
 import usace.rowcps.data.project.IProject;
 import usace.rowcps.headless.calculator.inflow.AbstractThreadedBlockRetriever;
@@ -100,7 +100,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	}
 
 	@Override
-	public void createGateSettingsOutlet(String officeId, String locationStr, Date startDate, Date end, String outletId) throws Exception
+	public void createGateSettingsOutlet(String officeId, String locationStr, Date startDate, Date end, String outletId) throws DbConnectionException, DbIoException, InterruptedException, CacheInitializationException, DbException, DataSetException, DataSetIllegalArgumentException, HecMathException
 	{
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
 		GateCache gc = getCache(locRef, startDate, end);
@@ -110,6 +110,17 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 			createGateSettingsOutlet(gc, locRef, startDate, end, iControlledOutlet);
 		}
 
+	}
+
+	void createGateSettingsOutlet(String officeId, String locationStr, Date startDate, Date end, String outletId, String tsId) throws DbConnectionException, DbIoException, InterruptedException, CacheInitializationException, DbException, DataSetException, DataSetIllegalArgumentException, HecMathException
+	{
+		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
+		GateCache gc = getCache(locRef, startDate, end);
+
+		IControlledOutlet iControlledOutlet = getIControlledOutlet(gc, outletId);
+		if(iControlledOutlet != null){
+			createGateSettingsOutlet(gc, locRef, startDate, end, iControlledOutlet, tsId);
+		}
 	}
 
 	public IControlledOutlet getIControlledOutlet(GateCache gc, String outletId)
@@ -172,6 +183,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 
 		Set<Date> modifiedDatesForCachedSettings = null;
 		GateCache gateCache = new GateCache(getManagerId(), projectDescriptor, 35, completionCallbackTarget, modifiedDatesForCachedSettings);
+		gateCache.setDisplayUnitSystem(hec.data.Units.SI_ID);  // does this matter?
 		gateCache.initCache(startDate);
 
 		logger.info("Waiting for GateCache to initialize.");
@@ -324,10 +336,6 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		return set;
 	}
 
-
-
-
-
 	public void createGateSettingsGroup(GateCache gc, LocationTemplate locRef, Date startDate, Date end, IControlledOutletGroup outletGroup)
 		throws DataSetException, DbException, HecMathException
 	{
@@ -368,14 +376,26 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		DataSetException, HecMathException
 	{
 		if (iControlledOutlet != null) {
-			DataSetTx dataSetTx = getDataSetTx(locRef, iControlledOutlet, startDate, end);
+			String tsIdStr = getFirstTimeSeriesDescription(locRef, iControlledOutlet.toString());
+			createGateSettingsOutlet(gc,locRef, startDate, end, iControlledOutlet, tsIdStr);
+		}
+	}
+
+	public void createGateSettingsOutlet(GateCache gc, LocationTemplate locRef, Date startDate, Date end,
+		IControlledOutlet iControlledOutlet, String tsIdStr ) throws DataSetException, DbException, HecMathException
+	{
+		AtTimeSeriesManager tsManager = getRegiDomain().getAtTimeSeriesManager(getManagerId());
+	
+		if (tsIdStr != null) {
+			DescriptionTx dtx = new DescriptionTx(locRef.getOfficeId(), tsIdStr);
+			DataSetTx dataSetTx = getDataSetTx(dtx, startDate, end, tsManager);
 
 			NavigableSet<Long> timeOfChanges = findChanges(dataSetTx);
-			if(timeOfChanges != null && !timeOfChanges.isEmpty()){
+			if (timeOfChanges != null && !timeOfChanges.isEmpty()) {
 
-				NavigableMap<Date, Double> dateValueNavigableMap = dataSetTx.getDateValueNavigableMap();
+				NavigableMap<Date, Double> tsMap = dataSetTx.getDateValueNavigableMap();
 				NavigableMap<Date, GateOpeningEntry> dateEntryMap = findEntriesForOutlet(iControlledOutlet, gc, startDate, end);
-				NavigableSet<Date> cacheDates = getDatesSubset(gc, startDate, end);
+//				NavigableSet<Date> cacheDates = getDatesSubset(gc, startDate, end);
 
 				// Coming from the back lets us ignore the gate-entries we are adding.
 				// Also we only care about the changes in the timeseries.
@@ -384,38 +404,26 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 					if (next != null) {
 						Date tsDate = new Date(next);
 
-						Double tsValue = dateValueNavigableMap.get(tsDate);
-						Units tsUnits = dataSetTx.getUnits();
+						Double tsValue = tsMap.get(tsDate);
+// Debugging...
+//					if (iControlledOutlet instanceof Outlet) {
+//					Units tsUnits = dataSetTx.getUnits();
+//						Outlet outlet = (Outlet) iControlledOutlet;
+//						String siUnits = outlet.getSiUnits();
+//						logger.finer("outlet " + outlet.getOutletName() + " is in units:" + siUnits);
+//					}
+						if (tsValue != null && RMAConst.isValidValue(tsValue)) {
 
-						if (iControlledOutlet instanceof Outlet) {
-							Outlet outlet = (Outlet) iControlledOutlet;
-							String siUnits = outlet.getSiUnits();
-							logger.finer("outlet " + outlet.getOutletName() + " is in units:" + siUnits);
-						}
+							Map.Entry<Date, GateOpeningEntry> floorEntry = getValidFloorEntry(gc, dateEntryMap, tsDate);
+							Double cacheValueInEffectAtDate = getValueFromEntry(floorEntry);
 
-						if (tsValue != null && Const.isValid(tsValue)) {
-							Date cacheDateBeforeTs = cacheDates.floor(tsDate);
-							if (cacheDateBeforeTs != null) {
-								Double gateOpeningAtOrBefore = gc.getGateOpening(cacheDateBeforeTs, iControlledOutlet);
-
-								Map.Entry<Date, GateOpeningEntry> floorEntry = dateEntryMap.floorEntry(tsDate);
-								if (floorEntry != null) {
-									GateOpeningEntry entry = floorEntry.getValue();
-//					Date entryDate = floorEntry.getKey();   // is this the same as cacheDateBeforeTs
-									AggregateGateOpeningEntry agoeHolding = entry.getParent();
-									if (agoeHolding != null) {
-										double gateOpeningCommon = agoeHolding.getGateOpeningCommon();  // is this the same as gateOpeniingAtOrBefore?
-
-										if (gateOpeningCommon != tsValue) {
-											try {
-												// difference detected
-												// do we immediately make the change or do we build objects and make all the changes later?
-												gc.modifyGateOpeningBlock(tsDate, iControlledOutlet, tsValue);
-											} catch (GateMergeException ex) {
-												Logger.getLogger(ScriptableGateSettingsImpl.class.getName()).log(Level.WARNING, null, ex);
-											}
-										}
-									}
+							if (!Objects.equals(cacheValueInEffectAtDate, tsValue)) {
+								try {
+									// difference detected
+									// do we immediately make the change or do we build objects and make all the changes later? Immediate
+									gc.modifyGateOpeningBlock(tsDate, iControlledOutlet, tsValue);
+								} catch (GateMergeException ex) {
+									Logger.getLogger(ScriptableGateSettingsImpl.class.getName()).log(Level.WARNING, null, ex);
 								}
 							}
 						}
@@ -425,18 +433,35 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		}
 	}
 
-	public DataSetTx getDataSetTx(LocationTemplate locRef, IControlledOutlet iControlledOutlet, Date startDate, Date end) throws
-		DbConnectionException, DataSetException, DbException, DbIoException, DataSetIllegalArgumentException
+	public Map.Entry<Date, GateOpeningEntry> getValidFloorEntry(GateCache gc, NavigableMap<Date, GateOpeningEntry> dateEntryMap, Date tsDate)
 	{
-		DataSetTx dataSetTx = null;
-		AtTimeSeriesManager tsManager = getRegiDomain().getAtTimeSeriesManager(getManagerId());
-		String tsIdStr = getFirstTimeSeriesDescription(locRef, iControlledOutlet.toString());
-		if (tsIdStr != null) {
-			DescriptionTx dtx = new DescriptionTx(locRef.getOfficeId(), tsIdStr);
-			dataSetTx = getDataSetTx(dtx, startDate, end, tsManager);
+		Map.Entry<Date, GateOpeningEntry> floorEntry = null;
+		
+		Double value = null;
+		Date nextKey = tsDate;
+		while(nextKey != null && (value == null || !RMAConst.isValidValue(value) )){
+			floorEntry = dateEntryMap.floorEntry(nextKey);
+			value = getValueFromEntry(floorEntry);
+			nextKey = dateEntryMap.lowerKey(nextKey);
 		}
-		return dataSetTx;
+
+		return floorEntry;
 	}
+
+	public Double getValueFromEntry(Map.Entry<Date, GateOpeningEntry> floorEntry)
+	{
+		Double retval = null;
+		if (floorEntry != null) {
+			GateOpeningEntry entry = floorEntry.getValue();
+			// Date entryDate = floorEntry.getKey();
+			AggregateGateOpeningEntry agoeHolding = entry.getParent();
+			if (agoeHolding != null) {
+				retval = agoeHolding.getGateOpeningCommon();
+			}
+		}
+		return retval;
+	}
+
 
 	public NavigableMap<Date, GateOpeningEntry> findEntriesForOutlet(IControlledOutlet iControlledOutlet, GateCache gc, Date startDate,
 		Date end)
@@ -520,6 +545,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		return dateGrpOutletEntryMap;
 	}
 
+
 	private Map<IControlledOutletGroup, Map<IControlledOutlet, NavigableMap<Date, GateOpeningEntry>>> reorganize(
 		NavigableMap<Date, Map<IControlledOutletGroup, Map<IControlledOutlet, GateOpeningEntry>>> dateGrpOutletEntryMap)
 	{
@@ -600,9 +626,9 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	{
 		AtOutletManager atOutletManager = regi.getAtOutletManager(managerId);
 		List<IOutlet> outlets = new ArrayList<>();
-		List<PhysicalStructure> physicalStructures = atOutletManager.retrieveList(locProject.getLocation().getLocationTemplate(),
+		List<IPhysicalStructure> physicalStructures = atOutletManager.retrieveList(locProject.getLocation().getLocationTemplate(),
 			CacheUsage.NORMAL);
-		for (PhysicalStructure physicalStructure : physicalStructures) {
+		for (IPhysicalStructure physicalStructure : physicalStructures) {
 			if (physicalStructure instanceof IOutlet) {
 				outlets.add((IOutlet) physicalStructure);
 			}
@@ -648,5 +674,6 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 
 		return retval;
 	}
+
 
 }
