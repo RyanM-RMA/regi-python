@@ -5,10 +5,19 @@ import hec.data.DataSetIllegalArgumentException;
 import hec.data.Duration;
 import hec.data.ITimeSeriesDescription;
 import hec.data.Interval;
+import hec.data.Parameter;
 import hec.data.ParameterType;
 import hec.data.Units;
 import hec.data.UtcOffsetConst;
+import hec.data.location.AssignedLocation;
+import hec.data.location.Location;
+import hec.data.location.LocationCategoryRef;
+import hec.data.location.LocationGroup;
+import hec.data.location.LocationGroupRef;
+import hec.data.location.LocationGroupSet;
 import hec.data.location.LocationTemplate;
+import hec.data.rating.IRatingSpecification;
+import hec.data.rating.JDomRatingSpecification;
 import hec.data.tx.DataSetTx;
 import hec.data.tx.DataSetTxIllegalArgumentException;
 import hec.data.tx.DataSetTxTemplate;
@@ -22,6 +31,7 @@ import hec.hecmath.TimeSeriesMath;
 import hec.io.TimeSeriesContainer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -65,8 +75,10 @@ import usace.rowcps.data.project.AtProjectDescriptor;
 import usace.rowcps.data.project.IProject;
 import usace.rowcps.headless.calculator.inflow.AbstractThreadedBlockRetriever;
 import usace.rowcps.regi.model.AtAssociationManager;
+import usace.rowcps.regi.model.AtLocationGroupManager;
 import usace.rowcps.regi.model.AtOutletManager;
 import usace.rowcps.regi.model.AtProjectManager;
+import usace.rowcps.regi.model.AtRatingManager;
 import usace.rowcps.regi.model.AtTimeSeriesManager;
 import usace.rowcps.regi.model.CacheUsage;
 import usace.rowcps.regi.model.ManagerId;
@@ -100,25 +112,34 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	}
 
 	@Override
-	public void createGateSettingsOutlet(String officeId, String locationStr, Date startDate, Date end, String outletId) throws DbConnectionException, DbIoException, InterruptedException, CacheInitializationException, DbException, DataSetException, DataSetIllegalArgumentException, HecMathException
+	public void createGateSettingsOutlet(String officeId, String locationStr, Date startDate, Date end, String outletId) throws
+		DbConnectionException, DbIoException, InterruptedException, CacheInitializationException, DbException, DataSetException,
+		DataSetIllegalArgumentException, HecMathException
 	{
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
 		GateCache gc = getCache(locRef, startDate, end);
 
 		IControlledOutlet iControlledOutlet = getIControlledOutlet(gc, outletId);
-		if(iControlledOutlet != null){
-			createGateSettingsOutlet(gc, locRef, startDate, end, iControlledOutlet);
+		if (iControlledOutlet != null) {
+
+			ITimeSeriesAssociation association = getInputAssociation(locRef);
+			Map<String, IOutlet> outletsBySubMap = getOutletsBySubMap(locRef);
+			Map<String, TimeSeriesIds> tsIdsBySubMap = initTsIdsBySubLocation(outletsBySubMap.values(), association);
+
+			createGateSettingsOutlet(gc, locRef, startDate, end, iControlledOutlet, tsIdsBySubMap);
 		}
 
 	}
 
-	void createGateSettingsOutlet(String officeId, String locationStr, Date startDate, Date end, String outletId, String tsId) throws DbConnectionException, DbIoException, InterruptedException, CacheInitializationException, DbException, DataSetException, DataSetIllegalArgumentException, HecMathException
+	void createGateSettingsOutlet(String officeId, String locationStr, Date startDate, Date end, String outletId, String tsId) throws
+		DbConnectionException, DbIoException, InterruptedException, CacheInitializationException, DbException, DataSetException,
+		DataSetIllegalArgumentException, HecMathException
 	{
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
 		GateCache gc = getCache(locRef, startDate, end);
 
 		IControlledOutlet iControlledOutlet = getIControlledOutlet(gc, outletId);
-		if(iControlledOutlet != null){
+		if (iControlledOutlet != null) {
 			createGateSettingsOutlet(gc, locRef, startDate, end, iControlledOutlet, tsId);
 		}
 	}
@@ -342,19 +363,104 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		List<IControlledOutlet> outlets = outletGroup.getOutlets();
 
 		if (outlets != null && !outlets.isEmpty()) {
-			createGateSettingsOutlets(gc, locRef, startDate, end, outlets);
-		}
-	}
+			ITimeSeriesAssociation association = getInputAssociation(locRef);
+			Map<String, IOutlet> outletsBySubMap = getOutletsBySubMap(locRef);
 
-	public void createGateSettingsOutlets(GateCache gc, LocationTemplate locRef, Date startDate, Date end, List<IControlledOutlet> outlets)
-		throws DbIoException, DbException, DbConnectionException, DataSetException, DataSetIllegalArgumentException, HecMathException
-	{
-		if (outlets != null && !outlets.isEmpty()) {
-			for (IControlledOutlet outlet : outlets) {
-				createGateSettingsOutlet(gc, locRef, startDate, end, outlet);
+			Map<String, TimeSeriesIds> tsIdsBySubMap = initTsIdsBySubLocation(outletsBySubMap.values(), association);
+			
+			/////
+			// OutletPanel updates the tsIds with control parameters - does thsi need to do that too?
+			LocationGroupSet lgs = getLocationGroupSet(locRef);
+			for (Map.Entry<String, IOutlet> entry : outletsBySubMap.entrySet()) {
+				String key = entry.getKey();
+				IOutlet value = entry.getValue();
+				LocationGroupRef locationGroupRef = value.getRatingGroupRef();
+
+				LocationGroup locationGroup = lgs.getLocationGroup(locationGroupRef);
+				List<String> controlParameters = getControlParameters(locationGroup, locRef);
+
+				TimeSeriesIds tsIds = tsIdsBySubMap.get(key);
+				updateParameters(tsIds, controlParameters);
+			}
+			/////
+
+			for (IControlledOutlet controlledOutlet : outlets) {
+				createGateSettingsOutlet(gc, locRef, startDate, end, controlledOutlet, tsIdsBySubMap);
 			}
 		}
 	}
+
+	public static void updateParameters(TimeSeriesIds tsIds, List<String> controlParameters)
+	{
+		if (tsIds != null && controlParameters != null && !controlParameters.isEmpty()) {
+			String firstControlParam = controlParameters.get(0);
+
+			tsIds.setParameter(0, firstControlParam);  // updates parameter from "Opening" to "Opening-Spillway_Gate"
+
+			if (controlParameters.size() > 1) {
+				// not exactly sure how this next bit works but this is what OutletPanel does....
+				for (int j = 1; j < controlParameters.size(); j++) {
+					tsIds.add(tsIds.getId(0), tsIds.getOffset(0));
+					tsIds.setParameter(j, controlParameters.get(j));
+				}
+			}
+		}
+	}
+
+	private LocationGroupSet getLocationGroupSet(LocationTemplate locRef) throws DbConnectionException, DbIoException
+	{
+		RegiDomain regiDomain1 = getRegiDomain();
+		AtProjectManager atProjectManager = regiDomain1.getAtProjectManager(getManagerId());
+		AtProjectDescriptor currentDescriptor = atProjectManager.getProjectDescriptor(locRef, CacheUsage.NORMAL);
+		LocationTemplate projectLocationRef = currentDescriptor.getProjectLocationRef();
+		AtRatingManager atRatingManager = regiDomain1.getAtRatingManager(getManagerId());
+		LocationCategoryRef ratingGroupCatRef = atRatingManager.getCategoryRef();
+		String officeId = projectLocationRef.getOfficeId();
+
+		AtLocationGroupManager atLocationGroupManager = regiDomain1.getAtLocationGroupManager(getManagerId());
+		LocationGroupSet ratingGroups = atLocationGroupManager.retrieveLocationGroups(ratingGroupCatRef, officeId,
+			projectLocationRef, null,
+			CacheUsage.NORMAL);
+		return ratingGroups;
+	}
+
+
+	/**
+	 * Based on the method in OutletPanel..
+	 * @param rating
+	 * @param template
+	 * @return
+	 */
+	  private List<String> getControlParameters(LocationGroup rating, LocationTemplate template) {
+
+        List<String> retval = new ArrayList<>();
+        if (rating != null){
+            for (AssignedLocation assignedLocation : rating.getAssignedLocations()) {
+                if (assignedLocation.getAssociatedLocRef() != null && assignedLocation.getAssociatedLocRef().equals(template)) {
+                    retval.add(assignedLocation.getAliasId());
+                }
+            }
+
+            if (retval.isEmpty()) {
+                try {
+                    String ratingSpecId = rating.getSharedLocAliasId();
+                    RegiDomain currentProject = (RegiDomain) RegiDomain.getCurrentProject();
+                    IRatingSpecification ratingSpecification = new JDomRatingSpecification(currentProject.getUserOfficeId(), ratingSpecId);
+
+					AtRatingManager ratingManager = currentProject.getAtRatingManager(getManagerId());
+                    Parameter controlParameter = ratingManager.getOutletOpeningParameter(ratingSpecification);
+                    if (controlParameter != null) {
+                        retval.add(controlParameter.toString());
+                    }
+                } catch (DataSetException ex) {
+                    logger.log(Level.INFO, "unable to get control parameter for rating group {0}", rating.getDisplayName());
+                }
+            }
+        }
+
+        return retval;
+    }
+
 
 	public NavigableSet<Date> getDatesSubset(GateCache gc, Date start, Date end)
 	{
@@ -372,20 +478,30 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	}
 
 	private void createGateSettingsOutlet(GateCache gc, LocationTemplate locRef, Date startDate, Date end,
-		IControlledOutlet iControlledOutlet) throws DbConnectionException, DbIoException, DataSetIllegalArgumentException, DbException,
+		IControlledOutlet iControlledOutlet, Map<String, TimeSeriesIds> tsIdsBySubMap) throws DbConnectionException, DbIoException,
+		DataSetIllegalArgumentException, DbException,
 		DataSetException, HecMathException
 	{
 		if (iControlledOutlet != null) {
-			String tsIdStr = getFirstTimeSeriesDescription(locRef, iControlledOutlet.toString());
-			createGateSettingsOutlet(gc,locRef, startDate, end, iControlledOutlet, tsIdStr);
+
+//				//	ITimeSeriesDescription timeSeriesId = association.getTimeSeriesId();
+//		List<IOutlet> outlets = getIOutlets(regi, locProject);
+//
+//		Map<String, IOutlet> outletsBySubMap = new HashMap<>();
+//		for (IOutlet outlet : outlets) {
+//			outletsBySubMap.put(outlet.getLocation().getSubLocationId(), outlet);
+//		}
+			String outletName = iControlledOutlet.getOutletName();   // this is like TG1 , not like WTYT2-TG1
+			String tsIdStr = getFirstTimeSeriesDescription(locRef, iControlledOutlet.toString(), tsIdsBySubMap);
+			createGateSettingsOutlet(gc, locRef, startDate, end, iControlledOutlet, tsIdStr);
 		}
 	}
 
 	public void createGateSettingsOutlet(GateCache gc, LocationTemplate locRef, Date startDate, Date end,
-		IControlledOutlet iControlledOutlet, String tsIdStr ) throws DataSetException, DbException, HecMathException
+		IControlledOutlet iControlledOutlet, String tsIdStr) throws DataSetException, DbException, HecMathException
 	{
 		AtTimeSeriesManager tsManager = getRegiDomain().getAtTimeSeriesManager(getManagerId());
-	
+
 		if (tsIdStr != null) {
 			DescriptionTx dtx = new DescriptionTx(locRef.getOfficeId(), tsIdStr);
 			DataSetTx dataSetTx = getDataSetTx(dtx, startDate, end, tsManager);
@@ -436,10 +552,10 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	public Map.Entry<Date, GateOpeningEntry> getValidFloorEntry(GateCache gc, NavigableMap<Date, GateOpeningEntry> dateEntryMap, Date tsDate)
 	{
 		Map.Entry<Date, GateOpeningEntry> floorEntry = null;
-		
+
 		Double value = null;
 		Date nextKey = tsDate;
-		while(nextKey != null && (value == null || !RMAConst.isValidValue(value) )){
+		while (nextKey != null && (value == null || !RMAConst.isValidValue(value))) {
 			floorEntry = dateEntryMap.floorEntry(nextKey);
 			value = getValueFromEntry(floorEntry);
 			nextKey = dateEntryMap.lowerKey(nextKey);
@@ -461,7 +577,6 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		}
 		return retval;
 	}
-
 
 	public NavigableMap<Date, GateOpeningEntry> findEntriesForOutlet(IControlledOutlet iControlledOutlet, GateCache gc, Date startDate,
 		Date end)
@@ -545,7 +660,6 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		return dateGrpOutletEntryMap;
 	}
 
-
 	private Map<IControlledOutletGroup, Map<IControlledOutlet, NavigableMap<Date, GateOpeningEntry>>> reorganize(
 		NavigableMap<Date, Map<IControlledOutletGroup, Map<IControlledOutlet, GateOpeningEntry>>> dateGrpOutletEntryMap)
 	{
@@ -595,31 +709,70 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 
 	}
 
-	String getFirstTimeSeriesDescription(LocationTemplate locRef, String outletId) throws DbConnectionException, DbIoException
+	// not efficient for multiple outlets.  used by test.
+	public String getFirstTimeSeriesDescription(LocationTemplate locRef, String outletId) throws DbConnectionException, DbIoException
+	{
+			ITimeSeriesAssociation association = getInputAssociation(locRef);
+			Map<String, IOutlet> outletsBySubMap = getOutletsBySubMap(locRef);
+			Map<String, TimeSeriesIds> tsIdsBySubMap = initTsIdsBySubLocation(outletsBySubMap.values(), association);
+			return getFirstTimeSeriesDescription(locRef, outletId, tsIdsBySubMap);
+	}
+
+
+// outletId is like TG1
+	public String getFirstTimeSeriesDescription(LocationTemplate locRef, String outletId, Map<String, TimeSeriesIds> tsIds) throws
+		DbConnectionException, DbIoException
 	{
 		String retval = null;
 		ITimeSeriesDescription tsDescription = null;
 
-		RegiDomain regi = getRegiDomain();
-		ManagerId manId = getManagerId();
-
-		AtProjectManager atProjectManager = regi.getAtProjectManager(managerId);
-
-		IProject locProject = atProjectManager.getIProject(locRef, CacheUsage.NORMAL);
-		final IAssociationProvider<ITimeSeriesAssociation> tsProvider = locProject.getTimeSeriesAssociationProvider();
-		ITimeSeriesAssociation association = tsProvider.getInputAssociation(IProject.TsUsageId.GATESETTINGS_GATE_OPENING.usage);
-
-		//	ITimeSeriesDescription timeSeriesId = association.getTimeSeriesId();
-		List<IOutlet> outlets = getIOutlets(regi, locProject);
-
-		Map<String, TimeSeriesIds> tsIds = initTsIds(outlets, association);
 		if (tsIds != null) {
-			TimeSeriesIds tsIdsForOutlet = tsIds.get(outletId);
+			TimeSeriesIds tsIdsForOutlet = tsIds.get(outletId);  // outletId is like TG1
 			if (tsIdsForOutlet != null) {
 				retval = tsIdsForOutlet.getId(0);
 			}
 		}
 		return retval;
+	}
+
+
+
+	public ITimeSeriesAssociation getInputAssociation(LocationTemplate locRef) throws DbIoException, DbConnectionException
+	{
+		RegiDomain regi = getRegiDomain();
+		ManagerId manId = getManagerId();
+
+		AtProjectManager atProjectManager = regi.getAtProjectManager(manId);
+
+		IProject locProject = atProjectManager.getIProject(locRef, CacheUsage.NORMAL);
+		final IAssociationProvider<ITimeSeriesAssociation> tsProvider = locProject.getTimeSeriesAssociationProvider();
+		ITimeSeriesAssociation association = tsProvider.getInputAssociation(IProject.TsUsageId.GATESETTINGS_GATE_OPENING.usage);
+		return association;
+	}
+
+	private Map<String, IOutlet> getOutletsBySubMap(LocationTemplate locRef) throws DbConnectionException, DbIoException
+	{
+		Map<String, IOutlet> outletsBySubMap = null;
+		RegiDomain regi = getRegiDomain();
+		ManagerId manId = getManagerId();
+
+		AtProjectManager atProjectManager = regi.getAtProjectManager(manId);
+
+		IProject locProject = atProjectManager.getIProject(locRef, CacheUsage.NORMAL);
+
+		//	ITimeSeriesDescription timeSeriesId = association.getTimeSeriesId();
+		List<IOutlet> outlets = getIOutlets(regi, locProject);
+
+		outletsBySubMap = new HashMap<>();
+		for (IOutlet outlet : outlets) {
+			if (outlet != null) {
+				Location location = outlet.getLocation();
+				if (location != null) {
+					outletsBySubMap.put(location.getSubLocationId(), outlet);
+				}
+			}
+		}
+		return outletsBySubMap;
 	}
 
 	public List<IOutlet> getIOutlets(RegiDomain regi, IProject locProject) throws DbConnectionException, DbIoException
@@ -637,8 +790,44 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		return outlets;
 	}
 
-
-	private Map<String, TimeSeriesIds> initTsIds(List<IOutlet> outlets, ITimeSeriesAssociation association)
+//	private Map<String, TimeSeriesIds> initTsIds(List<IOutlet> outlets, ITimeSeriesAssociation association)
+//	{
+//		Map<String, TimeSeriesIds> retval = new HashMap<>();
+//
+//		if (association != null && association.getTimeSeriesId() != null) {
+//			//sub in the time series id for each outlet
+//			ITimeSeriesDescription tsId = association.getTimeSeriesId();
+//
+//			for (IOutlet outlet : outlets) {
+//				String str = outlet.toString();
+//				String subLocationId = outlet.getLocation().getSubLocationId();
+//				TimeSeriesIds tsIds = new TimeSeriesIds();
+//				tsIds.add(tsId.getTimeSeriesId(), association.getOffsetSec());
+//				tsIds.setLocation(str);
+//				retval.put(str, tsIds);
+//			}
+//
+//		} else {
+//			String type = ParameterType.getAvailableParameterTypes()[0];
+//			String interval = Interval.getAvailableIntervals()[0];
+//			String duration = Duration.getAvailableDurations()[0];
+//			String version = "MANUAL";
+//			int offset = UtcOffsetConst.NO_UTC_OFFSET;
+//
+//			for (IOutlet outlet : outlets) {
+//				String str = outlet.toString();
+//				TimeSeriesIds tsIds = new TimeSeriesIds();
+//				tsIds.setLocation(str);
+//				tsIds.add("", type, interval, duration, version, offset);
+//
+//				retval.put(str, tsIds);
+//
+//			}
+//		}
+//
+//		return retval;
+//	}
+	private Map<String, TimeSeriesIds> initTsIdsBySubLocation(Collection<IOutlet> outlets, ITimeSeriesAssociation association)
 	{
 		Map<String, TimeSeriesIds> retval = new HashMap<>();
 
@@ -647,11 +836,12 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 			ITimeSeriesDescription tsId = association.getTimeSeriesId();
 
 			for (IOutlet outlet : outlets) {
-				String str = outlet.toString();
+				String str = outlet.toString();  // like WTYT2-TG1
+				String subLocationId = outlet.getLocation().getSubLocationId();  // like TG1
 				TimeSeriesIds tsIds = new TimeSeriesIds();
 				tsIds.add(tsId.getTimeSeriesId(), association.getOffsetSec());
 				tsIds.setLocation(str);
-				retval.put(str, tsIds);
+				retval.put(subLocationId, tsIds);
 			}
 
 		} else {
@@ -662,18 +852,18 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 			int offset = UtcOffsetConst.NO_UTC_OFFSET;
 
 			for (IOutlet outlet : outlets) {
+				String subLocationId = outlet.getLocation().getSubLocationId();  // like TG1
 				String str = outlet.toString();
 				TimeSeriesIds tsIds = new TimeSeriesIds();
 				tsIds.setLocation(str);
 				tsIds.add("", type, interval, duration, version, offset);
 
-				retval.put(str, tsIds);
+				retval.put(subLocationId, tsIds);
 
 			}
 		}
 
 		return retval;
 	}
-
 
 }
