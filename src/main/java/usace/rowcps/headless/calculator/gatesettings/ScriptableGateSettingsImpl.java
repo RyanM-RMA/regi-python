@@ -54,7 +54,7 @@ import usace.rowcps.computation.common.IThreadedBlockRetriever;
 import usace.rowcps.computation.common.grouping.IControlledOutlet;
 import usace.rowcps.computation.common.grouping.IControlledOutletGroup;
 import usace.rowcps.computation.common.grouping.IControlledOutletGroupContainer;
-import usace.rowcps.computation.gatesettings.TimeSeriesIds;
+import usace.rowcps.computation.TimeSeriesIds;
 import usace.rowcps.computation.gatesettings.common.AggregateGateOpeningEntry;
 import usace.rowcps.computation.gatesettings.common.GateCache;
 import usace.rowcps.computation.gatesettings.common.GateMergeException;
@@ -220,27 +220,6 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		return gateCache;
 	}
 
-//	public void createGateSettings(GateCache gc, LocationTemplate locRef, Date startDate, Date end) throws
-//		DbConnectionException, DbIoException, DbException, DataSetException, DataObjectException, HecMathException
-//	{
-//		RegiDomain regi = getRegiDomain();
-//		ManagerId manId = getManagerId();
-//
-//		AtProjectManager atProjectManager = regi.getAtProjectManager(managerId);
-//
-//		AtOutletManager atOutletManager = regi.getAtOutletManager(managerId);
-//		NavigableMap locAssociations = atOutletManager.retrieveLocationAssociations(locRef, CacheUsage.NORMAL);
-//
-//		List<IOutlet> retrieveList = atOutletManager.retrieveList(locRef, CacheUsage.NORMAL);
-//		for (IOutlet iOutlet : retrieveList) {
-//			createGateSettingsOutlet(gc, locRef, startDate, end, iOutlet);
-//		}
-//
-////        GateCache commonGateCache = new GateCache(currentDayControl, getManagerId(), projectDescriptor, MAXROWSTORETRIEVE, completionCallbackTarget,
-////                modifiedDatesForCachedSettings);
-////
-////        commonGateCache.initCache();
-//	}
 	public ITimeSeriesDescription getFirstTimeSeriesDescription(LocationTemplate locRef) throws DbConnectionException, DbIoException,
 		DataObjectException
 	{
@@ -367,22 +346,21 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 			Map<String, IOutlet> outletsBySubMap = getOutletsBySubMap(locRef);
 
 			Map<String, TimeSeriesIds> tsIdsBySubMap = initTsIdsBySubLocation(outletsBySubMap.values(), association);
-			
-			/////
-			// OutletPanel updates the tsIds with control parameters - does thsi need to do that too?
+
 			LocationGroupSet lgs = getLocationGroupSet(locRef);
-			for (Map.Entry<String, IOutlet> entry : outletsBySubMap.entrySet()) {
-				String key = entry.getKey();
-				IOutlet value = entry.getValue();
-				LocationGroupRef locationGroupRef = value.getRatingGroupRef();
+			if (lgs != null) {
+				for (Map.Entry<String, IOutlet> entry : outletsBySubMap.entrySet()) {
+					String key = entry.getKey();
+					IOutlet value = entry.getValue();
+					LocationGroupRef locationGroupRef = value.getRatingGroupRef();
 
-				LocationGroup locationGroup = lgs.getLocationGroup(locationGroupRef);
-				List<String> controlParameters = getControlParameters(locationGroup, locRef);
+					LocationGroup locationGroup = lgs.getLocationGroup(locationGroupRef);
+					List<String> controlParameters = getControlParameters(locationGroup, locRef);
 
-				TimeSeriesIds tsIds = tsIdsBySubMap.get(key);
-				updateParameters(tsIds, controlParameters);
+					TimeSeriesIds tsIds = tsIdsBySubMap.get(key);
+					updateParameters(tsIds, controlParameters);
+				}
 			}
-			/////
 
 			for (IControlledOutlet controlledOutlet : outlets) {
 				createGateSettingsOutlet(gc, locRef, startDate, end, controlledOutlet, tsIdsBySubMap);
@@ -634,11 +612,11 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 								IControlledOutletGroup controlledOutletGroup = entry.getOutletGroup();
 								if (controlledOutletGroup instanceof OutletGroup) {
 									OutletGroup outletGroup = (OutletGroup) controlledOutletGroup;
-									try {
-										String openingsUnitsForGroupSI = outletGroup.getOpeningsUnitsForGroup(hec.data.Units.SI_ID);
-									} catch (Exception ex) {
-										Logger.getLogger(ScriptableGateSettingsImpl.class.getName()).log(Level.SEVERE, null, ex);
-									}
+//									try {
+//										String openingsUnitsForGroupSI = outletGroup.getOpeningsUnitsForGroup(hec.data.Units.SI_ID);
+//									} catch (Exception ex) {
+//										Logger.getLogger(ScriptableGateSettingsImpl.class.getName()).log(Level.SEVERE, null, ex);
+//									}
 
 								}
 
@@ -790,43 +768,6 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		return outlets;
 	}
 
-//	private Map<String, TimeSeriesIds> initTsIds(List<IOutlet> outlets, ITimeSeriesAssociation association)
-//	{
-//		Map<String, TimeSeriesIds> retval = new HashMap<>();
-//
-//		if (association != null && association.getTimeSeriesId() != null) {
-//			//sub in the time series id for each outlet
-//			ITimeSeriesDescription tsId = association.getTimeSeriesId();
-//
-//			for (IOutlet outlet : outlets) {
-//				String str = outlet.toString();
-//				String subLocationId = outlet.getLocation().getSubLocationId();
-//				TimeSeriesIds tsIds = new TimeSeriesIds();
-//				tsIds.add(tsId.getTimeSeriesId(), association.getOffsetSec());
-//				tsIds.setLocation(str);
-//				retval.put(str, tsIds);
-//			}
-//
-//		} else {
-//			String type = ParameterType.getAvailableParameterTypes()[0];
-//			String interval = Interval.getAvailableIntervals()[0];
-//			String duration = Duration.getAvailableDurations()[0];
-//			String version = "MANUAL";
-//			int offset = UtcOffsetConst.NO_UTC_OFFSET;
-//
-//			for (IOutlet outlet : outlets) {
-//				String str = outlet.toString();
-//				TimeSeriesIds tsIds = new TimeSeriesIds();
-//				tsIds.setLocation(str);
-//				tsIds.add("", type, interval, duration, version, offset);
-//
-//				retval.put(str, tsIds);
-//
-//			}
-//		}
-//
-//		return retval;
-//	}
 	private Map<String, TimeSeriesIds> initTsIdsBySubLocation(Collection<IOutlet> outlets, ITimeSeriesAssociation association)
 	{
 		Map<String, TimeSeriesIds> retval = new HashMap<>();
