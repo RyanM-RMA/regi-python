@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.kohsuke.args4j.CmdLineParser;
-import usace.rowcps.regi.factories.RowcpsExecutorService;
 import usace.rowcps.regi.model.ManagerId;
 import usace.rowcps.regi.model.RegiDomain;
 import wcds.dbi.oracle.ui.OracleServerInfo;
@@ -90,18 +89,6 @@ public class RegiCLI
 			parser.printUsage(System.err);
 			return;
 		}
-		RowcpsExecutorService res = RowcpsExecutorService.getInstance();
-
-//		if(!res.isShutdown()){
-//			logger.info("RowcpsExecutorService was not shutdown.");
-//			res.shutdown();
-//			try {
-//				res.awaitTermination(5, TimeUnit.SECONDS);
-//			} catch (InterruptedException ex) {
-//				Logger.getLogger(RegiCLI.class.getName()).log(Level.SEVERE, null, ex);
-//				Thread.currentThread().interrupt();
-//			}
-//		}
 
 		logger.info("Exitting.");
 		System.exit(0);
