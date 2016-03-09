@@ -14,8 +14,10 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import usace.rowcps.regi.factories.RegiDomainFactory;
+import usace.rowcps.regi.interfaces.model.ManagerIdProvider;
 import usace.rowcps.regi.model.DatabaseConnectionManager;
 import usace.rowcps.regi.model.ManagerId;
+import usace.rowcps.regi.model.ManagerIdType;
 import usace.rowcps.regi.model.RegiDomain;
 
 /**
@@ -32,10 +34,8 @@ public class HeadlessRegiDomainFactory
 		String cp = System.getProperties().getProperty("java.class.path");
 		String[] split = cp.split(File.pathSeparator);
 		final String dbiClientjar = "dbiClient.jar";
-		for (String cpentry : split)
-		{
-			if (cpentry.endsWith(dbiClientjar))
-			{
+		for (String cpentry : split) {
+			if (cpentry.endsWith(dbiClientjar)) {
 				String pluginDir = cpentry.split(dbiClientjar)[0];
 				logger.log(Level.INFO, "Setting plugin dir to: {0}", pluginDir);
 				System.setProperty("PLUGINS", pluginDir);
@@ -55,10 +55,10 @@ public class HeadlessRegiDomainFactory
 
 		File projectDir = new File(rowcpsPojectDir, rowcpsProjectName);
 
-		if(projectDir == null){
+		if (projectDir == null) {
 			String missingProjDirMessage
 				= "A Rowcps Project Dir is required and must be specified on the command line or in a properties file.";
-			throw  new IllegalArgumentException(missingProjDirMessage);
+			throw new IllegalArgumentException(missingProjDirMessage);
 		} else {
 			if (!projectDir.exists()) {
 				// If we are being run headlessly I'm not sure how much hand-holding and sanity checking we have to do.
@@ -125,24 +125,28 @@ public class HeadlessRegiDomainFactory
 		return regiDomain;
 	}
 
-	public ManagerId getNewManagerId()
-	{
-		ManagerId managerId = new ManagerId("Headless" + ManagerId.getHashCodeCurrentTimeId(this));
-		return managerId;
-	}
-
 	public ManagerId getManagerId(CLIOptions opt)
 	{
-		ManagerId retval = null;
-		Object property = opt.getProperty("managerId");
-		if (property instanceof String) {
-			String string = (String) property;
-			retval = new ManagerId(string);
-		} else {
-			retval = getNewManagerId();
-		}
+		ManagerId retval = idProvider.getManagerId();
 
 		return retval;
+	}
+
+	private ManagerIdProvider idProvider = buildNewProvider();
+
+	private static ManagerIdProvider buildNewProvider()
+	{
+		return new ManagerIdProvider()
+		{
+			private final ManagerId _managerId = ManagerId.buildNewManagerId("Headless_" + System.currentTimeMillis(), ManagerIdType.HEADLESS);
+
+			@Override
+			public ManagerId getManagerId()
+			{
+				return _managerId;
+			}
+
+		};
 	}
 
 }
