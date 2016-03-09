@@ -33,6 +33,7 @@ import usace.rowcps.regi.model.AtProjectManager;
 import usace.rowcps.regi.model.CacheUsage;
 import usace.rowcps.regi.model.ManagerId;
 import usace.rowcps.regi.model.RegiDomain;
+import usace.rowcps.regi.util.RowcpsFutureDescriptor;
 
 /**
  *
@@ -242,7 +243,8 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 		InflowCache inflowCache = new InflowCache(getManagerId(), projectDescriptor, eventThreadExceptionProcessor,
 			completionCallbackTarget,
 			modifiedDatesForCachedSettings, getIntervalProvider());
-		inflowCache.initCache(startDate);
+		HashMap<RowcpsFutureDescriptor, Object> futureMap = new HashMap<RowcpsFutureDescriptor, Object>();
+		inflowCache.initCache(startDate, futureMap);
 
 		logger.info("Waiting for InflowCache to initialize.");
 		// This needs more thought.  Peter thinks db timesout at 10 minutes.
@@ -250,8 +252,8 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 		latch.await(11, TimeUnit.MINUTES);  // This one goes to 11...
 		logger.info("InflowCache is initialized.");
 
-		inflowCache.appendDataToHeadOfCache(-1, startDate);
-		inflowCache.appendDataToTailOfCache(-1, startDate);
+		inflowCache.appendDataToHeadOfCache(-1, startDate, futureMap);
+		inflowCache.appendDataToTailOfCache(-1, startDate, futureMap);
 
 		final TimeZone tz = inflowCache.getProjectTimeZone();
 		List<Date> datesInMonth = InflowComputation.getDatesInMonth(startDate, tz);
