@@ -8,10 +8,13 @@ import hec.security.LoginState;
 import java.io.File;
 import java.io.FileReader;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.kohsuke.args4j.CmdLineParser;
+import usace.rowcps.regi.factories.RowcpsExecutorService;
 import usace.rowcps.regi.model.ManagerId;
 import usace.rowcps.regi.model.RegiDomain;
 import wcds.dbi.oracle.ui.OracleServerInfo;
@@ -77,6 +80,7 @@ public class RegiCLI
 				}
 
 				logger.info("RegiDomain closing.");
+				shutdownRowcpsAccessFactory(managerId);
 				regiDomain.closing();
 			}
 
@@ -92,5 +96,26 @@ public class RegiCLI
 
 		logger.info("Exitting.");
 		System.exit(0);
+	}
+
+	private static void shutdownRowcpsAccessFactory(ManagerId managerId)
+	{
+		logger.info("Shutting down RowcpsExecutorService for " + managerId );
+		RowcpsExecutorService res = RowcpsExecutorService.getInstance(managerId);
+
+		res.shutdown();  // signal shutdown - this will stop accepting new jobs and allow existing jobs to complete.
+		boolean exitted = false;
+		try{
+			// We are willing to wait a little to achieve a clean shutdown.
+			exitted = res.awaitTermination(3000, TimeUnit.MILLISECONDS);
+
+		} catch (InterruptedException ie){
+			Thread.currentThread().interrupt();
+		}
+		if(!exitted){
+			// Some of the running tasks didn't exit in the time we were willing to wait.
+			List<Runnable> wereWaiting = res.shutdownNow();  // This will interrupt them if they support interruption.
+		}
+		logger.info("RowcpsExecutorService for " + managerId + " shutdown complete.");
 	}
 }
