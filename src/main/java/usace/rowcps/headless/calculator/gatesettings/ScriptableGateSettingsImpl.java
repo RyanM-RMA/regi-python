@@ -56,6 +56,7 @@ import usace.rowcps.computation.common.grouping.IControlledOutletGroup;
 import usace.rowcps.computation.common.grouping.IControlledOutletGroupContainer;
 import usace.rowcps.computation.TimeSeriesIds;
 import usace.rowcps.computation.gatesettings.common.AggregateGateOpeningEntry;
+import usace.rowcps.computation.gatesettings.common.DischargeComputationRecord;
 import usace.rowcps.computation.gatesettings.common.GateCache;
 import usace.rowcps.computation.gatesettings.common.GateMergeException;
 import usace.rowcps.computation.gatesettings.common.GateOpeningEntry;
@@ -109,12 +110,14 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 				}
 			}
 		}
+
+		gc.saveData();
 	}
 
 	@Override
 	public void createGateSettingsOutlet(String officeId, String locationStr, Date startDate, Date end, String outletId) throws
 		DbConnectionException, DbIoException, CacheInitializationException, DbException, DataSetException,
-		DataSetIllegalArgumentException, HecMathException
+		DataSetIllegalArgumentException, HecMathException, Exception
 	{
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
 		GateCache gc = getCache(locRef, startDate, end);
@@ -143,13 +146,15 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 			createGateSettingsOutlet(gc, locRef, startDate, end, iControlledOutlet, tsIdsBySubMap);
 		}
 
+		gc.saveData();
+
 	}
 
 	@Override
 	public void createGateSettingsOutletFromTs(String officeId, String locationStr, Date startDate, Date end, String outletId, String tsId)
 		throws
 		DbConnectionException, DbIoException, CacheInitializationException, DbException, DataSetException,
-		DataSetIllegalArgumentException, HecMathException
+		DataSetIllegalArgumentException, HecMathException, Exception
 	{
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
 		GateCache gc = getCache(locRef, startDate, end);
@@ -158,6 +163,8 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		if (iControlledOutlet != null) {
 			createGateSettingsOutlet(gc, locRef, startDate, end, iControlledOutlet, tsId);
 		}
+
+		gc.saveData();
 	}
 
 	public IControlledOutlet getIControlledOutlet(GateCache gc, String outletId)
@@ -186,6 +193,8 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 				createGateSettingsGroup(gc, locRef, startDate, end, outletGroup);
 			}
 		}
+
+		gc.saveData();
 	}
 
 //	GateCache GateCache = getCache(locRef, startDate);
@@ -546,7 +555,22 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 								try {
 									// difference detected
 									// do we immediately make the change or do we build objects and make all the changes later? Immediate
-									gc.modifyGateOpeningBlock(tsDate, iControlledOutlet, tsValue);
+
+									GateSettingsBlock gateSettingBlock = gc.getGateSetting(tsDate);
+									if (gateSettingBlock == null) {
+										ArrayList<AggregateGateOpeningEntry> aggregateOpenings = new ArrayList<AggregateGateOpeningEntry>();
+										gateSettingBlock = new GateSettingsBlock(gc.getOutletGroupContainer().getOutletGroups(), aggregateOpenings);
+										String dischargeCode = DischargeComputationRecord.DischargeComputationCode.EstimatedByUser.dbEquivalent();
+										gateSettingBlock.setDischargeComputationCode(dischargeCode);
+										gateSettingBlock.setReleaseReasonCode("O");
+										gateSettingBlock.setChangeNotes("Regi Headless ");
+										gateSettingBlock.setModified(true);
+										gc.putGateSetting(tsDate, gateSettingBlock);
+									}
+
+									
+
+									boolean modifyRetval = gc.modifyGateOpeningBlock(tsDate, iControlledOutlet, tsValue);
 									datesOfModifications.add(tsDate);
 								} catch (GateMergeException ex) {
 									Logger.getLogger(ScriptableGateSettingsImpl.class.getName()).log(Level.WARNING, null, ex);
@@ -558,6 +582,8 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 
 				logger.log(Level.INFO, "Modifications were made to the gate settings at {0} for the following {1} dates:{2}",
 					new Object[]{iControlledOutlet.getOutletName(), datesOfModifications.size(), datesOfModifications});
+
+
 			}
 		}
 	}
