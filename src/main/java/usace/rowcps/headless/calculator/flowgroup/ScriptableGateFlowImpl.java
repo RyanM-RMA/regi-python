@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import usace.metrics.services.Metrics;
+import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.headless.calculator.AbstractScriptableCalc;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
 import usace.rowcps.computation.ITimeSeriesComputationResult;
@@ -22,6 +24,7 @@ import usace.rowcps.regi.model.AtFlowGroupManager;
 import usace.rowcps.regi.model.AtTimeSeriesManager;
 import usace.rowcps.regi.model.CacheUsage;
 import usace.rowcps.regi.model.ManagerId;
+import usace.rowcps.regi.model.OptionalParams;
 import usace.rowcps.regi.model.RegiDomain;
 
 /**
@@ -42,9 +45,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 	public void computeAll(String officeId, String locationId, Date start, Date end)
 	{
 
-		long startTime = start.getTime();
-		long endTime = end.getTime();
-		computeAll(officeId, locationId, startTime, endTime);
+		computeAll(officeId, locationId, start.getTime(), end.getTime());
 
 	}
 
@@ -53,12 +54,14 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 	{
 		LocationTemplate projectLocRef = new LocationTemplate(officeId, locationId);
 
+		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "computeAll");
+		OptionalParams options = new OptionalParams(metrics);
+
 		AtFlowGroupManager flowGroupManager = regiDomain.getAtFlowGroupManager(getManagerId());
 		AtTimeSeriesManager atTimeSeriesManager= regiDomain.getAtTimeSeriesManager(getManagerId());
 
 		try {
-			Map<IFlowGroup, LocationGroup> conduitGateFlowGroupMap = flowGroupManager.retrieveFlowGroups(projectLocRef,
-				null, CacheUsage.NORMAL);
+			Map<IFlowGroup, LocationGroup> conduitGateFlowGroupMap = flowGroupManager.retrieveFlowGroups(projectLocRef,	null, CacheUsage.NORMAL);
 
 			if (conduitGateFlowGroupMap != null && !conduitGateFlowGroupMap.isEmpty()) {
 				final int groupMapSize = conduitGateFlowGroupMap.size();
@@ -77,8 +80,8 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 							//			interval, duration, version,
 							//			intervalOffsetSeconds, startCal.getTime(), null);
 							logger.log(Level.INFO, "Computing {0}/{1} Group:{2}", new Object[]{count, groupMapSize, flowGroup.getId()});
-							Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries = flowGroupCalc.
-								calcTimeSeries(getManagerId(), flowGroup,  startTime, endTime);
+							Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries =
+								flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup,  startTime, endTime, options);
 							if(calcTimeSeries == null){
 								// I think that this means there was an error...
 								logger.log(Level.INFO, "Compute {0}/{1} Group:{2} returned null.", new Object[]{count, groupMapSize, flowGroup.getId()});
@@ -129,6 +132,8 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 	{
 		AtFlowGroupManager flowGroupManager = regiDomain.getAtFlowGroupManager(getManagerId());
 		AtTimeSeriesManager atTimeSeriesManager= regiDomain.getAtTimeSeriesManager(getManagerId());
+		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "computeFlowGroup");
+		OptionalParams options = new OptionalParams(metrics);
 
 		LocationTemplate projectLocRef = new LocationTemplate(officeId, locationId);
 		try {
@@ -142,23 +147,29 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 				IFlowGroup flowGroup = entry.getKey();
 				LocationGroup locationGroup = entry.getValue();
 
-				if (flowGroup.getId().equals(groupId)) {
-
-					try {
-						Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries = flowGroupCalc.
-							calcTimeSeries(getManagerId(), flowGroup, startTime, endTime);
-
-						DbCommitFlowGroupCalc.storeToTimeSeriesManager(calcTimeSeries, atTimeSeriesManager);
-						logger.log(Level.INFO, "Compute Group:{2} completed normally.", new Object[]{ flowGroup.getId()});
-					} catch (FlowGroupComputationException | DataSetException ex) {
-						String message = String.format("Scripted compute for group:%s encountered an exception.", new Object[]{ flowGroup.getId()});
-						Logger.getLogger(ScriptableGateFlowImpl.class.getName()).log(Level.WARNING, message, ex);
-					}
-				}
+				computeGroup(flowGroup, groupId, flowGroupCalc, startTime, endTime, options, atTimeSeriesManager);
 			}
 
 		} catch (DbConnectionException | DbIoException ex) {
 			Logger.getLogger(ScriptableGateFlowImpl.class.getName()).log(Level.SEVERE, null, ex);
+		}
+	}
+
+	public void computeGroup(IFlowGroup flowGroup, String groupId, FlowGroupCalc flowGroupCalc, long startTime, long endTime,
+		OptionalParams options, AtTimeSeriesManager atTimeSeriesManager)
+	{
+		if (flowGroup.getId().equals(groupId)) {
+
+			try {
+				Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries =
+					flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup, startTime, endTime, options);
+
+				DbCommitFlowGroupCalc.storeToTimeSeriesManager(calcTimeSeries, atTimeSeriesManager);
+				logger.log(Level.INFO, "Compute Group:{2} completed normally.", new Object[]{ flowGroup.getId()});
+			} catch (FlowGroupComputationException | DataSetException ex) {
+				String message = String.format("Scripted compute for group:%s encountered an exception.", new Object[]{ flowGroup.getId()});
+				Logger.getLogger(ScriptableGateFlowImpl.class.getName()).log(Level.WARNING, message, ex);
+			}
 		}
 	}
 

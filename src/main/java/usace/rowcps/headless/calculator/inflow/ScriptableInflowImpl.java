@@ -15,6 +15,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import usace.metrics.services.Metrics;
+import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.computation.common.IEventThreadExceptionProcessor;
 import usace.rowcps.computation.common.IThreadedBlockRetriever;
 import usace.rowcps.computation.common.IntervalProvider;
@@ -32,6 +34,7 @@ import usace.rowcps.headless.interfaces.ScriptableCalc;
 import usace.rowcps.regi.model.AtProjectManager;
 import usace.rowcps.regi.model.CacheUsage;
 import usace.rowcps.regi.model.ManagerId;
+import usace.rowcps.regi.model.OptionalParams;
 import usace.rowcps.regi.model.RegiDomain;
 import usace.rowcps.regi.util.RowcpsFutureDescriptor;
 
@@ -96,13 +99,14 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 
 	public void autoAdjust(String officeId, String locationStr, Date startDate, boolean useLimits, boolean freezeRain)
 	{
-
+		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "autoAdjust");
+		OptionalParams options = new OptionalParams(metrics);
 		try {
 			LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
 
 			InflowAdjustedTypeModel asm = getOrCreateStatusMap(locRef);
 
-			InflowCache inflowCache = getCache(locRef, startDate);
+			InflowCache inflowCache = getCache(locRef, startDate, options);
 			startDate = inflowCache.getCeilingDateKey(startDate);
 
 			logger.info("performing AutoAdjustInflowsAction");
@@ -114,7 +118,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 			aaia.actionPerformed(null);
 			logger.info("AutoAdjustInflowsAction complete. Saving cache data.");
 
-			inflowCache.saveData();
+			inflowCache.saveData(options);
 
 		} catch (DbConnectionException ex) {
 			Logger.getLogger(ScriptableInflowImpl.class.getName()).log(Level.SEVERE, null, ex);
@@ -129,13 +133,15 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 
 	public void cloneInflows(String officeId, String locationStr, Date startDate)
 	{
+		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "cloneInflows");
+		OptionalParams options = new OptionalParams(metrics);
 
 		try {
 			LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
 
 			InflowAdjustedTypeModel asm = getOrCreateStatusMap(locRef);
 
-			InflowCache inflowCache = getCache(locRef, startDate);
+			InflowCache inflowCache = getCache(locRef, startDate, options);
 			startDate = inflowCache.getCeilingDateKey(startDate);
 
 			logger.info("performing CloneInflowsAction");
@@ -144,7 +150,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 			cloneAction.actionPerformed(null);
 			logger.info("CloneInflowsAction completed. Saving cache data.");
 
-			inflowCache.saveData();
+			inflowCache.saveData(options);
 
 		} catch (DbConnectionException ex) {
 			Logger.getLogger(ScriptableInflowImpl.class.getName()).log(Level.SEVERE, null, ex);
@@ -157,13 +163,15 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 
 	public void zeroNegatives(String officeId, String locationStr, Date startDate)
 	{
+		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "zeroNegatives");
+		OptionalParams options = new OptionalParams(metrics);
 
 		try {
 			LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
 
 			InflowAdjustedTypeModel asm = getOrCreateStatusMap(locRef);
 
-			InflowCache inflowCache = getCache(locRef, startDate);
+			InflowCache inflowCache = getCache(locRef, startDate, options);
 			startDate = inflowCache.getCeilingDateKey(startDate);
 
 			logger.info("performing ZeroNegativeAdjustedInflowsAction");
@@ -171,7 +179,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 				hec.data.Units.ENGLISH_ID, asm);
 			zeroAction.actionPerformed(null);
 			logger.info("ZeroNegativeAdjustedInflowsAction complete.  Saving cache data.");
-			inflowCache.saveData();
+			inflowCache.saveData(options);
 
 		} catch (DbConnectionException ex) {
 			Logger.getLogger(ScriptableInflowImpl.class.getName()).log(Level.SEVERE, null, ex);
@@ -184,11 +192,12 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 
 	public void balanceAll(String officeId, String locationStr, Date startDate)
 	{
-
+		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "balanceAll");
+		OptionalParams options = new OptionalParams(metrics);
 		try {
 			LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
 
-			InflowCache inflowCache = getCache(locRef, startDate);
+			InflowCache inflowCache = getCache(locRef, startDate, options);
 			startDate = inflowCache.getCeilingDateKey(startDate);
 
 			InflowAdjustedTypeModel asm = getOrCreateStatusMap(locRef);
@@ -199,7 +208,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 			balanceAll.actionPerformed(null);
 			logger.info("BalanceAdjustedInflowsAction complete.  Saving data.");
 
-			inflowCache.saveData();
+			inflowCache.saveData(options);
 
 		} catch (DbConnectionException ex) {
 			Logger.getLogger(ScriptableInflowImpl.class.getName()).log(Level.SEVERE, null, ex);
@@ -210,7 +219,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 		}
 	}
 
-	public InflowCache getCache(LocationTemplate locRef, Date startDate) throws DbConnectionException, DbIoException,
+	public InflowCache getCache(LocationTemplate locRef, Date startDate, OptionalParams options) throws DbConnectionException, DbIoException,
 		InterruptedException, CacheInitializationException
 	{
 		RegiDomain domain = getRegiDomain();
@@ -244,7 +253,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 			completionCallbackTarget,
 			modifiedDatesForCachedSettings, getIntervalProvider());
 		HashMap<RowcpsFutureDescriptor, Object> futureMap = new HashMap<RowcpsFutureDescriptor, Object>();
-		inflowCache.initCache(startDate, futureMap);
+		inflowCache.initCache(startDate, futureMap, options);
 
 		logger.info("Waiting for InflowCache to initialize.");
 		// This needs more thought.  Peter thinks db timesout at 10 minutes.
@@ -252,8 +261,8 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 		latch.await(11, TimeUnit.MINUTES);  // This one goes to 11...
 		logger.info("InflowCache is initialized.");
 
-		inflowCache.appendDataToHeadOfCache(-1, startDate, futureMap);
-		inflowCache.appendDataToTailOfCache(-1, startDate, futureMap);
+		inflowCache.appendDataToHeadOfCache(-1, startDate, futureMap, options);
+		inflowCache.appendDataToTailOfCache(-1, startDate, futureMap, options);
 
 		final TimeZone tz = inflowCache.getProjectTimeZone();
 		List<Date> datesInMonth = InflowComputation.getDatesInMonth(startDate, tz);

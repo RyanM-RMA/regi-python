@@ -49,6 +49,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import rma.util.RMAConst;
+import usace.metrics.services.Metrics;
+import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.computation.common.IEventThreadExceptionProcessor;
 import usace.rowcps.computation.common.IThreadedBlockRetriever;
 import usace.rowcps.computation.common.grouping.IControlledOutlet;
@@ -85,6 +87,7 @@ import usace.rowcps.regi.model.AtRatingManager;
 import usace.rowcps.regi.model.AtTimeSeriesManager;
 import usace.rowcps.regi.model.CacheUsage;
 import usace.rowcps.regi.model.ManagerId;
+import usace.rowcps.regi.model.OptionalParams;
 import usace.rowcps.regi.model.RegiDomain;
 
 public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implements ScriptableCalc, ScriptableGateSettings
@@ -100,20 +103,22 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	@Override
 	public void createGateSettings(String officeId, String locationStr, Date startDate, Date end) throws Exception
 	{
+		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "createGateSettings");
+		OptionalParams options = new OptionalParams(metrics);
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
-		GateCache gc = getCache(locRef, startDate, end);
+		GateCache gc = getCache(locRef, startDate, end, options);
 
 		IControlledOutletGroupContainer outletGroupContainer = gc.getOutletGroupContainer();
 		if (outletGroupContainer != null) {
 			List<IControlledOutletGroup> outletGroups = outletGroupContainer.getOutletGroups();
 			if (outletGroups != null) {
 				for (IControlledOutletGroup outletGroup : outletGroups) {
-					createGateSettingsGroup(gc, locRef, startDate, end, outletGroup);
+					createGateSettingsGroup(gc, locRef, startDate, end, outletGroup, options);
 				}
 			}
 		}
 
-		gc.saveData();
+		gc.saveData(options);
 	}
 
 	@Override
@@ -121,14 +126,16 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		DbConnectionException, DbIoException, CacheInitializationException, DbException, DataSetException,
 		DataSetIllegalArgumentException, HecMathException, Exception
 	{
+		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "createGateSettingsOutlet");
+		OptionalParams options = new OptionalParams(metrics);
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
-		GateCache gc = getCache(locRef, startDate, end);
+		GateCache gc = getCache(locRef, startDate, end, options);
 
 		IControlledOutlet iControlledOutlet = getIControlledOutlet(gc, outletId);
 		if (iControlledOutlet != null) {
 
 			ITimeSeriesAssociation association = getInputAssociation(locRef);
-			Map<String, IOutlet> outletsBySubMap = getOutletsBySubMap(locRef);
+			Map<String, IOutlet> outletsBySubMap = getOutletsBySubMap(locRef, options);
 			Map<String, TimeSeriesIds> tsIdsBySubMap = initTsIdsBySubLocation(outletsBySubMap.values(), association);
 			LocationGroupSet lgs = getLocationGroupSet(locRef);
 			if (lgs != null) {
@@ -148,7 +155,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 			createGateSettingsOutlet(gc, locRef, startDate, end, iControlledOutlet, tsIdsBySubMap);
 		}
 
-		gc.saveData();
+		gc.saveData(options);
 
 	}
 
@@ -158,15 +165,17 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		DbConnectionException, DbIoException, CacheInitializationException, DbException, DataSetException,
 		DataSetIllegalArgumentException, HecMathException, Exception
 	{
+		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "createGateSettingsOutletFromTs");
+		OptionalParams options = new OptionalParams(metrics);
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
-		GateCache gc = getCache(locRef, startDate, end);
+		GateCache gc = getCache(locRef, startDate, end,options);
 
 		IControlledOutlet iControlledOutlet = getIControlledOutlet(gc, outletId);
 		if (iControlledOutlet != null) {
 			createGateSettingsOutlet(gc, locRef, startDate, end, iControlledOutlet, tsId);
 		}
 
-		gc.saveData();
+		gc.saveData(options);
 	}
 
 	public IControlledOutlet getIControlledOutlet(GateCache gc, String outletId)
@@ -185,24 +194,27 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	@Override
 	public void createGateSettingsGroup(String officeId, String locationStr, Date startDate, Date end, String groupId) throws Exception
 	{
+		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "createGateSettingsGroup");
+		OptionalParams options = new OptionalParams(metrics);
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
-		GateCache gc = getCache(locRef, startDate, end);
+		GateCache gc = getCache(locRef, startDate, end, options);
 
 		IControlledOutletGroupContainer ogc = gc.getOutletGroupContainer();
 		if (ogc != null) {
 			IControlledOutletGroup outletGroup = ogc.getOutletGroup(groupId);
 			if (outletGroup != null) {
-				createGateSettingsGroup(gc, locRef, startDate, end, outletGroup);
+				createGateSettingsGroup(gc, locRef, startDate, end, outletGroup, options);
 			}
 		}
 
-		gc.saveData();
+		gc.saveData(options);
 	}
 
 //	GateCache GateCache = getCache(locRef, startDate);
-	public GateCache getCache(LocationTemplate locRef, Date startDate, Date endDate) throws DbConnectionException, DbIoException,
+	public GateCache getCache(LocationTemplate locRef, Date startDate, Date endDate, OptionalParams options) throws DbConnectionException, DbIoException,
 		CacheInitializationException
 	{
+
 		RegiDomain domain = getRegiDomain();
 		AtProjectManager atProjectManager = domain.getAtProjectManager(getManagerId());
 		AtProjectDescriptor projectDescriptor = atProjectManager.getProjectDescriptor(locRef, CacheUsage.NORMAL);
@@ -232,7 +244,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		Set<Date> modifiedDatesForCachedSettings = null;
 		GateCache gateCache = new GateCache(getManagerId(), projectDescriptor, 35, completionCallbackTarget, modifiedDatesForCachedSettings);
 		gateCache.setDisplayUnitSystem(hec.data.Units.SI_ID);  // does this matter?
-		gateCache.initCache(startDate);
+		gateCache.initCache(startDate,options);
 
 		logger.info("Waiting for GateCache to initialize.");
 		boolean completedWithoutTimeout = false;
@@ -247,8 +259,8 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		}
 
 		if (completedWithoutTimeout) {
-			gateCache.appendDataToHeadOfCache(35, -1, startDate);
-			gateCache.appendDataToTailOfCache(35, -1, endDate);
+			gateCache.appendDataToHeadOfCache(35, -1, startDate,options);
+			gateCache.appendDataToTailOfCache(35, -1, endDate,options);
 			logger.info("GateCache is initialized.");
 		} else {
 			// error
@@ -332,7 +344,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		return dstx;
 	}
 
-	public DataSetTx getDataSetTx(DescriptionTx dTx, Date startDate, Date end, AtTimeSeriesManager tsManager) throws DbException,
+	public DataSetTx getDataSetTx(DescriptionTx dTx, Date startDate, Date end, AtTimeSeriesManager tsManager, OptionalParams options) throws DbException,
 		DataSetException, DataSetTxIllegalArgumentException
 	{
 		DataSetTx dstx;
@@ -340,7 +352,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		Units units = dTx.getParameter().getUnits();
 		//Units units = new Units();
 		DataSetTxTemplate dataSetTxTemplate = new DataSetTxTemplate(dTx, startDate.getTime(), end.getTime(), units);
-		dstx = tsManager.retrieveDataSetTx(dataSetTxTemplate, CacheUsage.NORMAL);
+		dstx = tsManager.retrieveDataSetTx(dataSetTxTemplate, CacheUsage.NORMAL, options);
 		return dstx;
 	}
 
@@ -375,14 +387,14 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		return set;
 	}
 
-	public void createGateSettingsGroup(GateCache gc, LocationTemplate locRef, Date startDate, Date end, IControlledOutletGroup outletGroup)
+	public void createGateSettingsGroup(GateCache gc, LocationTemplate locRef, Date startDate, Date end, IControlledOutletGroup outletGroup, OptionalParams options)
 		throws DataSetException, DbException, HecMathException
 	{
 		List<IControlledOutlet> outlets = outletGroup.getOutlets();
 
 		if (outlets != null && !outlets.isEmpty()) {
 			ITimeSeriesAssociation association = getInputAssociation(locRef);
-			Map<String, IOutlet> outletsBySubMap = getOutletsBySubMap(locRef);
+			Map<String, IOutlet> outletsBySubMap = getOutletsBySubMap(locRef, options);
 
 			Map<String, TimeSeriesIds> tsIdsBySubMap = initTsIdsBySubLocation(outletsBySubMap.values(), association);
 
@@ -775,10 +787,10 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	}
 
 	// not efficient for multiple outlets.  used by test.
-	public String getFirstTimeSeriesDescription(LocationTemplate locRef, String outletId) throws DbConnectionException, DbIoException
+	public String getFirstTimeSeriesDescription(LocationTemplate locRef, String outletId, OptionalParams options) throws DbConnectionException, DbIoException
 	{
 		ITimeSeriesAssociation association = getInputAssociation(locRef);
-		Map<String, IOutlet> outletsBySubMap = getOutletsBySubMap(locRef);
+		Map<String, IOutlet> outletsBySubMap = getOutletsBySubMap(locRef, options);
 		Map<String, TimeSeriesIds> tsIdsBySubMap = initTsIdsBySubLocation(outletsBySubMap.values(), association);
 		return getFirstTimeSeriesDescription(locRef, outletId, tsIdsBySubMap);
 	}
@@ -812,7 +824,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		return association;
 	}
 
-	private Map<String, IOutlet> getOutletsBySubMap(LocationTemplate locRef) throws DbConnectionException, DbIoException
+	private Map<String, IOutlet> getOutletsBySubMap(LocationTemplate locRef, OptionalParams options) throws DbConnectionException, DbIoException
 	{
 		Map<String, IOutlet> outletsBySubMap = null;
 		RegiDomain regi = getRegiDomain();
@@ -823,7 +835,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		IProject locProject = atProjectManager.getIProject(locRef, CacheUsage.NORMAL);
 
 		//	ITimeSeriesDescription timeSeriesId = association.getTimeSeriesId();
-		List<IOutlet> outlets = getIOutlets(regi, locProject);
+		List<IOutlet> outlets = getIOutlets(regi, locProject, options);
 
 		outletsBySubMap = new HashMap<>();
 		for (IOutlet outlet : outlets) {
@@ -837,12 +849,12 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		return outletsBySubMap;
 	}
 
-	public List<IOutlet> getIOutlets(RegiDomain regi, IProject locProject) throws DbConnectionException, DbIoException
+	public List<IOutlet> getIOutlets(RegiDomain regi, IProject locProject, OptionalParams options) throws DbConnectionException, DbIoException
 	{
 		AtOutletManager atOutletManager = regi.getAtOutletManager(managerId);
 		List<IOutlet> outlets = new ArrayList<>();
 		List<IPhysicalStructure> physicalStructures = atOutletManager.retrieveList(locProject.getLocation().getLocationTemplate(),
-			CacheUsage.NORMAL);
+			CacheUsage.NORMAL, options);
 		for (IPhysicalStructure physicalStructure : physicalStructures) {
 			if (physicalStructure instanceof IOutlet) {
 				outlets.add((IOutlet) physicalStructure);
