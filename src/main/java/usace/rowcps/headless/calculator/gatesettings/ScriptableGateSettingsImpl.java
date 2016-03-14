@@ -62,6 +62,8 @@ import usace.rowcps.computation.gatesettings.common.GateMergeException;
 import usace.rowcps.computation.gatesettings.common.GateOpeningEntry;
 import usace.rowcps.computation.gatesettings.common.GateSettingsBlock;
 import usace.rowcps.computation.gatesettings.common.OutletGroup;
+import usace.rowcps.computation.gatesettings.finetuning.FineTuneRowElementSynthetic;
+import usace.rowcps.computation.gatesettings.finetuning.FineTuningRowType;
 import usace.rowcps.data.CacheInitializationException;
 import usace.rowcps.headless.calculator.AbstractScriptableCalc;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
@@ -539,13 +541,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 						Date tsDate = new Date(next);
 
 						Double tsValue = tsMap.get(tsDate);
-// Debugging...
-//					if (iControlledOutlet instanceof Outlet) {
-//					Units tsUnits = dataSetTx.getUnits();
-//						Outlet outlet = (Outlet) iControlledOutlet;
-//						String siUnits = outlet.getSiUnits();
-//						logger.finer("outlet " + outlet.getOutletName() + " is in units:" + siUnits);
-//					}
+
 						if (tsValue != null && RMAConst.isValidValue(tsValue)) {
 
 							Map.Entry<Date, GateOpeningEntry> floorEntry = getValidFloorEntry(dateEntryMap, tsDate);
@@ -558,17 +554,17 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 
 									GateSettingsBlock gateSettingBlock = gc.getGateSetting(tsDate);
 									if (gateSettingBlock == null) {
-										ArrayList<AggregateGateOpeningEntry> aggregateOpenings = new ArrayList<AggregateGateOpeningEntry>();
-										gateSettingBlock = new GateSettingsBlock(gc.getOutletGroupContainer().getOutletGroups(), aggregateOpenings);
-										String dischargeCode = DischargeComputationRecord.DischargeComputationCode.EstimatedByUser.dbEquivalent();
+										gateSettingBlock = buildGateSettingsBlock(gc, floorEntry.getKey(), tsDate);
+
+										gateSettingBlock.setModified(true);
+
+										String dischargeCode = DischargeComputationRecord.DischargeComputationCode.EstimatedByUser.	dbEquivalent();
 										gateSettingBlock.setDischargeComputationCode(dischargeCode);
 										gateSettingBlock.setReleaseReasonCode("O");
 										gateSettingBlock.setChangeNotes("Regi Headless ");
-										gateSettingBlock.setModified(true);
+
 										gc.putGateSetting(tsDate, gateSettingBlock);
 									}
-
-									
 
 									boolean modifyRetval = gc.modifyGateOpeningBlock(tsDate, iControlledOutlet, tsValue);
 									datesOfModifications.add(tsDate);
@@ -583,9 +579,30 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 				logger.log(Level.INFO, "Modifications were made to the gate settings at {0} for the following {1} dates:{2}",
 					new Object[]{iControlledOutlet.getOutletName(), datesOfModifications.size(), datesOfModifications});
 
-
 			}
 		}
+	}
+
+	public GateSettingsBlock buildGateSettingsBlock(GateCache gc, Date prevGateSettingDate, Date newDate)
+	{
+		GateSettingsBlock prevGateSetting = gc.getGateSetting(prevGateSettingDate);
+		ArrayList<AggregateGateOpeningEntry> goeList = new ArrayList<>();
+		if (prevGateSetting.getAggregateOpeningsSize() > 0) {
+			IControlledOutletGroup outletGroup = prevGateSetting.getAggregateOpeningsElement(0).getOutletGroup();
+			goeList.add(new AggregateGateOpeningEntry(outletGroup));
+		}
+		GateSettingsBlock gsb = new GateSettingsBlock(gc.getOutletGroupContainer().getOutletGroups(), goeList);
+		gsb.setDischargeComputationCode(prevGateSetting.getDischargeComputationCode());
+		gsb.setReleaseReasonCode(prevGateSetting.getReleaseReasonCode());
+		FineTuneRowElementSynthetic ftre = new FineTuneRowElementSynthetic(FineTuningRowType.GateChange, newDate,
+			newDate, gc.getTimeSeriesDataForGateSettingsDateRange(), true);
+		gsb.setElevationCommon(ftre.getPoolElevation());
+		gsb.setIsElevationOverridden(false);
+		gsb.setTailwaterCommon(ftre.getTailwaterElevation());
+		gsb.setIsTailwaterOveridden(false);
+		gsb.setReferenceCommon(ftre.getReferenceElevation());
+		gsb.setIsReferenceOveridden(false);
+		return gsb;
 	}
 
 	public Map.Entry<Date, GateOpeningEntry> getValidFloorEntry(NavigableMap<Date, GateOpeningEntry> dateEntryMap, Date tsDate)
