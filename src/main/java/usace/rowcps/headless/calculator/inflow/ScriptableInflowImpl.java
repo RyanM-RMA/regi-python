@@ -285,7 +285,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
         };
 
         HashMap<RowcpsFutureDescriptor, Object> futureMap = new HashMap<RowcpsFutureDescriptor, Object>();
-        inflowCache.initCache(startDate, futureMap, options);
+        inflowCache.initCache( futureMap, options);
 
         logger.info("Waiting for InflowCache to initialize.");
         headLatch.await(11, TimeUnit.MINUTES);  // This one goes to 11...
