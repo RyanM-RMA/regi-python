@@ -8,6 +8,7 @@ import hec.db.DbIoException;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import usace.metrics.services.Metrics;
@@ -60,6 +61,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 		AtFlowGroupManager flowGroupManager = regiDomain.getAtFlowGroupManager(getManagerId());
 		AtTimeSeriesManager atTimeSeriesManager= regiDomain.getAtTimeSeriesManager(getManagerId());
 
+		final TimeZone utcZone = TimeZone.getTimeZone("UTC");
 		try {
 			Map<IFlowGroup, LocationGroup> conduitGateFlowGroupMap = flowGroupManager.retrieveFlowGroups(projectLocRef,	null, CacheUsage.NORMAL);
 
@@ -81,7 +83,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 							//			intervalOffsetSeconds, startCal.getTime(), null);
 							logger.log(Level.INFO, "Computing {0}/{1} Group:{2}", new Object[]{count, groupMapSize, flowGroup.getId()});
 							Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries =
-								flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup,  startTime, endTime, options);
+								flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup,  startTime, endTime, utcZone, options);
 							if(calcTimeSeries == null){
 								// I think that this means there was an error...
 								logger.log(Level.INFO, "Compute {0}/{1} Group:{2} returned null.", new Object[]{count, groupMapSize, flowGroup.getId()});
@@ -91,7 +93,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 							}
 							//ITimeSeriesComputationResult computationResult = calcTimeSeries.get(newFlowGroupTimeSeries);
 
-						} catch (FlowGroupComputationException | DataSetException ex) {
+						} catch ( FlowGroupComputationException | DataSetException ex) {
 							String message = String.format("Scripted compute for %i/%i group:%s encountered an exception.", new Object[]{count, groupMapSize, flowGroup.getId()});
 							Logger.getLogger(ScriptableGateFlowImpl.class.getName()).log(Level.SEVERE, message, ex);
 						} 
@@ -161,8 +163,9 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 		if (flowGroup.getId().equals(groupId)) {
 
 			try {
+			    final TimeZone utcZone = TimeZone.getTimeZone("UTC");
 				Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries =
-					flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup, startTime, endTime, options);
+					flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup, startTime, endTime, utcZone, options);
 
 				DbCommitFlowGroupCalc.storeToTimeSeriesManager(calcTimeSeries, atTimeSeriesManager);
 				logger.log(Level.INFO, "Compute Group:{2} completed normally.", new Object[]{ flowGroup.getId()});
