@@ -16,6 +16,7 @@ import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.headless.calculator.AbstractScriptableCalc;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
 import usace.rowcps.computation.ITimeSeriesComputationResult;
+import usace.rowcps.computation.TimeSeriesComputationData;
 import usace.rowcps.computation.flowgroup.DbCommitFlowGroupCalc;
 import usace.rowcps.computation.flowgroup.FlowGroupCalc;
 import usace.rowcps.computation.flowgroup.FlowGroupComputationException;
@@ -88,8 +89,22 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 								// I think that this means there was an error...
 								logger.log(Level.INFO, "Compute {0}/{1} Group:{2} returned null.", new Object[]{count, groupMapSize, flowGroup.getId()});
 							} else {
-								DbCommitFlowGroupCalc.storeToTimeSeriesManager(calcTimeSeries, atTimeSeriesManager);
-								logger.log(Level.INFO, "Compute {0}/{1} Group:{2} completed normally.", new Object[]{count, groupMapSize, flowGroup.getId()});
+								
+								if (isCompleteFailure(calcTimeSeries)) {
+									logger.log(Level.INFO, "Compute {0}/{1} Group:{2} Failed. ", 
+											new Object[]{count, groupMapSize, flowGroup.getId()});
+								} else {
+									DbCommitFlowGroupCalc.storeToTimeSeriesManager(calcTimeSeries, atTimeSeriesManager);
+
+									int failureCount = failureCount(calcTimeSeries);
+									if (0 < failureCount) {
+										logger.log(Level.INFO, "Compute {0}/{1} Group:{2} completed with {3} Errors.",
+												new Object[]{count, groupMapSize, flowGroup.getId(), failureCount});
+									} else {
+										logger.log(Level.INFO, "Compute {0}/{1} Group:{2} completed normally.",
+												new Object[]{count, groupMapSize, flowGroup.getId()});
+									}
+								}
 							}
 							//ITimeSeriesComputationResult computationResult = calcTimeSeries.get(newFlowGroupTimeSeries);
 
@@ -163,14 +178,29 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 		if (flowGroup.getId().equals(groupId)) {
 
 			try {
-			    final TimeZone utcZone = TimeZone.getTimeZone("UTC");
-				Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries =
-					flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup, startTime, endTime, utcZone, options);
+				final TimeZone utcZone = TimeZone.getTimeZone("UTC");
+				Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries
+						= flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup, startTime, endTime, utcZone, options);
 
-				DbCommitFlowGroupCalc.storeToTimeSeriesManager(calcTimeSeries, atTimeSeriesManager);
-				logger.log(Level.INFO, "Compute Group:{2} completed normally.", new Object[]{ flowGroup.getId()});
+				if (calcTimeSeries == null) {				
+					logger.log(Level.INFO, " Group:{0} returned null.", new Object[]{flowGroup.getId()});
+				} else if (isCompleteFailure(calcTimeSeries)) {
+					logger.log(Level.INFO, "Compute Group:{0} Failed. ", new Object[]{flowGroup.getId()});
+				} else {
+					DbCommitFlowGroupCalc.storeToTimeSeriesManager(calcTimeSeries, atTimeSeriesManager);
+
+					int failureCount = failureCount(calcTimeSeries);
+					if (0 < failureCount) {
+						logger.log(Level.INFO, "Compute Group:{0} completed with {1} Errors.",
+								new Object[]{flowGroup.getId(), failureCount});
+					} else {
+						logger.log(Level.INFO, "Compute Group:{0} completed normally.",
+								new Object[]{flowGroup.getId()});
+					}
+				}
+
 			} catch (FlowGroupComputationException | DataSetException ex) {
-				String message = String.format("Scripted compute for group:%s encountered an exception.", new Object[]{ flowGroup.getId()});
+				String message = String.format("Scripted compute for group:%s encountered an exception.", new Object[]{flowGroup.getId()});
 				Logger.getLogger(ScriptableGateFlowImpl.class.getName()).log(Level.WARNING, message, ex);
 			}
 		}
@@ -192,6 +222,39 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 		for (String locationId : locationIds) {
 			computeFlowGroup(officeId, locationId, startTime, endTime, groupId);
 		}
+	}
+
+	private boolean isCompleteFailure(Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries) {
+		boolean isEpicFail = true;
+		if(calcTimeSeries != null && !calcTimeSeries.isEmpty()){
+			for (Map.Entry<FlowGroupTimeSeries, ITimeSeriesComputationResult> entry : calcTimeSeries.entrySet()) {
+				FlowGroupTimeSeries key = entry.getKey();
+				ITimeSeriesComputationResult value = entry.getValue();
+
+				if (value instanceof TimeSeriesComputationData) {
+					isEpicFail = false;
+					break;
+				}
+			}
+		}
+		
+		return isEpicFail;
+	}
+
+	private int failureCount(Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries) {
+		int failCount = 0; 
+		if(calcTimeSeries != null && !calcTimeSeries.isEmpty()){
+			for (Map.Entry<FlowGroupTimeSeries, ITimeSeriesComputationResult> entry : calcTimeSeries.entrySet()) {
+				FlowGroupTimeSeries key = entry.getKey();
+				ITimeSeriesComputationResult value = entry.getValue();
+
+				if (!(value instanceof TimeSeriesComputationData) || (value instanceof Exception)) {
+					failCount++;
+				} 
+			}
+		}
+		
+		return failCount;
 	}
 
 }
