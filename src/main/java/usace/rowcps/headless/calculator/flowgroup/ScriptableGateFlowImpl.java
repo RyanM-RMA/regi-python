@@ -62,7 +62,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 		AtFlowGroupManager flowGroupManager = regiDomain.getAtFlowGroupManager(getManagerId());
 		AtTimeSeriesManager atTimeSeriesManager= regiDomain.getAtTimeSeriesManager(getManagerId());
 
-		final TimeZone utcZone = TimeZone.getTimeZone("UTC");
+		final TimeZone utcZone = null;//TimeZone.getTimeZone("UTC");
 		try {
 			Map<IFlowGroup, LocationGroup> conduitGateFlowGroupMap = flowGroupManager.retrieveFlowGroups(projectLocRef,	null, CacheUsage.NORMAL);
 
