@@ -90,6 +90,7 @@ import usace.rowcps.data.outlet.IOutlet;
 import usace.rowcps.data.physicalstructure.IPhysicalStructure;
 import usace.rowcps.data.project.AtProjectDescriptor;
 import usace.rowcps.data.project.IProject;
+import usace.rowcps.data.project.TsUsageId;
 import usace.rowcps.headless.calculator.inflow.AbstractThreadedBlockRetriever;
 import usace.rowcps.regi.interfaces.model.ICurrentDayControl;
 import usace.rowcps.regi.model.AtAssociationManager;
@@ -268,6 +269,14 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	    public int getLookForwardDays() {
 		return 3;
 	    }
+
+            @Override
+            public void setLookForwardDays(Long value) {
+            }
+
+            @Override
+            public void setLookBackDays(Long value) {
+            }
 	};
 
 	GateCache gateCache = new GateCache(getManagerId(), projectDescriptor, MAXROWSTORETRIEVE, currentDayControl, eventThreadExceptionProcessor, completionCallbackTarget, modifiedDatesForCachedSettings) {
@@ -346,8 +355,8 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	// String usageCat = "Regi_*_OUTPUT";
 	// String usageCat = Regi_gate_OUTPUT
 	// String usageCat = IProject.TsUsageId.GATESETTINGS_GATE_OPENING.getUsageCategoryId(RegiDomain.getAppRootId(), InputOutput.INPUT);
-	String usageCat = IProject.TsUsageId.GATESETTINGS_GATE_OPENING.getUsageCategoryId(RegiDomain.getAppRootId(), InputOutput.OUTPUT);
-	String usageMask = IProject.TsUsageId.GATESETTINGS_GATE_OPENING.usage;   // GateSettings_gate_opening
+	String usageCat = TsUsageId.GATESETTINGS_GATE_OPENING.getUsageCategoryId(RegiDomain.getAppRootId(), InputOutput.OUTPUT);
+	String usageMask = TsUsageId.GATESETTINGS_GATE_OPENING.usage;   // GateSettings_gate_opening
 
 	// AtAssociationManager.retrieveAssociations builds something like usageCat.usageMask.locRef
 	// our gate association is like:
@@ -938,7 +947,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 
 	IProject locProject = atProjectManager.getIProject(locRef, CacheUsage.NORMAL);
 	final IAssociationProvider<ITimeSeriesAssociation> tsProvider = locProject.getTimeSeriesAssociationProvider();
-	ITimeSeriesAssociation association = tsProvider.getInputAssociation(IProject.TsUsageId.GATESETTINGS_GATE_OPENING.usage);
+	ITimeSeriesAssociation association = tsProvider.getInputAssociation(TsUsageId.GATESETTINGS_GATE_OPENING.usage);
 	return association;
     }
 

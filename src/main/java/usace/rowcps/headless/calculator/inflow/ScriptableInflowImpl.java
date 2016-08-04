@@ -268,6 +268,14 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
             public int getLookForwardDays() {
                 return 31;
             }
+
+            @Override
+            public void setLookForwardDays(Long value) {
+            }
+
+            @Override
+            public void setLookBackDays(Long value) {
+            }
         };
 
         InflowCache inflowCache = new InflowCache(currentDayControl, getManagerId(), projectDescriptor,
