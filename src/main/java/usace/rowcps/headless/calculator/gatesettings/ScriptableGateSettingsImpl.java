@@ -320,10 +320,6 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	}
 
 	if (completedWithoutTimeout) {
-//            gateCache.appendDataToHeadOfCache(35, -1, startDate, options);
-//            gateCache.appendDataToTailOfCache(35, -1, endDate, options);
-	    gateCache.appendDataToHeadOfCache(futureMap, options);
-	    gateCache.appendDataToTailOfCache(futureMap, options);
 	    logger.info("GateCache is initialized.");
 	} else {
 	    // error
