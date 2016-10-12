@@ -56,16 +56,15 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import rma.util.RMAConst;
 import usace.metrics.services.Metrics;
 import usace.metrics.services.MetricsServiceProvider;
+import usace.rowcps.computation.TimeSeriesIds;
 import usace.rowcps.computation.common.IEventThreadExceptionProcessor;
 import usace.rowcps.computation.common.IThreadedBlockRetriever;
 import usace.rowcps.computation.common.grouping.IControlledOutlet;
 import usace.rowcps.computation.common.grouping.IControlledOutletGroup;
 import usace.rowcps.computation.common.grouping.IControlledOutletGroupContainer;
-import usace.rowcps.computation.TimeSeriesIds;
 import usace.rowcps.computation.gatesettings.TimeSeriesDataContainer;
 import usace.rowcps.computation.gatesettings.common.AggregateGateOpeningEntry;
 import usace.rowcps.computation.gatesettings.common.DischargeComputationRecord;
@@ -79,8 +78,6 @@ import usace.rowcps.computation.gatesettings.finetuning.FineTuneRowElementSynthe
 import usace.rowcps.computation.gatesettings.finetuning.FineTuningRowType;
 import usace.rowcps.computation.util.LookupRecordBase;
 import usace.rowcps.data.CacheInitializationException;
-import usace.rowcps.headless.calculator.AbstractScriptableCalc;
-import usace.rowcps.headless.interfaces.ScriptableCalc;
 import usace.rowcps.data.DataObjectException;
 import usace.rowcps.data.InputOutput;
 import usace.rowcps.data.association.IAssociationCatalog;
@@ -91,7 +88,9 @@ import usace.rowcps.data.physicalstructure.IPhysicalStructure;
 import usace.rowcps.data.project.AtProjectDescriptor;
 import usace.rowcps.data.project.IProject;
 import usace.rowcps.data.project.TsUsageId;
+import usace.rowcps.headless.calculator.AbstractScriptableCalc;
 import usace.rowcps.headless.calculator.inflow.AbstractThreadedBlockRetriever;
+import usace.rowcps.headless.interfaces.ScriptableCalc;
 import usace.rowcps.regi.interfaces.model.ICurrentDayControl;
 import usace.rowcps.regi.model.AtAssociationManager;
 import usace.rowcps.regi.model.AtLocationGroupManager;
@@ -269,14 +268,6 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	    public int getLookForwardDays() {
 		return 3;
 	    }
-
-            @Override
-            public void setLookForwardDays(Long value) {
-            }
-
-            @Override
-            public void setLookBackDays(Long value) {
-            }
 	};
 
 	GateCache gateCache = new GateCache(getManagerId(), projectDescriptor, MAXROWSTORETRIEVE, currentDayControl, eventThreadExceptionProcessor, completionCallbackTarget, modifiedDatesForCachedSettings) {

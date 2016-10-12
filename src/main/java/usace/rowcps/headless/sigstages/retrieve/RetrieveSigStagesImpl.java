@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import usace.metrics.services.Timer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -34,6 +33,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import usace.metrics.services.Metrics;
 import usace.metrics.services.MetricsServiceProvider;
+import usace.metrics.services.Timer;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
 import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Action;
 import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Bankfull;
@@ -44,9 +44,9 @@ import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Moderate;
 import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Sigstage;
 import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Sigstages;
 import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Site;
-import usace.rowcps.regi.level.importer.LocationLevelRow;
-import usace.rowcps.regi.model.RegiDomain;
+import static usace.rowcps.regi.level.importer.LocationLevelRow.DATE_TIME_FORMATTER;
 import usace.rowcps.regi.model.ManagerId;
+import usace.rowcps.regi.model.RegiDomain;
 
 /**
  *
@@ -192,7 +192,7 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
                     if(site.getGenerationtime() != null && !site.getGenerationtime().isEmpty())
                     {
                         ZonedDateTime generationDateTime = ZonedDateTime.parse(site.getGenerationtime(), DateTimeFormatter.ISO_DATE_TIME);
-                        dateTime = LocationLevelRow.DATE_TIME_FORMATTER.format(generationDateTime);
+                        dateTime = DATE_TIME_FORMATTER.format(generationDateTime);
                     }
                     csvBuilder.append(_office);
                     csvBuilder.append(CSVSEPARATOR);

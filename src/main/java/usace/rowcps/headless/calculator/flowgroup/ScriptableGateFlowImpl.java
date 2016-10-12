@@ -1,11 +1,16 @@
 package usace.rowcps.headless.calculator.flowgroup;
 
 import hec.data.DataSetException;
+import hec.data.UtcOffsetConst;
 import hec.data.location.LocationGroup;
 import hec.data.location.LocationTemplate;
+import hec.data.tx.DataSetTx;
 import hec.db.DbConnectionException;
 import hec.db.DbIoException;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
@@ -13,15 +18,18 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import usace.metrics.services.Metrics;
 import usace.metrics.services.MetricsServiceProvider;
-import usace.rowcps.headless.calculator.AbstractScriptableCalc;
-import usace.rowcps.headless.interfaces.ScriptableCalc;
 import usace.rowcps.computation.ITimeSeriesComputationResult;
 import usace.rowcps.computation.TimeSeriesComputationData;
 import usace.rowcps.computation.flowgroup.DbCommitFlowGroupCalc;
 import usace.rowcps.computation.flowgroup.FlowGroupCalc;
 import usace.rowcps.computation.flowgroup.FlowGroupComputationException;
+import usace.rowcps.computation.util.FlowGroupOverrideDataAdapterBase;
+import usace.rowcps.data.DefaultFlowGroup;
 import usace.rowcps.data.flowgroup.FlowGroupTimeSeries;
 import usace.rowcps.data.flowgroup.IFlowGroup;
+import usace.rowcps.data.project.AtProjectDescriptor;
+import usace.rowcps.headless.calculator.AbstractScriptableCalc;
+import usace.rowcps.headless.interfaces.ScriptableCalc;
 import usace.rowcps.regi.model.AtFlowGroupManager;
 import usace.rowcps.regi.model.AtTimeSeriesManager;
 import usace.rowcps.regi.model.CacheUsage;
@@ -74,9 +82,21 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 					FlowGroupCalc flowGroupCalc = new FlowGroupCalc();
 				
 					int count = 0;
-					for (Map.Entry<IFlowGroup, LocationGroup> entry : entrySet) {
+					for (Map.Entry<IFlowGroup, LocationGroup> entry : entrySet)
+                    {
 						IFlowGroup flowGroup = entry.getKey();
 						LocationGroup locationGroup = entry.getValue();
+                        
+                        if (isProjectTotalFlowGroup(flowGroup))
+                        {
+                            //Special case for Project, as we need to use the Release Overrides
+                            computeReleaseOverrides(flowGroup, startTime, endTime, options, atTimeSeriesManager);
+                            
+                            logger.log(Level.INFO, "Compute {0}/{1} Group:{2} completed normally.",
+												new Object[]{count, groupMapSize, flowGroup.getId()});
+                            continue;
+                        }
+                        
 						count ++;
 						try {
 						//				FlowGroupTimeSeries newFlowGroupTimeSeries = flowGroup.newFlowGroupTimeSeries(parameterType,
@@ -160,6 +180,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 			Set<Map.Entry<IFlowGroup, LocationGroup>> entrySet = conduitGateFlowGroupMap.entrySet();
 
 			FlowGroupCalc flowGroupCalc = new FlowGroupCalc();
+            
 			for (Map.Entry<IFlowGroup, LocationGroup> entry : entrySet) {
 				IFlowGroup flowGroup = entry.getKey();
 				LocationGroup locationGroup = entry.getValue();
@@ -178,7 +199,16 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 		if (flowGroup.getId().equals(groupId)) {
 
 			try {
-				final TimeZone utcZone = TimeZone.getTimeZone("UTC");
+				final TimeZone utcZone = null;
+                
+                if (isProjectTotalFlowGroup(flowGroup))
+                {
+                    //Computing the overrides also stores them in the TS Manager.
+                    computeReleaseOverrides(flowGroup, startTime, endTime, options, atTimeSeriesManager);
+                    logger.log(Level.INFO, "Compute Group:{0} completed normally.", new Object[]{flowGroup.getId()});
+                    return;
+                }
+                
 				Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries
 						= flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup, startTime, endTime, utcZone, options);
 
@@ -256,5 +286,48 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 		
 		return failCount;
 	}
+    
+    private boolean isProjectTotalFlowGroup(IFlowGroup flowGroup)
+    {
+        return flowGroup.getIdSuffix().equals(DefaultFlowGroup.PROJECT.getGroupSuffix());
+    }
 
+    private void computeReleaseOverrides(IFlowGroup flowGroup, long startTime, long endTime, OptionalParams params, AtTimeSeriesManager atMan)
+    {
+        List<FlowGroupTimeSeries> outputTs = flowGroup.getOutputTimeSeriesList();
+        Date startDate = new Date(startTime);
+        Date endDate = new Date(endTime);
+        OptionalParams options = new OptionalParams(params.getMetrics().createMetrics("computeReleaseOverrides"));
+        
+        AtProjectDescriptor projDesc = new AtProjectDescriptor();
+        projDesc.setProjectLocationRef(flowGroup.getLocationRef());
+        
+        FlowGroupOverrideDataAdapterBase adapter = new FlowGroupOverrideDataAdapterBase(projDesc, getManagerId());
+        for (FlowGroupTimeSeries fgts : outputTs)
+        {
+            try
+            {
+                int intervalOffsetInSeconds = atMan.retrieveUtcIntervalOffset(fgts.getDescriptionTx());
+                
+                //default to 0 if it's not valid.
+                if (intervalOffsetInSeconds == UtcOffsetConst.NO_UTC_OFFSET || intervalOffsetInSeconds == UtcOffsetConst.UNDEFINED_UTC_OFFSET)
+                {
+                    intervalOffsetInSeconds = 0;
+                }
+                
+                DataSetTx dstx = adapter.getMergedTimeSeries(flowGroup, new HashSet<IFlowGroup>(), fgts.getInterval(), fgts.getParameterTypeString(), startDate, endDate, null, options, intervalOffsetInSeconds);
+                
+                //This can probably be removed later, as the getMergedTimeSeries function has a bug in the current build.
+                if (dstx != null)
+                {
+                    atMan.storeDataSetTxList(Arrays.asList(dstx), flowGroup.getMergeRule(), flowGroup.getOverrideProtection());
+                }
+                
+            }
+            catch (DbConnectionException | DbIoException | DataSetException ex)
+            {
+                Logger.getLogger(ScriptableGateFlowImpl.class.getName()).log(Level.INFO, "Unable to compute " + fgts.toString() + ", see error log. ", ex);
+            }
+        }
+    }
 }
