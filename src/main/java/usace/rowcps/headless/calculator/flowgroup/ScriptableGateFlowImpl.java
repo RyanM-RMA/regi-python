@@ -7,7 +7,6 @@ import hec.data.location.LocationTemplate;
 import hec.data.tx.DataSetTx;
 import hec.db.DbConnectionException;
 import hec.db.DbIoException;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -316,13 +315,6 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
                 }
                 
                 DataSetTx dstx = adapter.getMergedTimeSeries(flowGroup, new HashSet<IFlowGroup>(), fgts.getInterval(), fgts.getParameterTypeString(), startDate, endDate, null, options, intervalOffsetInSeconds);
-                
-                //This can probably be removed later, as the getMergedTimeSeries function has a bug in the current build.
-                if (dstx != null)
-                {
-                    atMan.storeDataSetTxList(Arrays.asList(dstx), flowGroup.getMergeRule(), flowGroup.getOverrideProtection());
-                }
-                
             }
             catch (DbConnectionException | DbIoException | DataSetException ex)
             {
