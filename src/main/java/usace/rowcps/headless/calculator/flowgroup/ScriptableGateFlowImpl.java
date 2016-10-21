@@ -19,6 +19,7 @@ import usace.metrics.services.Metrics;
 import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.computation.ITimeSeriesComputationResult;
 import usace.rowcps.computation.TimeSeriesComputationData;
+import usace.rowcps.computation.TimeSeriesComputationError;
 import usace.rowcps.computation.flowgroup.DbCommitFlowGroupCalc;
 import usace.rowcps.computation.flowgroup.FlowGroupCalc;
 import usace.rowcps.computation.flowgroup.FlowGroupComputationException;
@@ -125,17 +126,18 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 									}
 								}
 							}
-							//ITimeSeriesComputationResult computationResult = calcTimeSeries.get(newFlowGroupTimeSeries);
+                            
+                            logErrors(calcTimeSeries, flowGroup);
 
 						} catch ( FlowGroupComputationException | DataSetException ex) {
 							String message = String.format("Scripted compute for %i/%i group:%s encountered an exception.", new Object[]{count, groupMapSize, flowGroup.getId()});
-							Logger.getLogger(ScriptableGateFlowImpl.class.getName()).log(Level.SEVERE, message, ex);
+							logger.log(Level.SEVERE, message, ex);
 						} 
 					}
 				}
 			}
 		} catch (DbConnectionException | DbIoException ex) {
-			Logger.getLogger(ScriptableGateFlowImpl.class.getName()).log(Level.SEVERE, null, ex);
+			logger.log(Level.SEVERE, null, ex);
 		}
 	}
 
@@ -188,7 +190,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 			}
 
 		} catch (DbConnectionException | DbIoException ex) {
-			Logger.getLogger(ScriptableGateFlowImpl.class.getName()).log(Level.SEVERE, null, ex);
+			logger.log(Level.SEVERE, null, ex);
 		}
 	}
 
@@ -227,10 +229,12 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 								new Object[]{flowGroup.getId()});
 					}
 				}
+                
+                logErrors(calcTimeSeries, flowGroup);
 
 			} catch (FlowGroupComputationException | DataSetException ex) {
 				String message = String.format("Scripted compute for group:%s encountered an exception.", new Object[]{flowGroup.getId()});
-				Logger.getLogger(ScriptableGateFlowImpl.class.getName()).log(Level.WARNING, message, ex);
+				logger.log(Level.WARNING, message, ex);
 			}
 		}
 	}
@@ -315,10 +319,40 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
                 }
                 
                 DataSetTx dstx = adapter.getMergedTimeSeries(flowGroup, new HashSet<IFlowGroup>(), fgts.getInterval(), fgts.getParameterTypeString(), startDate, endDate, null, options, intervalOffsetInSeconds);
+                
+                if (dstx == null)
+                {
+                    logger.log(Level.INFO, "Unable to compute {1}.{0} Time Series for flowgroup: {2}", new Object[]{fgts.getIntervalString(), fgts.getParameterTypeString(), flowGroup.toString()});
+                }
+                else if (dstx.getNumberValues() == 0)
+                {
+                    logger.log(Level.INFO, "No data computed for {1}.{0} Time Series for flowgroup: {2}", new Object[]{fgts.getIntervalString(), fgts.getParameterTypeString(), flowGroup.toString()});
+                }
             }
             catch (DbConnectionException | DbIoException | DataSetException ex)
             {
-                Logger.getLogger(ScriptableGateFlowImpl.class.getName()).log(Level.INFO, "Unable to compute " + fgts.toString() + ", see error log. ", ex);
+                logger.log(Level.INFO, "Unable to compute " + fgts.toString() + ", see error log. ", ex);
+            }
+        }
+    }
+
+    private void logErrors(Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries, IFlowGroup flowGroup)
+    {
+        if (calcTimeSeries != null)
+        {
+            for (FlowGroupTimeSeries fgts : calcTimeSeries.keySet())
+            {
+                ITimeSeriesComputationResult result = calcTimeSeries.get(fgts);
+                
+                if (result instanceof TimeSeriesComputationError)
+                {
+                    logger.log(Level.INFO, "{0} failed to compute due to:\n{1}", new Object[]{fgts.toString(), ((TimeSeriesComputationError) result).getMessage()});
+                }
+            }
+            
+            if (flowGroup.getOutputTimeSeriesList().isEmpty())
+            {
+                logger.log(Level.INFO, "No output time series set on flow group.");
             }
         }
     }

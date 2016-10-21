@@ -1,11 +1,14 @@
 package usace.rowcps.headless;
 
-import usace.rowcps.headless.interfaces.ScriptableCalc;
-import usace.rowcps.headless.calculator.CalcFactoryRegistry;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import usace.rowcps.headless.calculator.CalcFactoryRegistry;
+import usace.rowcps.headless.interfaces.ScriptableCalc;
 import usace.rowcps.regi.model.ManagerId;
 import usace.rowcps.regi.model.RegiDomain;
+import wcds.dbi.DbiProperties;
 
 /**
  *
@@ -57,5 +60,23 @@ public class RegiCalcRegistry
 		CalcFactoryRegistry registry = CalcFactoryRegistry.getRegistry(version);
 		return registry.getNames();
 	}
+    
+    /**
+     * Sets the DbiProperties message level so we're reporting additional DB
+     * related messages.
+     * 
+     * Valid values range from 0-6, values outside of this range act as either
+     * 0 or 6, because the messages generally look for &gt;5 and &lt;= 0.
+     * 
+     * This should probably be put somewhere other than the RegiCalcRegistry,
+     * but for now this works.
+     * 
+     * @param messageLevel 
+     */
+    public void setDbMessageLevel(int messageLevel)
+    {
+        DbiProperties.MESSAGE_LEVEL = messageLevel;
+        Logger.getLogger(RegiCalcRegistry.class.getName()).log(Level.FINE, "Setting Db Message Level to: {0}", messageLevel);
+    }
 
 }
