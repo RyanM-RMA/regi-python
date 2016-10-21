@@ -107,18 +107,18 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 								flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup,  startTime, endTime, utcZone, options);
 							if(calcTimeSeries == null){
 								// I think that this means there was an error...
-								logger.log(Level.INFO, "Compute {0}/{1} Group:{2} returned null.", new Object[]{count, groupMapSize, flowGroup.getId()});
+								logger.log(Level.SEVERE, "Compute {0}/{1} Group:{2} returned null.", new Object[]{count, groupMapSize, flowGroup.getId()});
 							} else {
 								
 								if (isCompleteFailure(calcTimeSeries)) {
-									logger.log(Level.INFO, "Compute {0}/{1} Group:{2} Failed. ", 
+									logger.log(Level.SEVERE, "Compute {0}/{1} Group:{2} Failed. ", 
 											new Object[]{count, groupMapSize, flowGroup.getId()});
 								} else {
 									DbCommitFlowGroupCalc.storeToTimeSeriesManager(calcTimeSeries, atTimeSeriesManager);
 
 									int failureCount = failureCount(calcTimeSeries);
 									if (0 < failureCount) {
-										logger.log(Level.INFO, "Compute {0}/{1} Group:{2} completed with {3} Errors.",
+										logger.log(Level.SEVERE, "Compute {0}/{1} Group:{2} completed with {3} Errors.",
 												new Object[]{count, groupMapSize, flowGroup.getId(), failureCount});
 									} else {
 										logger.log(Level.INFO, "Compute {0}/{1} Group:{2} completed normally.",
@@ -214,15 +214,15 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 						= flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup, startTime, endTime, utcZone, options);
 
 				if (calcTimeSeries == null) {				
-					logger.log(Level.INFO, " Group:{0} returned null.", new Object[]{flowGroup.getId()});
+					logger.log(Level.SEVERE, " Group:{0} returned null.", new Object[]{flowGroup.getId()});
 				} else if (isCompleteFailure(calcTimeSeries)) {
-					logger.log(Level.INFO, "Compute Group:{0} Failed. ", new Object[]{flowGroup.getId()});
+					logger.log(Level.SEVERE, "Compute Group:{0} Failed. ", new Object[]{flowGroup.getId()});
 				} else {
 					DbCommitFlowGroupCalc.storeToTimeSeriesManager(calcTimeSeries, atTimeSeriesManager);
 
 					int failureCount = failureCount(calcTimeSeries);
 					if (0 < failureCount) {
-						logger.log(Level.INFO, "Compute Group:{0} completed with {1} Errors.",
+						logger.log(Level.SEVERE, "Compute Group:{0} completed with {1} Errors.",
 								new Object[]{flowGroup.getId(), failureCount});
 					} else {
 						logger.log(Level.INFO, "Compute Group:{0} completed normally.",
@@ -322,16 +322,16 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
                 
                 if (dstx == null)
                 {
-                    logger.log(Level.INFO, "Unable to compute {1}.{0} Time Series for flowgroup: {2}", new Object[]{fgts.getIntervalString(), fgts.getParameterTypeString(), flowGroup.toString()});
+                    logger.log(Level.SEVERE, "Unable to compute {1}.{0} Time Series for flowgroup: {2}", new Object[]{fgts.getIntervalString(), fgts.getParameterTypeString(), flowGroup.toString()});
                 }
                 else if (dstx.getNumberValues() == 0)
                 {
-                    logger.log(Level.INFO, "No data computed for {1}.{0} Time Series for flowgroup: {2}", new Object[]{fgts.getIntervalString(), fgts.getParameterTypeString(), flowGroup.toString()});
+                    logger.log(Level.SEVERE, "No data computed for {1}.{0} Time Series for flowgroup: {2}", new Object[]{fgts.getIntervalString(), fgts.getParameterTypeString(), flowGroup.toString()});
                 }
             }
             catch (DbConnectionException | DbIoException | DataSetException ex)
             {
-                logger.log(Level.INFO, "Unable to compute " + fgts.toString() + ", see error log. ", ex);
+                logger.log(Level.SEVERE, "Unable to compute " + fgts.toString() + ", see error log. ", ex);
             }
         }
     }
@@ -346,13 +346,14 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
                 
                 if (result instanceof TimeSeriesComputationError)
                 {
-                    logger.log(Level.INFO, "{0} failed to compute due to:\n{1}", new Object[]{fgts.toString(), ((TimeSeriesComputationError) result).getMessage()});
+                    logger.log(Level.SEVERE, "{0} failed to compute due to:\n{1}", new Object[]{fgts.toString(), ((TimeSeriesComputationError) result).getMessage()});
+                    logger.log(Level.SEVERE, "Stacktrace:", (Exception)result);
                 }
             }
             
             if (flowGroup.getOutputTimeSeriesList().isEmpty())
             {
-                logger.log(Level.INFO, "No output time series set on flow group.");
+                logger.log(Level.SEVERE, "No output time series set on flow group.");
             }
         }
     }
