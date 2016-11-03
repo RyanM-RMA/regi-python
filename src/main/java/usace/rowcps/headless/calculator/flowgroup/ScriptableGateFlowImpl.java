@@ -333,6 +333,11 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
                 {
                     logger.log(Level.SEVERE, "No data computed for {1}.{0} Time Series for flowgroup: {2}", new Object[]{fgts.getIntervalString(), fgts.getParameterTypeString(), flowGroup.toString()});
                 }
+                else
+                {
+                    //This should flag the time series manager as modified, I believe this was being missed in the getMergedTimeSeries function.
+                    atMan.setModified(true);
+                }
             }
             catch (DbConnectionException | DbIoException | DataSetException ex)
             {
