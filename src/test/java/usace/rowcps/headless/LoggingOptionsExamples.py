@@ -1,3 +1,5 @@
+from usace.rowcps.headless import LoggingOptions
+
 # Description of: LoggingOptions.setDbMessageLevel(int level)
 #
 # Adds Time Series logging messages in the OracleTimeSeriesDaoImpl.  Recommended
@@ -15,3 +17,17 @@
 # --------------|-------------------------------------------------------------------------------------------------------------------------------|
 
 LoggingOptions.setDbMessageLevel(2)
+
+
+# Description of: LoggingOptions.setMetricsEnabled(boolean value)
+#
+# Enables or disables the storage of REGI's Metric data pertaining to the
+# performance of the application.  This is incredibly helpful for identifying
+# issues where the application takes an excessive amount of time to operate.
+#
+# Metrics also log the location of the files as an INFO message if they are
+# enabled.
+#
+# By default, Metrics are disabled.
+
+LoggingOptions.setMetricsEnabled(True)
