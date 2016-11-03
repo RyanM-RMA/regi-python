@@ -43,12 +43,21 @@ public class LoggingOptions
         Logger.getLogger(LoggingOptions.class.getName()).log(Level.FINE, "Setting Db Message Level to: {0}", messageLevel);
     }
 
+    /*
+     * Enables or disables the storage of REGI's Metric data pertaining to the
+     * performance of the application. This is incredibly helpful for
+     * identifying issues where the application takes an excessive amount of
+     * time to operate.
+     *
+     * Metrics also log the location of the files as an INFO message if they are
+     * enabled. By default, Metrics are disabled.
+     */
     public static void setMetricsEnabled(boolean enabled)
     {
         initMetrics();
 
         MetricsServiceProvider.setMetricsEnabled(enabled);
-        
+
         if (enabled)
         {
             Logger.getLogger(LoggingOptions.class.getName()).log(Level.INFO, "Metrics enabled, files can be found at {0}", MetricsServiceProvider.getFileLocation());
