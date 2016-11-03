@@ -17,6 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import usace.metrics.services.Metrics;
 import usace.metrics.services.MetricsServiceProvider;
+import usace.metrics.services.Timer;
 import usace.rowcps.computation.ITimeSeriesComputationResult;
 import usace.rowcps.computation.TimeSeriesComputationData;
 import usace.rowcps.computation.TimeSeriesComputationError;
@@ -71,7 +72,8 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 		AtTimeSeriesManager atTimeSeriesManager= regiDomain.getAtTimeSeriesManager(getManagerId());
 
 		final TimeZone utcZone = null;//TimeZone.getTimeZone("UTC");
-		try {
+		try (Timer.Context context = metrics.createTimer().start())
+        {
 			Map<IFlowGroup, LocationGroup> conduitGateFlowGroupMap = flowGroupManager.retrieveFlowGroups(projectLocRef,	null, CacheUsage.NORMAL);
 
 			if (conduitGateFlowGroupMap != null && !conduitGateFlowGroupMap.isEmpty()) {
@@ -198,8 +200,12 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 		OptionalParams options, AtTimeSeriesManager atTimeSeriesManager)
 	{
 		if (flowGroup.getId().equals(groupId)) {
-
-			try {
+            
+            Metrics metrics = options.getMetrics().createMetrics("computeGroup", flowGroup.getId());
+            
+            
+			try (Timer.Context context = metrics.createTimer().start())
+            {
 				final TimeZone utcZone = null;
                 
                 if (isProjectTotalFlowGroup(flowGroup))
@@ -209,7 +215,6 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
                     logger.log(Level.INFO, "Compute Group:{0} completed normally.", new Object[]{flowGroup.getId()});
                     return;
                 }
-                
 				Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries
 						= flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup, startTime, endTime, utcZone, options);
 
