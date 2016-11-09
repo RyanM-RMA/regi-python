@@ -34,7 +34,7 @@ LoggingOptions.setDbMessageLevel(2)
 #
 # By default, Metrics are disabled.
 
-LoggingOptions.setMetricsEnabled(True)
+# LoggingOptions.setMetricsEnabled(True)
 
 # this gets a scriptable Pool Percent object
 inflowCalc = registry.getCalculation(1.0, "Inflow")

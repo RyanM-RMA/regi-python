@@ -31,7 +31,7 @@ LoggingOptions.setDbMessageLevel(2)
 #
 # By default, Metrics are disabled.
 
-LoggingOptions.setMetricsEnabled(True)
+# LoggingOptions.setMetricsEnabled(True)
 
 # not all of Regi is scriptable, registry is an object created by the java class RegiCLI that contains a list of
 # the implemented scriptable calculations
