@@ -15,13 +15,14 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import usace.metrics.services.Timer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -34,6 +35,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import usace.metrics.services.Metrics;
 import usace.metrics.services.MetricsServiceProvider;
+import usace.metrics.services.Timer;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
 import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Action;
 import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Bankfull;
@@ -44,9 +46,8 @@ import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Moderate;
 import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Sigstage;
 import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Sigstages;
 import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Site;
-import usace.rowcps.regi.level.importer.LocationLevelRow;
-import usace.rowcps.regi.model.RegiDomain;
 import usace.rowcps.regi.model.ManagerId;
+import usace.rowcps.regi.model.RegiDomain;
 
 /**
  *
@@ -64,6 +65,9 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
     public static final String CSVDELIMETER = System.getProperty("sigstages.csv.delim", "\n");
     public static final String CSVSEPARATOR = System.getProperty("sigstages.csv.separator", ",");
     public static int THREADCOUNT = 4;
+    
+    private static final DateFormat DATE_FORMAT = new SimpleDateFormat("ddMMMyyyy HHmm");
+    private static final DateFormat ISO_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
     
     private String _parameter;
     private String _parameterType;
@@ -191,8 +195,16 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
                     String dateTime = "";
                     if(site.getGenerationtime() != null && !site.getGenerationtime().isEmpty())
                     {
-                        ZonedDateTime generationDateTime = ZonedDateTime.parse(site.getGenerationtime(), DateTimeFormatter.ISO_DATE_TIME);
-                        dateTime = LocationLevelRow.DATE_TIME_FORMATTER.format(generationDateTime);
+                        Date generationDateTime = null;
+                        
+                        try {
+                            generationDateTime = ISO_FORMAT.parse(site.getGenerationtime());
+                        }
+                        catch (ParseException ex) {
+                            Logger.getLogger(RetrieveSigStagesImpl.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                        
+                        dateTime = DATE_FORMAT.format(generationDateTime);
                     }
                     csvBuilder.append(_office);
                     csvBuilder.append(CSVSEPARATOR);
