@@ -228,7 +228,6 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 
         // This seems like a really big hack.  Is this really needed?
         final CountDownLatch headLatch = new CountDownLatch(1);
-        final CountDownLatch tailLatch = new CountDownLatch(1);
         IThreadedBlockRetriever completionCallbackTarget = new AbstractThreadedBlockRetriever() {
 
             @Override
@@ -236,15 +235,8 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
                 logger.info("asyncHeadCacheFetchCompleted");
                 headLatch.countDown();
             }
-
-            @Override
-            public void asyncTailCacheFetchCompleted() {
-                logger.info("asyncTailCacheFetchCompleted");
-                tailLatch.countDown();
-            }
-
         };
-
+        
         Set<Date> modifiedDatesForCachedSettings = null;
 
         ICurrentDayControl currentDayControl = new ICurrentDayControl() {
@@ -288,35 +280,31 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
         inflowCache.initCache( futureMap, options);
 
         logger.info("Waiting for InflowCache to initialize.");
-        headLatch.await(11, TimeUnit.MINUTES);  // This one goes to 11...
-        tailLatch.await(11, TimeUnit.MINUTES);  // This one goes to 11...
+        headLatch.await(11, TimeUnit.MINUTES);
 
-//        inflowCache.appendDataToHeadOfCache(futureMap, options);
-//        inflowCache.appendDataToTailOfCache(futureMap, options);
+        /*
+        inflowCache.appendDataToHeadOfCache(futureMap, options);
         // This needs more thought.  Peter thinks db timesout at 10 minutes.
         // Needs to be a value higher than any user would be willing to wait.
-//         for (Map.Entry<RowcpsFutureDescriptor, Object> entry : futureMap.entrySet()) {
-//            RowcpsFutureDescriptor desc = entry.getKey();
-//            Object value = entry.getValue();
-//            Future future = desc.getFuture();
-//            try {
-//                future.get(10000, TimeUnit.MILLISECONDS);
-//            } catch (ExecutionException ex) {
-//                Logger.getLogger(ScriptableInflowImpl.class.getName()).log(Level.SEVERE, null, ex);
-//            } catch (TimeoutException ex) {
-//                Logger.getLogger(ScriptableInflowImpl.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//            System.out.println("asdf");
-//        }
-        logger.info("InflowCache is initialized.");
-
+        for (Map.Entry<RowcpsFutureDescriptor, Object> entry : futureMap.entrySet()) {
+            RowcpsFutureDescriptor desc = entry.getKey();
+            Object value = entry.getValue();
+            Future future = desc.getFuture();
+            try {
+                future.get(10000, TimeUnit.MILLISECONDS);
+            } catch (ExecutionException ex) {
+                Logger.getLogger(ScriptableInflowImpl.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (TimeoutException ex) {
+                Logger.getLogger(ScriptableInflowImpl.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            System.out.println("asdf");
+        }
+        */
+        
         final TimeZone tz = inflowCache.getProjectTimeZone();
         List<Date> datesInMonth = InflowComputation.getDatesInMonth(startDate, tz);
         for (Date dateKey : datesInMonth) {
             inflowCache.computedInflowForDate(dateKey, hec.data.Units.ENGLISH_ID, tz);
-        }
-
-        for (Date dateKey : datesInMonth) {
             inflowCache.computeInflowMassDelta(dateKey, hec.data.Units.ENGLISH_ID);
         }
 
