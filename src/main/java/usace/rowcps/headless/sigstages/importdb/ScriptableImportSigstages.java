@@ -5,8 +5,7 @@
  */
 package usace.rowcps.headless.sigstages.importdb;
 
-import usace.rowcps.headless.sigstages.retrieve.*;
-import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Sigstage;
+import java.util.Date;
 
 /**
  *
@@ -14,5 +13,5 @@ import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Sigstage;
  */
 public interface ScriptableImportSigstages
 {
-    public boolean importSigStages(String file);
+    public boolean importSigStages(String file, Date effectiveDate);
 }

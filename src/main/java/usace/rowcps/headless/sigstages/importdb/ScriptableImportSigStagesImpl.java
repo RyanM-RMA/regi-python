@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,7 +42,7 @@ public class ScriptableImportSigStagesImpl implements ScriptableImportSigstages,
     }
     
     @Override
-    public boolean importSigStages(String file)
+    public boolean importSigStages(String file, Date effectiveDate)
     {
         boolean retval = true;
         AtLocationLevelManager atLocLevelMgr = _regiDomain.getAtLocationLevelManager(_managerId);
@@ -57,7 +58,7 @@ public class ScriptableImportSigStagesImpl implements ScriptableImportSigstages,
             {
                 ILocationLevel level = locationLevels.get(locationLevelIndex);
                 try {
-//                    atLocLevelMgr.addLocationLevel(level, c);
+                    level.setDate(effectiveDate);
                     atLocLevelMgr.addLocationLevel(level);
                 } catch (DbConnectionException | DbIoException ex) {
                     Logger.getLogger(ScriptableImportSigStagesImpl.class.getName()).log(Level.SEVERE, null, ex);
