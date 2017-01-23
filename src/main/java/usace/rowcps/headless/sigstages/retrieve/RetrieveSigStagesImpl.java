@@ -69,6 +69,8 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("ddMMMyyyy HHmm");
     private static final DateFormat ISO_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
     
+    private static final int SHEF_MISSING_VALUE = -9999;
+    
     private String _parameter;
     private String _parameterType;
     private String _duration;
@@ -188,7 +190,7 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
                 for(int stageIndex = 0; stageIndex < allStages.size(); stageIndex++)
                 {
                     Sigstage stage = allStages.get(stageIndex);
-                    if(stage.getValue() == 0 || stage.getValue() == -9999)
+                    if(stage.getValue() == 0 || stage.getValue() == SHEF_MISSING_VALUE)
                     {
                         continue;
                     }
@@ -292,7 +294,7 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
                             catch (Exception ex)
                             {
                                 System.out.println(l.getNWS());
-                                Logger.getLogger(RetrieveSigStagesImpl.class.getName()).log(Level.SEVERE, "Error with: " + l.getNWS(), ex);
+                                Logger.getLogger(RetrieveSigStagesImpl.class.getName()).log(Level.SEVERE, "BAD URL for location: " + l.getNWS(), ex);
                             }
                         }
                     }
