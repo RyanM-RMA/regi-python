@@ -188,7 +188,7 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
                 for(int stageIndex = 0; stageIndex < allStages.size(); stageIndex++)
                 {
                     Sigstage stage = allStages.get(stageIndex);
-                    if(stage.getValue() == 0)
+                    if(stage.getValue() == 0 || stage.getValue() == -9999)
                     {
                         continue;
                     }
@@ -272,6 +272,11 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
             for(int locationIndex = 0; locationIndex < locationNames.length; locationIndex++)
             {
                 final SigstageLocation l = locationNames[locationIndex];
+                
+                // Thread ran for a LONG time, so thought it wise to have option
+                // of sending confirmations that it was working properly
+                // Logger.getLogger(RetrieveSigStagesImpl.class.getName()).log(Level.INFO, "Retrieving: "+l.getNWS());
+                
                 threadPool.execute(new Runnable(){
                     
                     @Override
@@ -287,7 +292,7 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
                             catch (Exception ex)
                             {
                                 System.out.println(l.getNWS());
-                                Logger.getLogger(RetrieveSigStagesImpl.class.getName()).log(Level.SEVERE, null, ex);
+                                Logger.getLogger(RetrieveSigStagesImpl.class.getName()).log(Level.SEVERE, "Error with: " + l.getNWS(), ex);
                             }
                         }
                     }
