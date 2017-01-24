@@ -64,7 +64,7 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
     public static final String DELIMETER = System.getProperty("sigstages.delim", ";");
     public static final String CSVDELIMETER = System.getProperty("sigstages.csv.delim", "\n");
     public static final String CSVSEPARATOR = System.getProperty("sigstages.csv.separator", ",");
-    public static int THREADCOUNT = 4;
+    public static int THREADCOUNT = 2;
     
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("ddMMMyyyy HHmm");
     private static final DateFormat ISO_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
@@ -113,20 +113,20 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
     }
     
     @Override
-    public void retrieveSigstages(String sourceFile, String outputFile)
+    public void retrieveSigstages(String sourceFile, String outputFile, int milliDelay)
     {
         Path inputPath = Paths.get(sourceFile);
         Path outputPath = Paths.get(outputFile);
-        retrieveSigstages(inputPath, outputPath);
+        retrieveSigstages(inputPath, outputPath, milliDelay);
     }
     
-    public void retrieveSigstages(Path source, Path outputPath)
+    public void retrieveSigstages(Path source, Path outputPath, int milliDelay)
     {
         SigstageLocation[] locations;
         try
         {
             locations = readLocationFile(source);
-            fetchSitesThreaded(locations);
+            fetchSitesThreaded(milliDelay, locations);
             locationsToCSV(outputPath, locations);
         }
         catch (IOException ex)
@@ -186,6 +186,16 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
                 
                 Moderate moderate = sigstages.getModerate();
                 allStages.add(moderate);
+                
+                int sameSiteLocations = countNumStages(site);
+                if(sameSiteLocations > 0)
+                {
+                    String logString = "writing " + sameSiteLocations + " level" 
+                                       + (sameSiteLocations==1? "  ":"s ") + "for " 
+                                       + locations[locationIndex].getOriginal();
+
+                    Logger.getLogger(RetrieveSigStagesImpl.class.getName()).log(Level.INFO, logString);
+                }
                 
                 for(int stageIndex = 0; stageIndex < allStages.size(); stageIndex++)
                 {
@@ -257,7 +267,7 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
 //        }
 //    }
     
-    public void fetchSitesThreaded(SigstageLocation... locationNames)
+    public void fetchSitesThreaded(int milliDelay, SigstageLocation... locationNames)
     {
         Metrics metrics = MetricsServiceProvider.createMetrics("fetchSitesThreaded");
         try(Timer.Context context = metrics.createTimer().start())
@@ -271,16 +281,13 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
                     cdl.countDown();
                 }
             };
+            
             for(int locationIndex = 0; locationIndex < locationNames.length; locationIndex++)
             {
                 final SigstageLocation l = locationNames[locationIndex];
                 
-                // Thread ran for a LONG time, so thought it wise to have option
-                // of sending confirmations that it was working properly
-                // Logger.getLogger(RetrieveSigStagesImpl.class.getName()).log(Level.INFO, "Retrieving: "+l.getNWS());
-                
                 threadPool.execute(new Runnable(){
-                    
+
                     @Override
                     public void run()
                     {
@@ -289,16 +296,35 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
                         {
                             String fullURL = DOWNLOADURL.replace("GAGENAME", l.getNWS());
                             try {
-                                l.setSite(fetchSite(fullURL));
+                                Site locationSite = fetchSite(fullURL);
+                                l.setSite(locationSite);
+                                
+                                // report the number of locations at this site
+                                int sameSiteLocations = countNumStages(locationSite);
+                                if(sameSiteLocations > 0)
+                                {
+                                    String logString = "retrieved " + sameSiteLocations + " level" 
+                                                   + (sameSiteLocations==1? "  ":"s ") + "for " 
+                                                   + l.getNWS();
+                                    Logger.getLogger(RetrieveSigStagesImpl.class.getName()).log(Level.INFO, logString);
+                                }
                             }
                             catch (Exception ex)
                             {
-                                System.out.println(l.getNWS());
-                                Logger.getLogger(RetrieveSigStagesImpl.class.getName()).log(Level.SEVERE, "BAD URL for location: " + l.getNWS(), ex);
+                                Logger.getLogger(RetrieveSigStagesImpl.class.getName()).log(Level.SEVERE, "error retrieving at site " + l.getNWS(), ex);
                             }
                         }
                     }
                 });
+                    
+                try
+                {
+                    cdl.await(milliDelay, TimeUnit.MILLISECONDS);
+                } 
+                catch (InterruptedException ex)
+                {
+                    Logger.getLogger(RetrieveSigStagesImpl.class.getName()).log(Level.SEVERE, "timeout while retrieving site " + l.getNWS(), ex);
+                }
             }
             threadPool.shutdown();
             try
@@ -362,6 +388,42 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
             locationsArray = locations.toArray(locationsArray);
             return locationsArray;
         }
+    }
+    
+    // count all valid locations at a site
+    private int countNumStages(Site site)
+    {
+        int numStages = 0;
+        
+        if(site == null)
+            return numStages;
+        
+        Sigstages stages = site.getSigstages();
+        
+        if(stages == null)
+            return numStages;
+        
+        if(stages.getAction() != null && stages.getAction().getValue() != 0 && stages.getAction().getValue() != SHEF_MISSING_VALUE) 
+            numStages++;
+        else 
+            return numStages;
+        
+        if(stages.getBankfull() != null && stages.getBankfull().getValue() != 0 && stages.getBankfull().getValue() != SHEF_MISSING_VALUE) 
+            numStages++;
+        
+        if(stages.getFlood() != null && stages.getFlood().getValue() != 0 && stages.getFlood().getValue() != SHEF_MISSING_VALUE) 
+            numStages++;
+        
+        if(stages.getLow() != null && stages.getLow().getValue() != 0 && stages.getLow().getValue() != SHEF_MISSING_VALUE) 
+            numStages++;
+        
+        if(stages.getMajor() != null && stages.getMajor().getValue() != 0 && stages.getMajor().getValue() != SHEF_MISSING_VALUE) 
+            numStages++;
+        
+        if(stages.getModerate() != null && stages.getModerate().getValue() != 0 && stages.getModerate().getValue() != SHEF_MISSING_VALUE) 
+            numStages++;
+        
+        return numStages;
     }
     
     @Override

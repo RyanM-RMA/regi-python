@@ -13,7 +13,7 @@ import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Sigstage;
  */
 public interface RetrieveSigstages
 {
-    public void retrieveSigstages(String sourceFile, String outputFile);
+    public void retrieveSigstages(String sourceFile, String outputFile, int milliDelay);
     public void setParameter(String parameter);
     public String getParameter();
     public void setParameterType(String parameterType);
