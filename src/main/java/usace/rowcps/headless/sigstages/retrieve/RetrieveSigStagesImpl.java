@@ -187,16 +187,6 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
                 Moderate moderate = sigstages.getModerate();
                 allStages.add(moderate);
                 
-                int sameSiteLocations = countNumStages(site);
-                if(sameSiteLocations > 0)
-                {
-                    String logString = "writing " + sameSiteLocations + " level" 
-                                       + (sameSiteLocations==1? "  ":"s ") + "for " 
-                                       + locations[locationIndex].getOriginal();
-
-                    Logger.getLogger(RetrieveSigStagesImpl.class.getName()).log(Level.INFO, logString);
-                }
-                
                 for(int stageIndex = 0; stageIndex < allStages.size(); stageIndex++)
                 {
                     Sigstage stage = allStages.get(stageIndex);
@@ -282,9 +272,7 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
                 }
             };
             
-            for(int locationIndex = 0; locationIndex < locationNames.length; locationIndex++)
-            {
-                final SigstageLocation l = locationNames[locationIndex];
+            for (final SigstageLocation l : locationNames) {
                 
                 threadPool.execute(new Runnable(){
 
@@ -301,17 +289,24 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
                                 
                                 // report the number of locations at this site
                                 int sameSiteLocations = countNumStages(locationSite);
-                                if(sameSiteLocations > 0)
-                                {
-                                    String logString = "retrieved " + sameSiteLocations + " level" 
-                                                   + (sameSiteLocations==1? "  ":"s ") + "for " 
-                                                   + l.getNWS();
-                                    Logger.getLogger(RetrieveSigStagesImpl.class.getName()).log(Level.INFO, logString);
-                                }
+                                String logString = "retrieved " + sameSiteLocations + " level"
+                                        + (sameSiteLocations==1? "  ":"s ") + "for "
+                                        + l.getNWS();
+                                Logger.getLogger(RetrieveSigStagesImpl.class.getName()).log(Level.INFO, logString);
                             }
                             catch (Exception ex)
                             {
-                                Logger.getLogger(RetrieveSigStagesImpl.class.getName()).log(Level.SEVERE, "error retrieving at site " + l.getNWS(), ex);
+                                Logger logger = Logger.getLogger(RetrieveSigStagesImpl.class.getName());
+                                logger.isLoggable(Level.SEVERE);
+                                if(logger.isLoggable(Level.FINE))
+                                {
+                                    logger.log(Level.SEVERE, "error retrieving at site " + l.getNWS(), ex);
+                                }
+                                else
+                                {
+                                    String logMessage = "error retrieving at site " + l.getNWS() + " " + ex.getMessage();
+                                    logger.log(Level.SEVERE, logMessage);
+                                }
                             }
                         }
                     }

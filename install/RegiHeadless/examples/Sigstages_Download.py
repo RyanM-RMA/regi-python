@@ -21,9 +21,7 @@ sigstates = registry.getCalculation(1.0, "Retrieve Sig States")
 
 inpath = "sites.txt"		# file to read the relevant sig stage sites from
 outpath = "sigstages.csv"	# file to write the relevant sig stage information gathered to
-accessDelay = 250			# time delay in milliseconds between accesses to the AHPS site
-							# the longer the delay, the more likely to avoid timeout issues on connection
-							# 250 milliseconds is recommended for best balance between performance and speed
+accessDelay = 5				# time delay in milliseconds between accesses to the AHPS site, to prevent blocking out
 							
 sigstates.retrieveSigstages(inpath, outpath, accessDelay)
 
