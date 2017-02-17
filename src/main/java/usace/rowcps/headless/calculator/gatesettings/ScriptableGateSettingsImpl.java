@@ -696,7 +696,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
                             try
                             {
                                 // difference detected
-                                // do we immediately make the change or do we build objects and make all the changes later? Immediate
+                                // immediately make the change and apply it
 
                                 GateSettingsBlock gateSettingBlock = gc.getGateSetting(tsDate);
                                 if (gateSettingBlock == null)
@@ -733,6 +733,10 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 
                 String message = getMessage(datesOfModifications, iControlledOutlet.getOutletName());
                 logger.log(Level.INFO, message);
+            }
+            else
+            {
+                logger.log(Level.INFO, "no changes found");
             }
         }
     }
@@ -790,20 +794,24 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
     {
         ArrayList<AggregateGateOpeningEntry> goeList = new ArrayList<>();
         GateSettingsBlock prevGateSetting = null;
+        GateSettingsBlock gsb = null;
         if (prevGateSettingDate != null)
         {
             prevGateSetting = gc.getGateSetting(prevGateSettingDate);
             if (prevGateSetting != null && prevGateSetting.getAggregateOpeningsSize() > 0)
             {
-                IControlledOutletGroup outletGroup = prevGateSetting.getAggregateOpeningsElement(0).getOutletGroup();
-                goeList.add(new AggregateGateOpeningEntry(outletGroup));
+                for(int i = 0; i < prevGateSetting.getAggregateOpeningsSize(); i++)
+                {
+                    IControlledOutletGroup outletGroup = prevGateSetting.getAggregateOpeningsElement(i).getOutletGroup();
+                    goeList.add(new AggregateGateOpeningEntry(outletGroup));
+                }
             }
         }
-
-        // goeList should be full before the ctor call b/c GateSettingBlock adds listeners to the items in the goeList.
-        GateSettingsBlock gsb = new GateSettingsBlock(gc.getOutletGroupContainer().getOutletGroups(), goeList);
+        
         if (prevGateSetting == null)
         {
+            // goeList should be full before the ctor call b/c GateSettingBlock adds listeners to the items in the goeList.
+            gsb = new GateSettingsBlock(gc.getOutletGroupContainer().getOutletGroups(), goeList);
             boolean getActiveOnly = true;
             DischargeComputationCode disCode = DischargeComputationRecord.DischargeComputationCode.CalculatedFromRatingCurve;
             gsb.setDischargeComputationCode(disCode.dbEquivalent());
@@ -812,6 +820,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
         }
         else
         {
+            gsb = new GateSettingsBlock(prevGateSetting);
             gsb.setDischargeComputationCode(prevGateSetting.getDischargeComputationCode());
             gsb.setReleaseReasonCode(prevGateSetting.getReleaseReasonCode());
         }
@@ -1189,8 +1198,6 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 
     private boolean hasDifferenceAtDate(NavigableMap<Date, GateOpeningEntry> dateEntryMap, Double tsValue, Date tsDate)
     {
-        boolean retval = true;
-
         if (dateEntryMap != null && tsValue != null && RMAConst.isValidValue(tsValue))
         {
 
@@ -1203,12 +1210,12 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 
                 if (Objects.equals(cacheValueInEffectAtDate, tsValue))
                 {
-                    retval = false;
+                    return false;
                 }
             }
         }
 
-        return retval;
+        return true;
     }
 
 }
