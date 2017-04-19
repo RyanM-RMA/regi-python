@@ -21,6 +21,10 @@ public class SimpleFactoryRegistry extends CalcFactoryRegistry
 	{
 		Collection<? extends ScriptableCalcFactory> lookupAll = Lookup.getDefault().lookupAll(
 			ScriptableCalcFactory.class);
+		if(lookupAll == null || lookupAll.isEmpty()){
+			logger.warning("No ScriptableCalcFactory objects found in the lookup. "
+					+ "There must have been a problem running the @Service annotation processor during the build.");
+		}
 		List<ScriptableCalcFactory> factories = new ArrayList<>();
 		factories.addAll(lookupAll);
 		return factories;
