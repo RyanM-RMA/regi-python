@@ -7,14 +7,12 @@ def compute_All_Flowgroups(officeID, location, startCal, endCal):
         gateCalc.computeAll(officeID, location, startCal.getTime(), endCal.getTime())
     except Exception as e:
         print "Error Computing all Flow Groups at {0} {1}".format(officeID, location)
-        continue
 
 def compute_Single_Flowgroup(officeID, location, startCal, endCal):
     try:
         gateCalc.computeFlowGroup(officeID, location, startCal.getTime(), endCal.getTime(), "Flow.{0}.Pump_Out_Total".format(location))
     except Exception as e:
         print "Error Computing Flow Group at {0} {1}".format(officeID, location)
-        continue
 
 # Description of: LoggingOptions.setDbMessageLevel(int level)
 #
