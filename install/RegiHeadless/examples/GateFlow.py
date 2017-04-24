@@ -1,6 +1,21 @@
 from java.util import Calendar
 from usace.rowcps.headless import LoggingOptions
 
+def compute_All_Flowgroups(officeID, location, startCal, endCal):
+    # Takes in locations defined by user in group and computes all flow groups
+    try:
+        gateCalc.computeAll(officeID, location, startCal.getTime(), endCal.getTime())
+    except Exception as e:
+        print "Error Computing all Flow Groups at {0} {1}".format(officeID, location)
+        continue
+
+def compute_Single_Flowgroup(officeID, location, startCal, endCal):
+    try:
+        gateCalc.computeFlowGroup(officeID, location, startCal.getTime(), endCal.getTime(), "Flow.{0}.Pump_Out_Total".format(location))
+    except Exception as e:
+        print "Error Computing Flow Group at {0} {1}".format(officeID, location)
+        continue
+
 # Description of: LoggingOptions.setDbMessageLevel(int level)
 #
 # Adds Time Series logging messages in the OracleTimeSeriesDaoImpl.  Recommended
@@ -53,20 +68,104 @@ endCal.clear()
 endCal.set(Calendar.YEAR, 2015)
 endCal.set(Calendar.MONTH, 6)
 
+officeID = "SWF"
+
 # the gateCalc object can perform its calculation for a single flow group
 # the computeFlowGroup method takes:
 # officeId
 # projectId
 # startDate
 # endDate
-#gateCalc.computeFlowGroup("SWF", "LEWT2",  startCal.getTime(), endCal.getTime(), "Flow.LEWT2.ConduitGate_Total")
-
+# gateCalc.computeFlowGroup("SWF", "LEWT2",  startCal.getTime(), endCal.getTime(), "Flow.LEWT2.ConduitGate_Total")
+calculateSingleFlowGroups = True
+FlowGroupList = ["ACTT2",
+                 "ALAT2",
+                 "BDWT2",
+                 "BLNT2",
+                 "BNBT2",
+                 "DAWT2",
+                 "GGLT2",
+                 "GNGT2",
+                 "GPVT2",
+                 "HORT2",
+                 "JPLT2",
+                 "LEWT2",
+                 "LVNT2",
+                 "PCTT2",
+                 "RRLT2",
+                 "FRHT2",
+                 "SCLT2",
+                 "SMCT2",
+                 "SOMT2",
+                 "STIT2",
+                 "TXKT2",
+                 "WTYT2",
+                 "TRNT2",
+                 "FFLT2",
+                 "EAMT2",
+                 "FLWT2",
+                 "LLST2",
+                 "GBYT2",
+                 "PSMT2",
+                 "SAGT2",
+                 ]
 # the calculation can also be performed for all the associated groups
 # the computeAll method takes:
 # officeId
 # projectId
 # startDate
 # endDate
-gateCalc.computeAll("SWF", "LEWT2",  startCal.getTime(), endCal.getTime())
+# gateCalc.computeAll("SWF", "LEWT2",  startCal.getTime(), endCal.getTime())
+calculateAllFlowGroups = True
+locationList = ["ACTT2",
+                "ALAT2",
+                "BDWT2",
+                "BLNT2",
+                "BNBT2",
+                "CLDL1",
+                "DAWT2",
+                "GGLT2",
+                "GNGT2",
+                "GPVT2",
+                "HORT2",
+                "JFNT2",
+                "JPLT2",
+                "JSPT2",
+                "LEWT2",
+                "LVNT2",
+                "PCTT2",
+                "RRLT2",
+                "FRHT2",
+                "SCLT2",
+                "SMCT2",
+                "SOMT2",
+                "STIT2",
+                "TXKT2",
+                "WTYT2",
+                "TRNT2",
+                "FFLT2",
+                "BPRT2",
+                "EAMT2",
+                "FLWT2",
+                "LLST2",
+                "GBYT2",
+                "PSMT2",
+                "TBLT2",
+                "TBRT2",
+                "GPET2",
+                "BSLT2",
+                "SAGT2",
+                "MSDT2",
+                ]
+
+
+
+if calculateAllFlowGroups:
+    for location in locationList:
+        compute_All_Flowgroups(officeID, location, startCal, endCal)
+
+if calculateSingleFlowGroups:
+    for location in FlowGroupList:
+        compute_Single_Flowgroup(officeID, location, startCal, endCal)
 
 
