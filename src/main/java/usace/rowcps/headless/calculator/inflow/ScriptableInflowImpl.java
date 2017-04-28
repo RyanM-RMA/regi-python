@@ -31,15 +31,19 @@ import usace.rowcps.computation.inflow.InflowComputation;
 import usace.rowcps.computation.inflow.ZeroNegativeAdjustedInflowsAction;
 import usace.rowcps.data.CacheInitializationException;
 import usace.rowcps.data.project.AtProjectDescriptor;
+import usace.rowcps.data.tabs.RegiTabSpec;
+import usace.rowcps.data.tabs.RegiTabType;
 import usace.rowcps.headless.calculator.AbstractScriptableCalc;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
+import usace.rowcps.regi.executor.DefaultThreadIdProvider;
+import usace.rowcps.regi.executor.ThreadIdProvider;
 import usace.rowcps.regi.interfaces.model.ICurrentDayControl;
 import usace.rowcps.regi.model.AtProjectManager;
 import usace.rowcps.regi.model.CacheUsage;
 import usace.rowcps.regi.model.ManagerId;
 import usace.rowcps.regi.model.OptionalParams;
 import usace.rowcps.regi.model.RegiDomain;
-import usace.rowcps.regi.util.RowcpsFutureDescriptor;
+//import usace.rowcps.regi.util.RowcpsFutureDescriptor;
 
 /**
  *
@@ -59,9 +63,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
         public boolean isPeriodAverage() {
 //                return _periodAverageFlows;
             return false;
-        }
-        
-        
+        }          
 
         @Override
         public Interval getInterval() {
@@ -273,11 +275,10 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
                     start.setTime(startDate);
                 }
             }
-
         };
 
-        HashMap<RowcpsFutureDescriptor, Object> futureMap = new HashMap<RowcpsFutureDescriptor, Object>();
-        inflowCache.initCache( futureMap, options);
+	    ThreadIdProvider idprov = new DefaultThreadIdProvider(); // new RegiTabSpec(RegiTabType.INFLOW));
+        inflowCache.initCache( idprov, options);
 
         logger.info("Waiting for InflowCache to initialize.");
         headLatch.await(11, TimeUnit.MINUTES);

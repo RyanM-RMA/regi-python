@@ -17,7 +17,8 @@ import usace.rowcps.regi.factories.RegiDomainFactory;
 import usace.rowcps.regi.interfaces.model.ManagerIdProvider;
 import usace.rowcps.regi.model.DatabaseConnectionManager;
 import usace.rowcps.regi.model.ManagerId;
-import usace.rowcps.regi.model.ManagerIdType;
+import usace.rowcps.regi.executor.ManagerIdType;
+
 import usace.rowcps.regi.model.RegiDomain;
 
 /**

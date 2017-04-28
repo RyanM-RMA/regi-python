@@ -106,7 +106,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 							//			intervalOffsetSeconds, startCal.getTime(), null);
 							logger.log(Level.INFO, "Computing {0}/{1} Group:{2}", new Object[]{count, groupMapSize, flowGroup.getId()});
 							Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries =
-								flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup,  startTime, endTime, utcZone, options);
+									flowGroupCalc.calcTimeSeries(getManagerId(),flowGroup, startTime, endTime, utcZone,options, CacheUsage.NORMAL);							//								
 							if(calcTimeSeries == null){
 								// I think that this means there was an error...
 								logger.log(Level.SEVERE, "Compute {0}/{1} Group:{2} returned null.", new Object[]{count, groupMapSize, flowGroup.getId()});
@@ -216,7 +216,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
                     return;
                 }
 				Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries
-						= flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup, startTime, endTime, utcZone, options);
+						= flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup, startTime, endTime, utcZone, options, CacheUsage.NORMAL);
 
 				if (calcTimeSeries == null) {				
 					logger.log(Level.SEVERE, " Group:{0} returned null.", new Object[]{flowGroup.getId()});
@@ -323,7 +323,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
                     intervalOffsetInSeconds = 0;
                 }
                 
-                DataSetTx dstx = adapter.getMergedTimeSeries(flowGroup, new HashSet<IFlowGroup>(), fgts.getInterval(), fgts.getParameterTypeString(), startDate, endDate, null, options, intervalOffsetInSeconds);
+                DataSetTx dstx = adapter.getMergedTimeSeries(flowGroup, new HashSet<IFlowGroup>(), fgts.getInterval(), fgts.getParameterTypeString(), startDate, endDate, null, options, intervalOffsetInSeconds,CacheUsage.NORMAL);
                 
                 if (dstx == null)
                 {
