@@ -31,6 +31,7 @@ import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.LayoutManager;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -282,6 +283,9 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 				}
 			}
 		};
+        
+        releasesGraphicPanel.setData(data);
+        logger.info("Adding data PCL");
 		data.addPropertyChangeListener(pcl);
 
 		Thread.sleep(5000);
@@ -289,11 +293,12 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				releasesGraphicPanel.setData(data);
+                logger.info("Setting data in the graphic panel and firing data update request.");
 				releasesGraphicPanel.fireDataUpdateRequest();
 			}
 		});
 
+        logger.info("Waiting 11 minutes on latch.");
 		dataFilledLatch.await(11, TimeUnit.MINUTES);
 		
 		// not sure if this will help
@@ -315,12 +320,14 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 
 				final Dimension d = new Dimension(width, height);
 				releasesGraphicPanel.setMinimumSize(d);
+				releasesGraphicPanel.setMaximumSize(d);
 				releasesGraphicPanel.setPreferredSize(d);
 				releasesGraphicPanel.setSize(d);
-				releasesGraphicPanel.setDoubleBuffered(false);
-				layoutComponent(releasesGraphicPanel, d);
-				releasesGraphicPanel.show(true);
-				releasesGraphicPanel.setVisible(true);
+                releasesGraphicPanel.setBounds(new Rectangle(0, 0, width, height));
+//				releasesGraphicPanel.setDoubleBuffered(false);
+//				layoutComponent(releasesGraphicPanel, d);
+//				releasesGraphicPanel.show(true);
+//				releasesGraphicPanel.setVisible(true);
 				releasesGraphicPanel.paintImmediately(0, 0, width, height);				
 				
 				releasesGraphicPanel.print(g);				
