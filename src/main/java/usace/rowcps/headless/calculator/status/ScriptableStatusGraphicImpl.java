@@ -98,6 +98,8 @@ import usace.rowcps.regi.ui.gfx2d.PiePanel;
 public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implements ScriptableCalc {
 
 	private static final Logger logger = Logger.getLogger(ScriptableStatusGraphicImpl.class.getName());
+  
+	public final static String LATCH_SECONDS = "rowcps.latchseconds";
 
 	public ScriptableStatusGraphicImpl(RegiDomain regiDomain, ManagerId manId) {
 		super(regiDomain, manId);
@@ -157,7 +159,9 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		SwingUtilities.invokeLater(panelFuture);
 		rpp = panelFuture.get(1, TimeUnit.MINUTES);
 		
-		cdl.await(11, TimeUnit.MINUTES);
+		Integer seconds = Integer.getInteger(LATCH_SECONDS, 11*60); // This one goes to 11...
+		cdl.await(seconds, TimeUnit.SECONDS);  
+		
 		rgod.removePropertyChangeListener(pcl);
 
 		String imageFormat = getFormatFromFile(filename);
@@ -201,14 +205,15 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 
 		streamData.addPropertyChangeListener(pcl);
 
-		logger.info("calling getCurrentEmbankment");
+//		logger.info("calling getCurrentEmbankment");
 		streamData.getCurrentEmbankment();
-		logger.info("calling getCurrentFlow");
+//		logger.info("calling getCurrentFlow");
 		streamData.getCurrentFlow();
-		logger.info("calling getCurrentStage");
+//		logger.info("calling getCurrentStage");
 		streamData.getCurrentStage();
-
-		cdl.await(11, TimeUnit.MINUTES);
+		
+		Integer seconds = Integer.getInteger(LATCH_SECONDS, 11*60); // This one goes to 11...
+		cdl.await(seconds, TimeUnit.SECONDS);  
 
 		final Dimension d = new Dimension(width, height);
 
@@ -276,8 +281,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		final CountDownLatch dataFilledLatch = new CountDownLatch(1);
 		PropertyChangeListener pcl = new PropertyChangeListener() {
 			@Override
-			public void propertyChange(PropertyChangeEvent evt) {
-				System.out.println("evt:" + evt.getPropertyName());
+			public void propertyChange(PropertyChangeEvent evt) {				
 				if (GraphicConstants.DATA_FILLED_EVENT.equals(evt.getPropertyName())) {
 					dataFilledLatch.countDown();
 				}
@@ -293,16 +297,17 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-                logger.info("Setting data in the graphic panel and firing data update request.");
+//                logger.info("Setting data in the graphic panel and firing data update request.");
 				releasesGraphicPanel.fireDataUpdateRequest();
 			}
 		});
 
-        logger.info("Waiting 11 minutes on latch.");
-		dataFilledLatch.await(11, TimeUnit.MINUTES);
+//        logger.info("Waiting 11 minutes on latch.");
+		Integer seconds = Integer.getInteger(LATCH_SECONDS, 11*60);
+		dataFilledLatch.await(seconds, TimeUnit.SECONDS);
 		
 		// not sure if this will help
-		logger.info("Firing repaint and waiting an extra second.");
+//		logger.info("Firing repaint and waiting an extra second.");
 		data.fireRepaintEvent();
 		Thread.sleep(1000);		
 

@@ -25,7 +25,6 @@ public class HeadlessReleasesGraphicDetailArea extends ReleasesGraphicDetailArea
 	
 	@Override
 	public void draw(Graphics g, Component parentComponent) {
-		System.out.println("headless");
 		super.draw(g, parentComponent);
         _detailComponent.setBounds(getScrollArea());
         _detailComponent.print(g);

@@ -281,7 +281,8 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
         inflowCache.initCache( idprov, options);
 
         logger.info("Waiting for InflowCache to initialize.");
-        headLatch.await(11, TimeUnit.MINUTES);
+		Integer seconds = Integer.getInteger("rowcps.latchseconds", 11*60);
+		headLatch.await(seconds, TimeUnit.SECONDS);        
 
         /*
         inflowCache.appendDataToHeadOfCache(futureMap, options);

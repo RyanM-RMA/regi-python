@@ -88,10 +88,9 @@ import usace.rowcps.data.physicalstructure.IPhysicalStructure;
 import usace.rowcps.data.project.AtProjectDescriptor;
 import usace.rowcps.data.project.IProject;
 import usace.rowcps.data.project.TsUsageId;
-import usace.rowcps.data.tabs.RegiTabSpec;
-import usace.rowcps.data.tabs.RegiTabType;
 import usace.rowcps.headless.calculator.AbstractScriptableCalc;
 import usace.rowcps.headless.calculator.inflow.AbstractThreadedBlockRetriever;
+import static usace.rowcps.headless.calculator.status.ScriptableStatusGraphicImpl.LATCH_SECONDS;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
 import usace.rowcps.regi.executor.DefaultThreadIdProvider;
 import usace.rowcps.regi.executor.ThreadIdProvider;
@@ -307,7 +306,9 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		try {
 			// This needs more thought.  Peter thinks db timesout at 10 minutes.
 			// Needs to be a value higher than any user would be willing to wait.
-			completedWithoutTimeout = latch.await(11, TimeUnit.MINUTES); // This one goes to 11...
+			
+			Integer seconds = Integer.getInteger(LATCH_SECONDS, 11*60); // This one goes to 11...
+			completedWithoutTimeout = latch.await(seconds, TimeUnit.SECONDS);        					
 		} catch (InterruptedException ex) {
 			Thread.currentThread().interrupt();
 			Logger.getLogger(ScriptableGateSettingsImpl.class.getName()).log(Level.SEVERE, null, ex);
