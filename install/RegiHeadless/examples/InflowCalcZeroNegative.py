@@ -4,6 +4,15 @@ from java.util import TimeZone
 from java.util import GregorianCalendar
 from usace.rowcps.headless import LoggingOptions
 
+def zero_Negatives(officeID, location, startCal):
+    # Takes in locations defined by user in group and turns all negative values to 0 for the selected inflow. If a location fails or has an error, the script will continue. check the console log
+    # for any further information.
+    try:
+        inflowCalc.zeroNegatives(officeID, location,  startCal.getTime())
+    except Exception as e:
+        print "Error Computing Zero Negatives at {0} {1}".format(officeID, location)
+        print e
+        print ""
 # Description of: LoggingOptions.setDbMessageLevel(int level)
 #
 # Adds Time Series logging messages in the OracleTimeSeriesDaoImpl.  Recommended
@@ -46,7 +55,7 @@ startCal = GregorianCalendar(TimeZone.getTimeZone('US/Central'))
 
 startCal.clear()
 startCal.set(Calendar.YEAR, 2015)
-startCal.set(Calendar.MONTH, 4)
+startCal.set(Calendar.MONTH, 1)
 
 
 # inflowCalc contains 4 callable methods:
@@ -55,7 +64,7 @@ startCal.set(Calendar.MONTH, 4)
 # cloneInflows
 # zeroNegatives
 
-# Each method takes the followind arguments:
+# Each method takes the following arguments:
 #   officeId
 #   locationId
 #   startDate
@@ -64,7 +73,22 @@ startCal.set(Calendar.MONTH, 4)
 #	useLimits
 #	freezeRain
 
-# This autoBalances ALAT2
-inflowCalc.zeroNegatives("SWF", "ALAT2",  startCal.getTime())
+# This zeroes any negatives for ACTT2 and ALAT2. Several locations are commented out and can be commented back in any order. Additional stations can be added
+# to the end provided they follow the same format.
+
+officeID = "SWF"
+locationList = ["ACTT2",
+                "ALAT2",
+#                 "BLNT2",
+#                 "BNBT2",
+#                 "CLDL1",
+#                 "DAWT2",
+                "ACTT2",
+                "TXKT2",
+                ]
+for location in locationList:
+    print "Now Running", location
+    zero_Negatives(officeID, location, startCal)
+
 
 
