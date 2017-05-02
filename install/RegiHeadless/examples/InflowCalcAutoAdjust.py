@@ -1,8 +1,19 @@
 # the java Calendar class is used to create java Date objects
 from java.util import Calendar
-from java.util import TimeZone
 from java.util import GregorianCalendar
+from java.util import TimeZone
 from usace.rowcps.headless import LoggingOptions
+
+
+def auto_Adjust(officeID, location, startCal, useLimits, freezeRain):
+    # Takes in locations defined by user in group and adjusts the selected inflow. If a location fails or has an error, the script will continue. check the console log
+    # for any further information.
+    try:
+        inflowCalc.autoAdjust(officeID, location, startCal.getTime(), useLimits, freezeRain)
+    except Exception as e:
+        print "Error Adjusting Values at {0} {1}".format(officeID, location)
+        print e
+        print ""
 
 # Description of: LoggingOptions.setDbMessageLevel(int level)
 #
@@ -55,16 +66,34 @@ startCal.set(Calendar.MONTH, 4)
 # cloneInflows
 # zeroNegatives
 
-# Each method takes the followind arguments:
+# Each method takes the following arguments:
 #   officeId
 #   locationId
 #   startDate
 
 # autoAdjust also takes booleans:
-#	useLimits
-#	freezeRain
+# 	useLimits
+# 	freezeRain
 
-# This autoBalances ALAT2
-inflowCalc.autoAdjust("SWF", "ALAT2",  startCal.getTime(), False, False)
+# This autoAdjusts for ACTT2 and ALAT2. Several locations are commented out and can be commented back in any order. Additional stations can be added
+# to the end provided they follow the same format. UseLimits and FreezeRain are also controllable arguments for AutoAdjust. By setting "useLimits_ON" to True,
+# the function will use the "useLimits command. By setting it to "False", it will be turned off. This functions the same way for "freezeRain_ON"
+
+officeID = "SWF"
+useLimits_ON = False
+freezeRain_ON = False
+locationList = ["ACTT2",
+                "ALAT2",
+#                 "BLNT2",
+#                 "BNBT2",
+#                 "CLDL1",
+#                 "DAWT2",
+                "ACTT2",
+                "TXKT2",
+                ]
+for location in locationList:
+    print "Now Running", location
+    auto_Adjust(officeID, location, startCal, useLimits_ON, freezeRain_ON)
+
 
 
