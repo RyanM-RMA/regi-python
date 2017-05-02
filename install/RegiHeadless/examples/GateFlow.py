@@ -5,16 +5,18 @@ def compute_All_Flowgroups(officeID, location, startCal, endCal):
     # Takes in locations defined by user in group and computes all flow groups
     try:
         gateCalc.computeAll(officeID, location, startCal.getTime(), endCal.getTime())
-    except:
-#         print "Error Computing all Flow Groups at {0} {1}".format(officeID, location)
+    except Exception as e:
+        print "Error Computing all Flow Groups at {0} {1}".format(officeID, location)
+        print e
         print ''
 
 
 def compute_Single_Flowgroup(officeID, location, startCal, endCal, flowGroup):
     try:
         gateCalc.computeFlowGroup(officeID, location, startCal.getTime(), endCal.getTime(), "Flow.{0}.{1}".format(location, flowGroup))
-    except:
-#         print "Error Computing Flow Group at {0} {1}".format(officeID, location)
+    except Exception as e:
+        print "Error Computing Flow Group {0} at {1}".format(officeID, location)
+        print e
         print ''
 
     # #gateCalc.computeFlowGroup("SWF", "ACTT2",  startCal.getTime(), endCal.getTime(), "Flow.ACTT2.Pump_Out_Total")
@@ -99,21 +101,21 @@ locationList = ["ACTT2",
                 "BNBT2",
                 "CLDL1",
                 "DAWT2",
-                "GGLT2",
-                "GNGT2",
-                "GPVT2",
-                "HORT2",
-                "JFNT2",
-                "JPLT2",
-                "JSPT2",
-                "LEWT2",
-                "LVNT2",
-                "PCTT2",
-                "RRLT2",
-                "FRHT2",
-                "SCLT2",
-                "SMCT2",
-                "SOMT2",
+#                 "GGLT2",
+#                 "GNGT2",
+#                 "GPVT2",
+#                 "HORT2",
+#                 "JFNT2",
+#                 "JPLT2",
+#                 "JSPT2",
+#                 "LEWT2",
+#                 "LVNT2",
+#                 "PCTT2",
+#                 "RRLT2",
+#                 "FRHT2",
+#                 "SCLT2",
+#                 "SMCT2",
+#                 "SOMT2",
 #                 "STIT2",
 #                 "TXKT2",
 #                 "WTYT2",
@@ -142,7 +144,7 @@ locationList = ["ACTT2",
 # By setting the following parameter to True, all of the following flow groups in each location in the list locationList will all be calculated.
 # Items can be commented out or commented back in individually. To turn this option off, set the following parameter to False.
 
-calculateAllFlowGroups = False
+calculateAllFlowGroups = True
 FlowGroupList = ["ACTT2",
                  "ALAT2",
                  "BDWT2",
