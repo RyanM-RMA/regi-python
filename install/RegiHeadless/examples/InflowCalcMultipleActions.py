@@ -4,6 +4,23 @@ from java.util import TimeZone
 from java.util import GregorianCalendar
 from usace.rowcps.headless import LoggingOptions
 
+def inflow_Actions(function, officeID, location, startCal, uselimits, freezerain):
+    # Takes in locations defined by user in group and computes the given command at the given station.
+    try:
+        if function.lower() == "cloneinflows":
+            inflowCalc.cloneInflows(officeID, location,  startCal.getTime())
+        elif function.lower() == "zeronegatives":
+            inflowCalc.zeroNegatives(officeID, location,  startCal.getTime())
+        elif function.lower() == "balanceall":
+            inflowCalc.cloneInflows(officeID, location,  startCal.getTime())
+        elif function.lower() == "autoadjust":
+            inflowCalc.autoAdjust(officeID, location,  startCal.getTime(), uselimits, freezerain)
+        else:
+            print "Input command", function, "is not recognized. Please edit your input and try again."
+    except Exception as e:
+        print "Error Completing action {0} at {1} {2}".format(function, officeID, location)
+        print e
+        print ""
 # Description of: LoggingOptions.setDbMessageLevel(int level)
 #
 # Adds Time Series logging messages in the OracleTimeSeriesDaoImpl.  Recommended
@@ -39,8 +56,7 @@ LoggingOptions.setDbMessageLevel(2)
 # this gets a scriptable Pool Percent object
 inflowCalc = registry.getCalculation(1.0, "Inflow")
 
-# configure the start calendar
-
+# configure the start calendar'
 startCal = GregorianCalendar(TimeZone.getTimeZone('US/Central'))
 
 
@@ -48,6 +64,7 @@ startCal.clear()
 startCal.set(Calendar.YEAR, 2015)
 startCal.set(Calendar.MONTH, 4)
 
+officeID = "SWF"
 
 # inflowCalc contains 4 callable methods:
 # autoAdjust
@@ -55,19 +72,36 @@ startCal.set(Calendar.MONTH, 4)
 # cloneInflows
 # zeroNegatives
 
-# Each method takes the followind arguments:
+# Each method takes the following arguments:
 #   officeId
 #   locationId
 #   startDate
 
 # autoAdjust also takes booleans:
-#	useLimits
-#	freezeRain
+#    useLimits
+#    freezeRain
 
-# This is an example of how multiple actions can be combined into one script
-inflowCalc.cloneInflows("SWF", "ALAT2",  startCal.getTime())
-inflowCalc.zeroNegatives("SWF", "ALAT2",  startCal.getTime())
-inflowCalc.cloneInflows("SWF", "ALAT2",  startCal.getTime())
-inflowCalc.balanceAll("SWF", "ALAT2",  startCal.getTime())
+# UseLimits and FreezeRain are also controllable arguments for AutoAdjust. By setting "useLimits_ON" to True,
+# the function will use the "useLimits command. By setting it to "False", it will be turned off. This functions the same way for "freezeRain_ON"
+# If the Auto Adjust command is not used, these arguments will have no influence on the other commands.
+useLimits_ON = False
+freezeRain_ON = False
 
+# Commands can be input in a list format as seen below. The format is as follows "[ACTION] @ [LOCATION]", reading like "Perform [ACITON] at [LOCATION]. 
+# The action must come first, and they must be separated by a "@" symbol.
+# Spaces between the Action/Location and "@" symbol can vary, although 1 space is recommended for readability. Lines can be commented out as needed.
+actions = ["cloneInflows @ ALAT2",
+           "zeroNegatives @ ALAT2",
+           "cloneInflows @ ALAT2",
+           "balanceAll @ ALAT2",
+           "cloneInflows @ ALAT2",
+           "autoAdjust @ ALAT2",
+           ]
 
+for command in actions:
+    location = command.split('@')[1].strip()
+    function = command.split('@')[0].strip()
+    print ""
+    print "Now running", function, "at", location
+    print ""
+    inflow_Actions(function, officeID, location, startCal, useLimits_ON, freezeRain_ON)
