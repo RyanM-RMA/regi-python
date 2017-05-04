@@ -1,0 +1,2 @@
+:: The headless scripts can also be executed from a bat file as demonstrated below
+..\jre64\bin\java.exe -Dhec.data.cwmsRating.RatingSet.databaseLoadMethod=eager -Djava.util.logging.config.file=../config/properties/logging.properties -cp ..\lib\*;..\lib\ext\*;..\lib\modules\*;..\lib\sys\* usace.rowcps.headless.RegiCLI -Drowcps.timezone=GMT -p ..\\examples\\credentials.properties -f ..\\examples\\BasinPie.py
