@@ -1,7 +1,9 @@
 # the java Calendar class is used to create java Date objects
 from java.util import Calendar
-import sys
+import os, sys
 import getopt
+sys.path.insert(0, os.path.abspath(".."))
+from examples import printInfo
 
 def Usage():
     msg = """
@@ -15,6 +17,7 @@ def Usage():
     print msg
 
 def headless_examples():
+    printInfo.printAll()
     # This gets a scriptable Basin Pie object.
     basinPie = registry.getCalculation(1.0, "Status")
 
