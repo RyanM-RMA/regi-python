@@ -45,8 +45,11 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TimeZone;
@@ -66,9 +69,13 @@ import javax.imageio.ImageWriter;
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
+import rma.services.GlobalServiceLoader;
+import rma.services.GlobalServiceLoaderDelegate;
 import usace.metrics.services.Metrics;
 import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.computation.common.IEventThreadExceptionProcessor;
+import usace.rowcps.computation.services.CalcFlowGroupTimeSeriesService;
+import usace.rowcps.data.ILocationAssociation;
 import usace.rowcps.data.basin.IBasin;
 import usace.rowcps.data.charttemplate.IChartTemplate;
 import usace.rowcps.data.maptemplate.graphicoptions.ReleasesGraphicOptionData;
@@ -84,6 +91,7 @@ import usace.rowcps.decisionsupport.ui.mappanel.OperationSupportBasinTreeModel;
 import usace.rowcps.decisionsupport.ui.reservoirplot.ReservoirPlotPanel;
 import usace.rowcps.decisionsupport.ui.reservoirplot.ReservoirPlotPanelData;
 import usace.rowcps.headless.calculator.AbstractScriptableCalc;
+import usace.rowcps.regi.interfaces.model.ProjectChildLocationCacheService;
 
 import usace.rowcps.regi.model.AtBasinManager;
 import usace.rowcps.regi.model.AtChartTemplateManager;
@@ -98,7 +106,7 @@ import usace.rowcps.regi.ui.gfx2d.PiePanel;
 public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implements ScriptableCalc {
 
 	private static final Logger logger = Logger.getLogger(ScriptableStatusGraphicImpl.class.getName());
-  
+
 	public final static String LATCH_SECONDS = "rowcps.latchseconds";
 
 	public ScriptableStatusGraphicImpl(RegiDomain regiDomain, ManagerId manId) {
@@ -123,6 +131,8 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 			}
 		};
 
+		checkForKnownNeededServices();
+		
 		AtMapTemplateManager atMapTemplateManager = this.regiDomain.getAtMapTemplateManager(managerId);
 
 		MapTemplateLayer mtl = getMapTemplateLayer(templateName);
@@ -147,26 +157,85 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		final ReservoirPlotPanelData rppd = new ReservoirPlotPanelData(iProject, tis, managerId, rgod);
 		rppd.addListener(pcl);
 
-		ReservoirPlotPanel rpp; 
+		ReservoirPlotPanel rpp;
 
 		RunnableFuture<ReservoirPlotPanel> panelFuture = new FutureTask<ReservoirPlotPanel>(new Callable<ReservoirPlotPanel>() {
 			@Override
 			public ReservoirPlotPanel call() throws Exception {
 				return new ReservoirPlotPanel(iProject, managerId, tis, rgod, rppd);
 			}
-			
 		});
 		SwingUtilities.invokeLater(panelFuture);
 		rpp = panelFuture.get(1, TimeUnit.MINUTES);
-		
-		Integer seconds = Integer.getInteger(LATCH_SECONDS, 11*60); // This one goes to 11...
-		cdl.await(seconds, TimeUnit.SECONDS);  
-		
+
+		Integer seconds = Integer.getInteger(LATCH_SECONDS, 11 * 60); // This one goes to 11...
+		cdl.await(seconds, TimeUnit.SECONDS);
+
 		rgod.removePropertyChangeListener(pcl);
+
+		// This next sleep is important b/c the latch gets set after the SwingWorker doInBackground complete but before done()
+		// are called.   We need the done() methods to execute before we proceed.
+		Thread.sleep(2000);
 
 		String imageFormat = getFormatFromFile(filename);
 		final Dimension d = new Dimension(width, height);
 		layoutAndSave(rpp, d, filename, imageFormat);
+	}
+
+	private boolean checkForKnownNeededServices() {
+		boolean retval = false;
+		
+		boolean hasCalcFlow = hasGlobalService(CalcFlowGroupTimeSeriesService.class);
+		if(!hasCalcFlow){			
+			ServiceLoader serviceLoader = ServiceLoader.load(CalcFlowGroupTimeSeriesService.class);
+			hasCalcFlow = hasService(CalcFlowGroupTimeSeriesService.class, serviceLoader);
+		}
+		
+		if(!hasCalcFlow){
+			String mesg = "The CalcFlowGroupTimeSeriesService was not found and is known to be needed by Regi Headless.  "
+					+ "Without this service the headless Status Graphic generation may not generate the correct values.  "
+					+ "Even if the necessary classes are in the classpath, the services may still not be found "
+					+ "if the jars do not include the necessary META-INF services folder.  "
+					+ "For example, public-package-jars\\usace-rowcps-computation.jar contains implementation classes "
+					+ "but not the service definitions.";
+			logger.warning(mesg);
+		}
+		
+		
+	
+		boolean hasProjectChild = hasGlobalService(ProjectChildLocationCacheService.class);
+		if(!hasCalcFlow){
+			String mesg = "A ProjectChildLocationCacheService was not found and is known to be needed by Regi Headless.  "
+					+ "Without this service the headless Status Graphic generation may not generate the correct values.  "
+					+ "Even if the necessary classes are in the classpath, the services may still not be found "
+					+ "if the jars do not include the necessary META-INF services folder.  "
+					+ "For example, public-package-jars\\usace-rowcps-regi.jar contains implementation classes "
+					+ "but not the service definitions.";
+			logger.warning(mesg);
+		}
+
+		return hasCalcFlow && hasProjectChild;		
+	}
+	
+	private boolean hasGlobalService(Class klass) {
+		GlobalServiceLoaderDelegate instance = GlobalServiceLoader.getInstance();
+		ServiceLoader serviceLoader = instance.getServiceLoader(klass);
+
+		return hasService(klass, serviceLoader);
+	}
+
+	private boolean hasService(Class klass, ServiceLoader sl) {
+		boolean hasCalcFlow = false;
+		ServiceLoader serviceLoader;
+		
+		GlobalServiceLoaderDelegate instance = GlobalServiceLoader.getInstance();
+		serviceLoader = instance.getServiceLoader(klass);
+		
+		for (Object service : serviceLoader) {
+			hasCalcFlow = true;
+			break;
+		}
+		return hasCalcFlow;
 	}
 
 	public void generateStreamStatusImage(String officeId, String locationId, String templateName, Date current,
@@ -211,29 +280,29 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		streamData.getCurrentFlow();
 //		logger.info("calling getCurrentStage");
 		streamData.getCurrentStage();
-		
-		Integer seconds = Integer.getInteger(LATCH_SECONDS, 11*60); // This one goes to 11...
-		cdl.await(seconds, TimeUnit.SECONDS);  
+
+		Integer seconds = Integer.getInteger(LATCH_SECONDS, 11 * 60); // This one goes to 11...
+		cdl.await(seconds, TimeUnit.SECONDS);
 
 		final Dimension d = new Dimension(width, height);
 
 		String imageFormat = getFormatFromFile(filename);
-				
+
 		RunnableFuture<StreamPlotPanel> panelFuture = new FutureTask<StreamPlotPanel>(new Callable<StreamPlotPanel>() {
 			@Override
 			public StreamPlotPanel call() throws Exception {
 				StreamPlotPanel spp = new StreamPlotPanel();  // Why is this building a panel on background thread?
 				spp.setData(streamData);
 				return spp;
-			}		
+			}
 		}
 		);
-	
+
 		SwingUtilities.invokeLater(panelFuture);
-		
+
 		final StreamPlotPanel panel = panelFuture.get(11, TimeUnit.MINUTES);
-				
-		layoutAndSave(panel, d, filename, imageFormat);		
+
+		layoutAndSave(panel, d, filename, imageFormat);
 	}
 
 	public void generateReleasesStatusImage(String officeId, String locationId, String templateName, Date current,
@@ -281,15 +350,15 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		final CountDownLatch dataFilledLatch = new CountDownLatch(1);
 		PropertyChangeListener pcl = new PropertyChangeListener() {
 			@Override
-			public void propertyChange(PropertyChangeEvent evt) {				
+			public void propertyChange(PropertyChangeEvent evt) {
 				if (GraphicConstants.DATA_FILLED_EVENT.equals(evt.getPropertyName())) {
 					dataFilledLatch.countDown();
 				}
 			}
 		};
-        
-        releasesGraphicPanel.setData(data);
-        logger.info("Adding data PCL");
+
+		releasesGraphicPanel.setData(data);
+		logger.info("Adding data PCL");
 		data.addPropertyChangeListener(pcl);
 
 		Thread.sleep(5000);
@@ -303,13 +372,13 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		});
 
 //        logger.info("Waiting 11 minutes on latch.");
-		Integer seconds = Integer.getInteger(LATCH_SECONDS, 11*60);
+		Integer seconds = Integer.getInteger(LATCH_SECONDS, 11 * 60);
 		dataFilledLatch.await(seconds, TimeUnit.SECONDS);
-		
+
 		// not sure if this will help
 //		logger.info("Firing repaint and waiting an extra second.");
 		data.fireRepaintEvent();
-		Thread.sleep(1000);		
+		Thread.sleep(1000);
 
 		RunnableFuture<BufferedImage> biFuture = new FutureTask<BufferedImage>(new Callable<BufferedImage>() {
 			@Override
@@ -321,21 +390,21 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 				g.setPaint(color);
 				g.fillRect(0, 0, width, height);
 				g.setColor(color);
-				g.setClip(0, 0 , width, height);
+				g.setClip(0, 0, width, height);
 
 				final Dimension d = new Dimension(width, height);
 				releasesGraphicPanel.setMinimumSize(d);
 				releasesGraphicPanel.setMaximumSize(d);
 				releasesGraphicPanel.setPreferredSize(d);
 				releasesGraphicPanel.setSize(d);
-                releasesGraphicPanel.setBounds(new Rectangle(0, 0, width, height));
+				releasesGraphicPanel.setBounds(new Rectangle(0, 0, width, height));
 //				releasesGraphicPanel.setDoubleBuffered(false);
 //				layoutComponent(releasesGraphicPanel, d);
 //				releasesGraphicPanel.show(true);
 //				releasesGraphicPanel.setVisible(true);
-				releasesGraphicPanel.paintImmediately(0, 0, width, height);				
-				
-				releasesGraphicPanel.print(g);				
+				releasesGraphicPanel.paintImmediately(0, 0, width, height);
+
+				releasesGraphicPanel.print(g);
 				g.dispose();
 
 				return bImage;
@@ -346,7 +415,6 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		SwingUtilities.invokeLater(biFuture);
 
 		BufferedImage bImage = biFuture.get(11, TimeUnit.MINUTES);
-		
 
 //		Thread.sleep(5000);
 //		releasesGraphicPanel.print(g);
@@ -358,7 +426,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		}
 
 	}
-	
+
 	private void layoutComponent(JComponent component, Dimension d) {
 		LayoutManager layout = component.getLayout();
 		if (layout != null) {
@@ -373,21 +441,19 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 			layout.layoutContainer(component);
 		}
 	}
-		
-	public static class MyReleasesGraphicData extends ReleasesGraphicData
-	{
+
+	public static class MyReleasesGraphicData extends ReleasesGraphicData {
 
 		public MyReleasesGraphicData(Location loc, ManagerId manId, TimeInfoSource tis, ReleasesGraphicOptionData options, OptionalParams optionalParams) {
-        super(loc, manId, tis, options, optionalParams);
+			super(loc, manId, tis, options, optionalParams);
 		}
 
-			@Override
-			public void fireRepaintEvent() {
-				super.fireRepaintEvent(); //To change body of generated methods, choose Tools | Templates.
-			}
-						
+		@Override
+		public void fireRepaintEvent() {
+			super.fireRepaintEvent(); //To change body of generated methods, choose Tools | Templates.
 		}
 
+	}
 
 	public TimeInfo getTimeInfo(Date current, TimeZone tz) {
 		final int MILLIS_PER_HOUR = 1000 * 60 * 60;
@@ -403,6 +469,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		Calendar curCal = new GregorianCalendar(tz);
 		curCal.setTime(current);
 		HecTime curTime = new HecTime(curCal);
+		curTime.showTimeAsBeginningOfDay(true);
 
 		int stepSize = 1000 * 60 * 60;  // millisPerHour
 		TimeInfo ti = new TimeInfo(start, end, curTime, stepSize);
@@ -725,6 +792,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 
 		return retval;
 	}
+
 	/**
 	 * Saves a copy of the plot as a image type
 	 *
@@ -860,7 +928,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 				public Boolean call() throws Exception {
 					layoutComponent(component, d);
 					return Boolean.TRUE;
-				}					
+				}
 			};
 			FutureTask<Boolean> futureTask = new FutureTask<>(imageCallable);
 
@@ -876,7 +944,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 			} catch (TimeoutException ex) {
 				throw new IOException("Timeout waiting for layout to complete.", ex);
 			}
-		}		
+		}
 
 		try (FileOutputStream fos = new FileOutputStream(file);
 				BufferedOutputStream bos = new BufferedOutputStream(fos);) {
@@ -885,5 +953,4 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		}
 	}
 
-	
 }
