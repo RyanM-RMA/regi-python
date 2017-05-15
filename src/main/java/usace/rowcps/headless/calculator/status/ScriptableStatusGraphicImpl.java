@@ -45,10 +45,8 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.SortedSet;
@@ -75,7 +73,6 @@ import usace.metrics.services.Metrics;
 import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.computation.common.IEventThreadExceptionProcessor;
 import usace.rowcps.computation.services.CalcFlowGroupTimeSeriesService;
-import usace.rowcps.data.ILocationAssociation;
 import usace.rowcps.data.basin.IBasin;
 import usace.rowcps.data.charttemplate.IChartTemplate;
 import usace.rowcps.data.maptemplate.graphicoptions.ReleasesGraphicOptionData;
@@ -464,6 +461,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 
 		Calendar endCal = new GregorianCalendar(tz);
 		endCal.setTime(current);
+		endCal.add(Calendar.DAY_OF_MONTH, 1);
 		HecTime end = new HecTime(endCal);
 
 		Calendar curCal = new GregorianCalendar(tz);
