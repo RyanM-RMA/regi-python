@@ -21,7 +21,14 @@ def headless_examples():
     # This gets a scriptable Basin Pie object.
     basinPie = registry.getCalculation(1.0, "Status")
 
-    # Configure the calendar
+
+    ######################################################################################
+    #                                                                                    #
+    # Please refer to the functions for the parametrization for generating the graphics. #
+    #                                                                                    #
+    ######################################################################################
+
+    # Configure the calendar for the date and time of the Basin Pie graphic
     startCal = Calendar.getInstance()
     startCal.clear()
     startCal.set(Calendar.YEAR, 2016)

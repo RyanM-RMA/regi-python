@@ -21,7 +21,16 @@ def headless_examples():
     # This gets a scriptable Stream Status object.
     streamStatus = registry.getCalculation(1.0, "Status")
 
-    # Configure the calendar
+    # To generate the status graphics, the following parameters are required
+    # office_id: The office id used for finding the specified locations and map_template
+    # location_id: The location for which the status graphic is desired
+    # map_template_id: The id of the map template to use.
+    # date and time: This specifies the date and time for which the image should be generated
+    # width: width in pixels
+    # height: height in pixels
+    # filepath: Path of where to write the file.  The images may be generated with the extensions of either .jpg or .png
+
+    # Configure the calendar for the date and time of the Basin Pie graphic
     startCal = Calendar.getInstance()
     startCal.clear()
     startCal.set(Calendar.YEAR, 2016)
