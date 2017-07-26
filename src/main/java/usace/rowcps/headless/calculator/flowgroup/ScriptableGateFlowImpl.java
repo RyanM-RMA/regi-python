@@ -323,7 +323,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
                     intervalOffsetInSeconds = 0;
                 }
                 
-                DataSetTx dstx = adapter.getMergedTimeSeries(flowGroup, new HashSet<IFlowGroup>(), fgts.getInterval(), fgts.getParameterTypeString(), startDate, endDate, null, options, intervalOffsetInSeconds,CacheUsage.NORMAL);
+                DataSetTx dstx = adapter.getMergedTimeSeries(flowGroup, new HashSet<IFlowGroup>(), fgts.getInterval(), fgts.getParameterTypeString(), startDate, endDate,null, null, null, options, intervalOffsetInSeconds,CacheUsage.NORMAL);
                 
                 if (dstx == null)
                 {
