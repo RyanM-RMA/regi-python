@@ -777,7 +777,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		AtBasinManager atBasinManager = regiDomain.getAtBasinManager(managerId);
 
 		if (basinId != null && atBasinManager != null) {
-			List<IBasin> allbasins = atBasinManager.retrieveAllBasins();
+			List<IBasin> allbasins = atBasinManager.retrieveAllBasins(CacheUsage.NORMAL);
 			if (allbasins != null && !allbasins.isEmpty()) {
 				for (IBasin basin : allbasins) {
 					if (basinId.equals(basin.getBasinId())) {
