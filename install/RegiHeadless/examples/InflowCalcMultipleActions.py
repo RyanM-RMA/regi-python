@@ -12,7 +12,7 @@ def inflow_Actions(function, officeID, location, startCal, uselimits, freezerain
         elif function.lower() == "zeronegatives":
             inflowCalc.zeroNegatives(officeID, location,  startCal.getTime())
         elif function.lower() == "balanceall":
-            inflowCalc.cloneInflows(officeID, location,  startCal.getTime())
+            inflowCalc.balanceAll(officeID, location,  startCal.getTime())
         elif function.lower() == "autoadjust":
             inflowCalc.autoAdjust(officeID, location,  startCal.getTime(), uselimits, freezerain)
         else:
