@@ -36,6 +36,7 @@ import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -372,8 +373,6 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		Integer seconds = Integer.getInteger(LATCH_SECONDS, 11 * 60);
 		dataFilledLatch.await(seconds, TimeUnit.SECONDS);
 
-		// not sure if this will help
-//		logger.info("Firing repaint and waiting an extra second.");
 		data.fireRepaintEvent();
 		Thread.sleep(1000);
 
@@ -416,7 +415,10 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 //		Thread.sleep(5000);
 //		releasesGraphicPanel.print(g);
 		String imageFormat = getFormatFromFile(filename);
-		try (FileOutputStream fos = new FileOutputStream(filename);
+		File file = new File(filename);
+		file.mkdirs();
+		
+		try (FileOutputStream fos = new FileOutputStream(file);
 				BufferedOutputStream bos = new BufferedOutputStream(fos);) {
 			logger.info("Writing releases image to output stream.");
 			writeImage(imageFormat, 100.0f, bos, bImage);
