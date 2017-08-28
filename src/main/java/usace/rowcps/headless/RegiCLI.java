@@ -42,7 +42,7 @@ public class RegiCLI
 //			};
 //		}
 
-		CLIOptions opt = new CLIOptions();
+		CLIOptions opt = new CLIOptions(System.getProperties());
 		CmdLineParser parser = new CmdLineParser(opt);
 
 		ManagerId managerId = null;
@@ -53,6 +53,7 @@ public class RegiCLI
 
 		try {
 			parser.parseArgument(args);
+			System.setProperties(opt.getProperties());
 
 			HeadlessRegiDomainFactory factory = new HeadlessRegiDomainFactory();
 			managerId = factory.getManagerId(opt);
