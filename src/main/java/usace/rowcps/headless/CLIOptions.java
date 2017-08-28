@@ -26,7 +26,7 @@ public class CLIOptions
 	//public String oracleUser;
 	//public String oraclePassword;
 	//private Map<String, String> properties = new HashMap<String, String>();
-	Properties props = new Properties();
+	Properties props;
 
 	public final static String URL = "oracle.url";
 	public final static String USER = "oracle.user";
@@ -39,6 +39,16 @@ public class CLIOptions
 
 	public final static String HEC_PASSWD_FILE = "hec.passwd";
 
+	public CLIOptions()
+	{
+		this(System.getProperties());
+	}
+	
+	public CLIOptions(Properties defaultProperties)
+	{
+		props = new Properties(defaultProperties);
+	}
+	
 	@Option(name = "-D", metaVar = "<property>=<value>", usage = "use value for given property")
 	private void setProperty(final String property) throws CmdLineException
 	{
@@ -59,11 +69,7 @@ public class CLIOptions
 	public Object getProperty(String key)
 	{
 		return props.get(key);
-	}
-
-	public CLIOptions()
-	{
-	}
+	}	
 
 	/**
 	 * @return the rowcpsTimezone
@@ -182,6 +188,7 @@ public class CLIOptions
 	public void setRowcpsTimezone(String rowcpsTimezone) throws CmdLineException
 	{
 		setProperty(new String[]{TIMEZONE, rowcpsTimezone});
+		
 		//this.rowcpsTimezone = rowcpsTimezone;
 	}
 
@@ -313,6 +320,10 @@ public class CLIOptions
 			}
 		}
 		return retval;
+	}
+
+	Properties getProperties() {
+		return new Properties(props);
 	}
 
 }
