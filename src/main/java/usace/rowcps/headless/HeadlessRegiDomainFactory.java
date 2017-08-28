@@ -13,6 +13,8 @@ import java.io.File;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import rma.services.ServiceLookup;
+import rma.services.tz.TimeZoneDisplayService;
 import usace.rowcps.regi.factories.RegiDomainFactory;
 import usace.rowcps.regi.interfaces.model.ManagerIdProvider;
 import usace.rowcps.regi.model.DatabaseConnectionManager;
@@ -116,6 +118,9 @@ public class HeadlessRegiDomainFactory
 			connectionManager.setPass(password);
 			connectionManager.setUserOfficeId(officeId);
 			connectionManager.saveData();
+			
+			TimeZoneDisplayService tsDS = ServiceLookup.getTimeZoneDisplayService();
+			tsDS.setTimeZone(connectionManager.getTimeZone());
 
 			regiDomain.connect();
 			List<Manager> managerList = regiDomain.getManagerList();
