@@ -167,7 +167,10 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		rpp = panelFuture.get(1, TimeUnit.MINUTES);
 
 		Integer seconds = Integer.getInteger(LATCH_SECONDS, 11 * 60); // This one goes to 11...
-		cdl.await(seconds, TimeUnit.SECONDS);
+		boolean normalExit = cdl.await(seconds, TimeUnit.SECONDS);
+		if (!normalExit) {
+			logger.log(Level.WARNING, "Timeout exceeded loading reservoir status graphic data.");
+		}
 
 		rgod.removePropertyChangeListener(pcl);
 
@@ -199,8 +202,6 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 			logger.warning(mesg);
 		}
 		
-		
-	
 		boolean hasProjectChild = hasGlobalService(ProjectChildLocationCacheService.class);
 		if(!hasCalcFlow){
 			String mesg = "A ProjectChildLocationCacheService was not found and is known to be needed by Regi Headless.  "
@@ -280,7 +281,10 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		streamData.getCurrentStage();
 
 		Integer seconds = Integer.getInteger(LATCH_SECONDS, 11 * 60); // This one goes to 11...
-		cdl.await(seconds, TimeUnit.SECONDS);
+		boolean normalExit = cdl.await(seconds, TimeUnit.SECONDS);
+		if (!normalExit) {
+			logger.log(Level.INFO, "Exceeded timeout waiting for status data model to load.");
+		}
 
 		final Dimension d = new Dimension(width, height);
 
@@ -371,7 +375,10 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 
 //        logger.info("Waiting 11 minutes on latch.");
 		Integer seconds = Integer.getInteger(LATCH_SECONDS, 11 * 60);
-		dataFilledLatch.await(seconds, TimeUnit.SECONDS);
+		boolean normalExit = dataFilledLatch.await(seconds, TimeUnit.SECONDS);
+		if (!normalExit) {
+			logger.log(Level.WARNING, "Exceeded timeout waiting for releases status data to load.");
+		}
 
 		data.fireRepaintEvent();
 		Thread.sleep(1000);
@@ -545,7 +552,6 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 
 		// This also primes connDA for the getPrimary call..
 		LocationGroup lg = buildLocationGroupWithAssignedLocations(connDA, basinId);
-
 		Set<AssignedLocation> assignedLocations = lg.getAssignedLocations();
 
 		List<LocationTemplate> locs = new ArrayList<>();
@@ -601,7 +607,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		treeModel.fillBasinTree(lg, connDA);
 
 		for (IChartTemplate chartTemplate : templates) {
-
+			logger.info("Generating images for template:" + chartTemplate.getId());
 			final BasinPieModel pieModel = buildAndInitializeBasinPieModel(projectsOnly, chartTemplate, startDate, endDate, treeModel);
 
 			for (Date date : dateSet) {
@@ -667,12 +673,12 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 	}
 
 	public void drawImage(final OperationSupportBasinTreeModel treeModel, final LocationTemplate locRef, final BasinPieModel pieModel, final Dimension d, final Date date, final String file, final String imageFormat) throws InterruptedException, ExecutionException {
-		final List<LocationTemplate> relavantLocations = treeModel.getRelavantLocations(locRef);
 
 		final CountDownLatch latch = new CountDownLatch(1);
 		final SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
 			@Override
 			protected Void doInBackground() throws Exception {
+				List<LocationTemplate> relavantLocations = treeModel.getRelavantLocations(locRef);
 				logger.log(Level.INFO, "Found {0} locations relevant to {1}", new Object[]{relavantLocations.size(), locRef});
 				pieModel.setActiveLocations(relavantLocations, true);
 				return null;
@@ -693,8 +699,11 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		worker.execute();
 
 		Void got = worker.get();  // This returns as soon as doInBackground finishes.
-		latch.await(10, TimeUnit.SECONDS);
-		logger.log(Level.INFO, "Drawing finished");
+		boolean normalExit = latch.await(Integer.getInteger(LATCH_SECONDS, 11 * 60), TimeUnit.SECONDS);
+		if (!normalExit) {
+			logger.log(Level.WARNING, "Exceeded timeout waiting for basin image to draw.");
+		}
+
 	}
 
 	public BasinPieModel buildAndInitializeBasinPieModel(LocationGroup projectsOnly, final IChartTemplate chartTemplate, Date startDate, Date endDate, final OperationSupportBasinTreeModel treeModel) throws InterruptedException {
@@ -705,6 +714,8 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 			@Override
 			public void propertyChange(PropertyChangeEvent evt) {
 				if ("PieDataChangedProperty".equals(evt.getPropertyName())) {
+					logger.log(Level.FINER, "PieDataChanged edt:{0} latch:{1}",
+							new Object[]{SwingUtilities.isEventDispatchThread(), initlatch.getCount()});
 					initlatch.countDown();
 				}
 			}
@@ -712,7 +723,11 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		List<LocationTemplate> forInitCache = treeModel.getRelavantLocations(null);
 		logger.log(Level.INFO, "Initializing BasinPieModel with {0} locations.", forInitCache.size());
 		pieModel.initCache(forInitCache);  // this can take a while but it fires a property change event when its done.
-		initlatch.await(20, TimeUnit.SECONDS);
+
+		boolean normalExit = initlatch.await(Integer.getInteger(LATCH_SECONDS, 11 * 60), TimeUnit.SECONDS);
+		if (!normalExit) {
+			logger.log(Level.WARNING, "Exceeded timeout waiting for basin pie model to load.");
+		}
 
 		return pieModel;
 	}
@@ -946,7 +961,10 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 			}
 		}
 
-		try (FileOutputStream fos = new FileOutputStream(file);
+		File f = new File(file);
+		f.getParentFile().mkdirs();
+
+		try (FileOutputStream fos = new FileOutputStream(f);
 				BufferedOutputStream bos = new BufferedOutputStream(fos);) {
 			logger.info("Writing to output stream");
 			saveToStream(bos, component, imageFormat, 100.0f);
