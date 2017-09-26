@@ -92,8 +92,8 @@ public class HeadlessRegiDomainFactory
 			projReportsDir.mkdir();
 			projXmlDir.mkdir();
 
-			String name = null;
-			String description = null;
+			String name = "Headless";
+			String description = "Created for Headless execution.";
 			regiDomain = new RegiDomainFactory().createProject(name, description, prjFile);
 
 			regiDomain.loadProjectFile();
