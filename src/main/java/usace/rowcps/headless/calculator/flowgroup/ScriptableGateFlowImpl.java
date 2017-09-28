@@ -7,6 +7,7 @@ import hec.data.location.LocationTemplate;
 import hec.data.tx.DataSetTx;
 import hec.db.DbConnectionException;
 import hec.db.DbIoException;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -42,39 +43,36 @@ import usace.rowcps.regi.model.RegiDomain;
  *
  * @author ryan
  */
-public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements ScriptableGateFlowCalc, ScriptableCalc
-{
+public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements ScriptableGateFlowCalc, ScriptableCalc {
+
 	private static final Logger logger = Logger.getLogger(ScriptableGateFlowImpl.class.getName());
 
-
-	public ScriptableGateFlowImpl(RegiDomain regiDomain, ManagerId manId)
-	{
+	public ScriptableGateFlowImpl(RegiDomain regiDomain, ManagerId manId) {
 		super(regiDomain, manId);
 	}
 
 	@Override
-	public void computeAll(String officeId, String locationId, Date start, Date end)
-	{
+	public void computeAll(String officeId, String locationId, Date start, Date end) {
 
 		computeAll(officeId, locationId, start.getTime(), end.getTime());
 
 	}
 
 	@Override
-	public void computeAll(String officeId, String locationId, long startTime, long endTime)
-	{
+	public void computeAll(String officeId, String locationId, long startTime, long endTime) {
 		LocationTemplate projectLocRef = new LocationTemplate(officeId, locationId);
 
 		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "computeAll");
 		OptionalParams options = new OptionalParams(metrics);
 
 		AtFlowGroupManager flowGroupManager = regiDomain.getAtFlowGroupManager(getManagerId());
-		AtTimeSeriesManager atTimeSeriesManager= regiDomain.getAtTimeSeriesManager(getManagerId());
+		AtTimeSeriesManager atTimeSeriesManager = regiDomain.getAtTimeSeriesManager(getManagerId());
+
+		possiblyWarnAboutMilliseconds(startTime, endTime);
 
 		final TimeZone utcZone = null;//TimeZone.getTimeZone("UTC");
-		try (Timer.Context context = metrics.createTimer().start())
-        {
-			Map<IFlowGroup, LocationGroup> conduitGateFlowGroupMap = flowGroupManager.retrieveFlowGroups(projectLocRef,	null, CacheUsage.NORMAL);
+		try (Timer.Context context = metrics.createTimer().start()) {
+			Map<IFlowGroup, LocationGroup> conduitGateFlowGroupMap = flowGroupManager.retrieveFlowGroups(projectLocRef, null, CacheUsage.NORMAL);
 
 			if (conduitGateFlowGroupMap != null && !conduitGateFlowGroupMap.isEmpty()) {
 				final int groupMapSize = conduitGateFlowGroupMap.size();
@@ -82,38 +80,36 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 				Set<Map.Entry<IFlowGroup, LocationGroup>> entrySet = conduitGateFlowGroupMap.entrySet();
 				if (entrySet != null && !entrySet.isEmpty()) {
 					FlowGroupCalc flowGroupCalc = new FlowGroupCalc();
-				
+
 					int count = 0;
-					for (Map.Entry<IFlowGroup, LocationGroup> entry : entrySet)
-                    {
+					for (Map.Entry<IFlowGroup, LocationGroup> entry : entrySet) {
 						IFlowGroup flowGroup = entry.getKey();
 						LocationGroup locationGroup = entry.getValue();
-                        
-                        if (isProjectTotalFlowGroup(flowGroup))
-                        {
-                            //Special case for Project, as we need to use the Release Overrides
-                            computeReleaseOverrides(flowGroup, startTime, endTime, options, atTimeSeriesManager);
-                            
-                            logger.log(Level.INFO, "Compute {0}/{1} Group:{2} completed normally.",
-												new Object[]{count, groupMapSize, flowGroup.getId()});
-                            continue;
-                        }
-                        
-						count ++;
+						count++;
+
+						if (isProjectTotalFlowGroup(flowGroup)) {
+							//Special case for Project, as we need to use the Release Overrides
+							computeReleaseOverrides(flowGroup, startTime, endTime, options, atTimeSeriesManager);
+
+							logger.log(Level.INFO, "Compute {0}/{1} Project Total Flow Group:{2} completed normally.",
+									new Object[]{count, groupMapSize, flowGroup.getId()});
+							continue;
+						}
+
 						try {
-						//				FlowGroupTimeSeries newFlowGroupTimeSeries = flowGroup.newFlowGroupTimeSeries(parameterType,
+							//				FlowGroupTimeSeries newFlowGroupTimeSeries = flowGroup.newFlowGroupTimeSeries(parameterType,
 							//			interval, duration, version,
 							//			intervalOffsetSeconds, startCal.getTime(), null);
 							logger.log(Level.INFO, "Computing {0}/{1} Group:{2}", new Object[]{count, groupMapSize, flowGroup.getId()});
-							Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries =
-									flowGroupCalc.calcTimeSeries(getManagerId(),flowGroup, startTime, endTime, utcZone,options, CacheUsage.NORMAL);							//								
-							if(calcTimeSeries == null){
+							Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries
+									= flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup, startTime, endTime, utcZone, options, CacheUsage.NORMAL);
+							if (calcTimeSeries == null) {
 								// I think that this means there was an error...
 								logger.log(Level.SEVERE, "Compute {0}/{1} Group:{2} returned null.", new Object[]{count, groupMapSize, flowGroup.getId()});
 							} else {
-								
+
 								if (isCompleteFailure(calcTimeSeries)) {
-									logger.log(Level.SEVERE, "Compute {0}/{1} Group:{2} Failed. ", 
+									logger.log(Level.SEVERE, "Compute {0}/{1} Group:{2} Failed. ",
 											new Object[]{count, groupMapSize, flowGroup.getId()});
 								} else {
 									DbCommitFlowGroupCalc.storeToTimeSeriesManager(calcTimeSeries, atTimeSeriesManager);
@@ -128,13 +124,13 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 									}
 								}
 							}
-                            
-                            logErrors(calcTimeSeries, flowGroup);
 
-						} catch ( FlowGroupComputationException | DataSetException ex) {
+							logErrors(calcTimeSeries, flowGroup);
+
+						} catch (FlowGroupComputationException | DataSetException ex) {
 							String message = String.format("Scripted compute for %i/%i group:%s encountered an exception.", new Object[]{count, groupMapSize, flowGroup.getId()});
 							logger.log(Level.SEVERE, message, ex);
-						} 
+						}
 					}
 				}
 			}
@@ -144,46 +140,44 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 	}
 
 	@Override
-	public void computeAll(String officeId, String[] locationIds, Date start, Date end)
-	{
+	public void computeAll(String officeId, String[] locationIds, Date start, Date end) {
 		for (String locationId : locationIds) {
 			computeAll(officeId, locationId, start, end);
 		}
 	}
 
 	@Override
-	public void computeAll(String officeId, String[] locationIds, long startTime, long endTime)
-	{
+	public void computeAll(String officeId, String[] locationIds, long startTime, long endTime) {
 		for (String locationId : locationIds) {
 			computeAll(officeId, locationId, startTime, endTime);
 		}
 	}
 
 	@Override
-	public void computeFlowGroup(String officeId, String locationId, Date start, Date end, String groupId)
-	{
+	public void computeFlowGroup(String officeId, String locationId, Date start, Date end, String groupId) {
 		long startTime = start.getTime();
 		long endTime = end.getTime();
 		computeFlowGroup(officeId, locationId, startTime, endTime, groupId);
 	}
 
 	@Override
-	public void computeFlowGroup(String officeId, String locationId, long startTime, long endTime, String groupId)
-	{
+	public void computeFlowGroup(String officeId, String locationId, long startTime, long endTime, String groupId) {
 		AtFlowGroupManager flowGroupManager = regiDomain.getAtFlowGroupManager(getManagerId());
-		AtTimeSeriesManager atTimeSeriesManager= regiDomain.getAtTimeSeriesManager(getManagerId());
+		AtTimeSeriesManager atTimeSeriesManager = regiDomain.getAtTimeSeriesManager(getManagerId());
 		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "computeFlowGroup");
 		OptionalParams options = new OptionalParams(metrics);
+
+		possiblyWarnAboutMilliseconds(startTime, endTime);
 
 		LocationTemplate projectLocRef = new LocationTemplate(officeId, locationId);
 		try {
 			Map<IFlowGroup, LocationGroup> conduitGateFlowGroupMap = flowGroupManager.retrieveFlowGroups(projectLocRef,
-				null, CacheUsage.NORMAL);
+					null, CacheUsage.NORMAL);
 
 			Set<Map.Entry<IFlowGroup, LocationGroup>> entrySet = conduitGateFlowGroupMap.entrySet();
 
 			FlowGroupCalc flowGroupCalc = new FlowGroupCalc();
-            
+
 			for (Map.Entry<IFlowGroup, LocationGroup> entry : entrySet) {
 				IFlowGroup flowGroup = entry.getKey();
 				LocationGroup locationGroup = entry.getValue();
@@ -197,28 +191,26 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 	}
 
 	public void computeGroup(IFlowGroup flowGroup, String groupId, FlowGroupCalc flowGroupCalc, long startTime, long endTime,
-		OptionalParams options, AtTimeSeriesManager atTimeSeriesManager)
-	{
+			OptionalParams options, AtTimeSeriesManager atTimeSeriesManager) {
 		if (flowGroup.getId().equals(groupId)) {
-            
-            Metrics metrics = options.getMetrics().createMetrics("computeGroup", flowGroup.getId());
-            
-            
-			try (Timer.Context context = metrics.createTimer().start())
-            {
+
+			Metrics metrics = options.getMetrics().createMetrics("computeGroup", flowGroup.getId());
+
+			possiblyWarnAboutMilliseconds(startTime, endTime);
+
+			try (Timer.Context context = metrics.createTimer().start()) {
 				final TimeZone utcZone = null;
-                
-                if (isProjectTotalFlowGroup(flowGroup))
-                {
-                    //Computing the overrides also stores them in the TS Manager.
-                    computeReleaseOverrides(flowGroup, startTime, endTime, options, atTimeSeriesManager);
-                    logger.log(Level.INFO, "Compute Group:{0} completed normally.", new Object[]{flowGroup.getId()});
-                    return;
-                }
+
+				if (isProjectTotalFlowGroup(flowGroup)) {
+					//Computing the overrides also stores them in the TS Manager.
+					computeReleaseOverrides(flowGroup, startTime, endTime, options, atTimeSeriesManager);
+					logger.log(Level.INFO, "Compute Project Total Flow Group:{0} completed normally.", new Object[]{flowGroup.getId()});
+					return;
+				}
 				Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries
 						= flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup, startTime, endTime, utcZone, options, CacheUsage.NORMAL);
 
-				if (calcTimeSeries == null) {				
+				if (calcTimeSeries == null) {
 					logger.log(Level.SEVERE, " Group:{0} returned null.", new Object[]{flowGroup.getId()});
 				} else if (isCompleteFailure(calcTimeSeries)) {
 					logger.log(Level.SEVERE, "Compute Group:{0} Failed. ", new Object[]{flowGroup.getId()});
@@ -234,8 +226,8 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 								new Object[]{flowGroup.getId()});
 					}
 				}
-                
-                logErrors(calcTimeSeries, flowGroup);
+
+				logErrors(calcTimeSeries, flowGroup);
 
 			} catch (FlowGroupComputationException | DataSetException ex) {
 				String message = String.format("Scripted compute for group:%s encountered an exception.", new Object[]{flowGroup.getId()});
@@ -245,8 +237,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 	}
 
 	@Override
-	public void computeFlowGroup(String officeId, String[] locationIds, Date start, Date end, String groupId)
-	{
+	public void computeFlowGroup(String officeId, String[] locationIds, Date start, Date end, String groupId) {
 		long startTime = start.getTime();
 		long endTime = end.getTime();
 		for (String locationId : locationIds) {
@@ -255,8 +246,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 	}
 
 	@Override
-	public void computeFlowGroup(String officeId, String[] locationIds, long startTime, long endTime, String groupId)
-	{
+	public void computeFlowGroup(String officeId, String[] locationIds, long startTime, long endTime, String groupId) {
 		for (String locationId : locationIds) {
 			computeFlowGroup(officeId, locationId, startTime, endTime, groupId);
 		}
@@ -264,7 +254,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 
 	private boolean isCompleteFailure(Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries) {
 		boolean isEpicFail = true;
-		if(calcTimeSeries != null && !calcTimeSeries.isEmpty()){
+		if (calcTimeSeries != null && !calcTimeSeries.isEmpty()) {
 			for (Map.Entry<FlowGroupTimeSeries, ITimeSeriesComputationResult> entry : calcTimeSeries.entrySet()) {
 				FlowGroupTimeSeries key = entry.getKey();
 				ITimeSeriesComputationResult value = entry.getValue();
@@ -275,96 +265,123 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 				}
 			}
 		}
-		
+
 		return isEpicFail;
 	}
 
 	private int failureCount(Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries) {
-		int failCount = 0; 
-		if(calcTimeSeries != null && !calcTimeSeries.isEmpty()){
+		int failCount = 0;
+		if (calcTimeSeries != null && !calcTimeSeries.isEmpty()) {
 			for (Map.Entry<FlowGroupTimeSeries, ITimeSeriesComputationResult> entry : calcTimeSeries.entrySet()) {
 				FlowGroupTimeSeries key = entry.getKey();
 				ITimeSeriesComputationResult value = entry.getValue();
 
 				if (!(value instanceof TimeSeriesComputationData) || (value instanceof Exception)) {
 					failCount++;
-				} 
+				}
 			}
 		}
-		
+
 		return failCount;
 	}
-    
-    private boolean isProjectTotalFlowGroup(IFlowGroup flowGroup)
-    {
-        return flowGroup.getIdSuffix().equals(DefaultFlowGroup.PROJECT.getGroupSuffix());
-    }
 
-    private void computeReleaseOverrides(IFlowGroup flowGroup, long startTime, long endTime, OptionalParams params, AtTimeSeriesManager atMan)
-    {
-        List<FlowGroupTimeSeries> outputTs = flowGroup.getOutputTimeSeriesList();
-        Date startDate = new Date(startTime);
-        Date endDate = new Date(endTime);
-        OptionalParams options = new OptionalParams(params.getMetrics().createMetrics("computeReleaseOverrides"));
-        
-        AtProjectDescriptor projDesc = new AtProjectDescriptor();
-        projDesc.setProjectLocationRef(flowGroup.getLocationRef());
-        
-        FlowGroupOverrideDataAdapterBase adapter = new FlowGroupOverrideDataAdapterBase(projDesc, getManagerId());
-        for (FlowGroupTimeSeries fgts : outputTs)
-        {
-            try
-            {
-                int intervalOffsetInSeconds = atMan.retrieveUtcIntervalOffset(fgts.getDescriptionTx());
-                
-                //default to 0 if it's not valid.
-                if (intervalOffsetInSeconds == UtcOffsetConst.NO_UTC_OFFSET || intervalOffsetInSeconds == UtcOffsetConst.UNDEFINED_UTC_OFFSET)
-                {
-                    intervalOffsetInSeconds = 0;
-                }
-                
-                DataSetTx dstx = adapter.getMergedTimeSeries(flowGroup, new HashSet<IFlowGroup>(), fgts.getInterval(), fgts.getParameterTypeString(), startDate, endDate,null, null, null, options, intervalOffsetInSeconds,CacheUsage.NORMAL);
-                
-                if (dstx == null)
-                {
-                    logger.log(Level.SEVERE, "Unable to compute {1}.{0} Time Series for flowgroup: {2}", new Object[]{fgts.getIntervalString(), fgts.getParameterTypeString(), flowGroup.toString()});
-                }
-                else if (dstx.getNumberValues() == 0)
-                {
-                    logger.log(Level.SEVERE, "No data computed for {1}.{0} Time Series for flowgroup: {2}", new Object[]{fgts.getIntervalString(), fgts.getParameterTypeString(), flowGroup.toString()});
-                }
-                else
-                {
-                    //This should flag the time series manager as modified, I believe this was being missed in the getMergedTimeSeries function.
-                    atMan.setModified(true);
-                }
-            }
-            catch (DbConnectionException | DbIoException | DataSetException ex)
-            {
-                logger.log(Level.SEVERE, "Unable to compute " + fgts.toString() + ", see error log. ", ex);
-            }
-        }
-    }
+	private boolean isProjectTotalFlowGroup(IFlowGroup flowGroup) {
+		return flowGroup.getIdSuffix().equals(DefaultFlowGroup.PROJECT.getGroupSuffix());
+	}
 
-    private void logErrors(Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries, IFlowGroup flowGroup)
-    {
-        if (calcTimeSeries != null)
-        {
-            for (FlowGroupTimeSeries fgts : calcTimeSeries.keySet())
-            {
-                ITimeSeriesComputationResult result = calcTimeSeries.get(fgts);
-                
-                if (result instanceof TimeSeriesComputationError)
-                {
-                    logger.log(Level.SEVERE, "{0} failed to compute due to:\n{1}", new Object[]{fgts.toString(), ((TimeSeriesComputationError) result).getMessage()});
-                    logger.log(Level.SEVERE, "Stacktrace:", (Exception)result);
-                }
-            }
-            
-            if (flowGroup.getOutputTimeSeriesList().isEmpty())
-            {
-                logger.log(Level.SEVERE, "No output time series set on flow group.");
-            }
-        }
-    }
+	private void computeReleaseOverrides(IFlowGroup flowGroup, long startTime, long endTime, OptionalParams params, AtTimeSeriesManager atMan) {
+		List<FlowGroupTimeSeries> outputTs = flowGroup.getOutputTimeSeriesList();
+
+		OptionalParams options = new OptionalParams(params.getMetrics().createMetrics("computeReleaseOverrides"));
+
+		Date startDate = new Date(startTime);
+		Date endDate = new Date(endTime);
+		possiblyWarnAboutMilliseconds(startDate, endDate);
+
+		AtProjectDescriptor projDesc = new AtProjectDescriptor();
+		projDesc.setProjectLocationRef(flowGroup.getLocationRef());
+
+		FlowGroupOverrideDataAdapterBase adapter = new FlowGroupOverrideDataAdapterBase(projDesc, getManagerId());
+		for (FlowGroupTimeSeries fgts : outputTs) {
+			try {
+				int intervalOffsetInSeconds = atMan.retrieveUtcIntervalOffset(fgts.getDescriptionTx());
+
+				//default to 0 if it's not valid.
+				if (intervalOffsetInSeconds == UtcOffsetConst.NO_UTC_OFFSET || intervalOffsetInSeconds == UtcOffsetConst.UNDEFINED_UTC_OFFSET) {
+					intervalOffsetInSeconds = 0;
+				}
+
+				DataSetTx dstx = adapter.getMergedTimeSeries(flowGroup, new HashSet<IFlowGroup>(), fgts.getInterval(), fgts.getParameterTypeString(), startDate, endDate, null, null, null, options, intervalOffsetInSeconds, CacheUsage.NORMAL);
+
+				if (dstx == null) {
+					logger.log(Level.SEVERE, "Unable to compute {1}.{0} Time Series for flowgroup: {2}", new Object[]{fgts.getIntervalString(), fgts.getParameterTypeString(), flowGroup.toString()});
+				} else if (dstx.getNumberValues() == 0) {
+					logger.log(Level.SEVERE, "No data computed for {1}.{0} Time Series for flowgroup: {2}", new Object[]{fgts.getIntervalString(), fgts.getParameterTypeString(), flowGroup.toString()});
+				} else {
+					//This should flag the time series manager as modified, I believe this was being missed in the getMergedTimeSeries function.
+					atMan.setModified(true);
+				}
+			} catch (DbConnectionException | DbIoException | DataSetException ex) {
+				logger.log(Level.SEVERE, "Unable to compute " + fgts.toString() + ", see error log. ", ex);
+			}
+		}
+	}
+
+	private void possiblyWarnAboutMilliseconds(long start, long end) {
+		possiblyWarnAboutMilliseconds(new Date(start), new Date(end));
+	}
+
+	private void possiblyWarnAboutMilliseconds(Date startDate, Date endDate) {
+		Calendar cal = Calendar.getInstance();
+		cal.clear();
+		cal.setTime(startDate);
+		boolean startHasSecOrMillis = cal.get(Calendar.MILLISECOND) != 0 || cal.get(Calendar.SECOND) != 0;
+		cal.clear();
+		cal.setTime(endDate);
+		boolean endHasSecOrMillis = cal.get(Calendar.MILLISECOND) != 0 || cal.get(Calendar.SECOND) != 0;
+
+		String end = "Typically times are only specified to the hour or minute. "
+				+ "Using seconds or milliseconds can cause errors because these times do not align with the expected intervals.  "
+				+ "If these times have been generated by java.util.Calendar calling clear() before setting individual "
+				+ "fields will reset calendar values to 0.  Alternatively calendar.set(Calendar.MILLISECOND, 0) "
+				+ "and calendar.set(Calendar.SECOND, 0) will clear millisecond and second values. ";
+
+		String message = null;
+		
+		if (startHasSecOrMillis && endHasSecOrMillis) {
+			 message = "The supplied start and end times have non-zero seconds or milliseconds components, " + end;
+			
+		} else if (startHasSecOrMillis) {
+			 message = "The supplied start time has a non-zero second or millisecond component, " + end;
+			
+		} else if (endHasSecOrMillis) {
+			 message = "The supplied end time has a non-zero second or millisecond component, " + end;
+		}
+		
+		if(message != null){
+			boolean onlyWarn = Boolean.getBoolean("rowcps.headless.warn_and_continue");
+			if(onlyWarn){
+				logger.log(Level.WARNING, message);
+			} else {
+				throw new IllegalArgumentException(message);
+			}
+		}
+	}
+
+	private void logErrors(Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries, IFlowGroup flowGroup) {
+		if (calcTimeSeries != null) {
+			for (FlowGroupTimeSeries fgts : calcTimeSeries.keySet()) {
+				ITimeSeriesComputationResult result = calcTimeSeries.get(fgts);
+
+				if (result instanceof TimeSeriesComputationError) {
+					logger.log(Level.SEVERE, "{0} failed to compute due to:\n{1}", new Object[]{fgts.toString(), ((TimeSeriesComputationError) result).getMessage()});
+					logger.log(Level.SEVERE, "Stacktrace:", (Exception) result);
+				}
+			}
+
+			if (flowGroup.getOutputTimeSeriesList().isEmpty()) {
+				logger.log(Level.SEVERE, "No output time series set on flow group.");
+			}
+		}
+	}
 }
