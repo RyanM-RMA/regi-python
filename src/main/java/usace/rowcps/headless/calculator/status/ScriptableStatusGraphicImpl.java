@@ -423,7 +423,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 //		releasesGraphicPanel.print(g);
 		String imageFormat = getFormatFromFile(filename);
 		File file = new File(filename);
-		file.mkdirs();
+		file.getParentFile().mkdirs();
 		
 		try (FileOutputStream fos = new FileOutputStream(file);
 				BufferedOutputStream bos = new BufferedOutputStream(fos);) {
