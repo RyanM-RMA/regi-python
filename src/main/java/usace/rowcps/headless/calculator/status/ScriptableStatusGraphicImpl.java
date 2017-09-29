@@ -130,7 +130,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		};
 
 		checkForKnownNeededServices();
-		
+
 		AtMapTemplateManager atMapTemplateManager = this.regiDomain.getAtMapTemplateManager(managerId);
 
 		MapTemplateLayer mtl = getMapTemplateLayer(templateName);
@@ -185,14 +185,14 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 
 	private boolean checkForKnownNeededServices() {
 		boolean retval = false;
-		
+
 		boolean hasCalcFlow = hasGlobalService(CalcFlowGroupTimeSeriesService.class);
-		if(!hasCalcFlow){			
+		if (!hasCalcFlow) {
 			ServiceLoader serviceLoader = ServiceLoader.load(CalcFlowGroupTimeSeriesService.class);
 			hasCalcFlow = hasService(CalcFlowGroupTimeSeriesService.class, serviceLoader);
 		}
-		
-		if(!hasCalcFlow){
+
+		if (!hasCalcFlow) {
 			String mesg = "The CalcFlowGroupTimeSeriesService was not found and is known to be needed by Regi Headless.  "
 					+ "Without this service the headless Status Graphic generation may not generate the correct values.  "
 					+ "Even if the necessary classes are in the classpath, the services may still not be found "
@@ -201,9 +201,9 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 					+ "but not the service definitions.";
 			logger.warning(mesg);
 		}
-		
+
 		boolean hasProjectChild = hasGlobalService(ProjectChildLocationCacheService.class);
-		if(!hasCalcFlow){
+		if (!hasCalcFlow) {
 			String mesg = "A ProjectChildLocationCacheService was not found and is known to be needed by Regi Headless.  "
 					+ "Without this service the headless Status Graphic generation may not generate the correct values.  "
 					+ "Even if the necessary classes are in the classpath, the services may still not be found "
@@ -213,9 +213,9 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 			logger.warning(mesg);
 		}
 
-		return hasCalcFlow && hasProjectChild;		
+		return hasCalcFlow && hasProjectChild;
 	}
-	
+
 	private boolean hasGlobalService(Class klass) {
 		GlobalServiceLoaderDelegate instance = GlobalServiceLoader.getInstance();
 		ServiceLoader serviceLoader = instance.getServiceLoader(klass);
@@ -226,10 +226,10 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 	private boolean hasService(Class klass, ServiceLoader sl) {
 		boolean hasCalcFlow = false;
 		ServiceLoader serviceLoader;
-		
+
 		GlobalServiceLoaderDelegate instance = GlobalServiceLoader.getInstance();
 		serviceLoader = instance.getServiceLoader(klass);
-		
+
 		for (Object service : serviceLoader) {
 			hasCalcFlow = true;
 			break;
@@ -424,7 +424,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		String imageFormat = getFormatFromFile(filename);
 		File file = new File(filename);
 		file.getParentFile().mkdirs();
-		
+
 		try (FileOutputStream fos = new FileOutputStream(file);
 				BufferedOutputStream bos = new BufferedOutputStream(fos);) {
 			logger.info("Writing releases image to output stream.");
@@ -463,29 +463,30 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 
 	public TimeInfo getTimeInfo(Date current, TimeZone tz) {
 		final int MILLIS_PER_HOUR = 1000 * 60 * 60;
+		// The time controls internally use HecTimes with utc values and Regi formats them to the display timezone in the ui
+		// components.
+		// In headless the user is giving us a Date object and a timezone that date object is in.
+		// So imagine the user wants a graphic displayed at midnight on 4/18 in CDT.  Say that UTC is ahead of CDT by 5 hours
+		// so we need hectime to actually store the time at 5AM
+		
 
-		Calendar startCal = new GregorianCalendar(tz);
-		startCal.setTime(current);
-		HecTime start = new HecTime(startCal);
+		HecTime start = new HecTime(current, 0);
 
 		Calendar endCal = new GregorianCalendar(tz);
 		endCal.setTime(current);
 		endCal.add(Calendar.DAY_OF_MONTH, 1);
-		HecTime end = new HecTime(endCal);
+		Date endDate = endCal.getTime();
+		HecTime end = new HecTime(endDate, 0);
 
 		Calendar curCal = new GregorianCalendar(tz);
 		curCal.setTime(current);
-		HecTime curTime = new HecTime(curCal);
+		Date curDate = curCal.getTime();
+		HecTime curTime = new HecTime(curDate, 0);
 		curTime.showTimeAsBeginningOfDay(true);
 
 		int stepSize = 1000 * 60 * 60;  // millisPerHour
 		TimeInfo ti = new TimeInfo(start, end, curTime, stepSize);
 		return ti;
-//        startHecTime.setTimeGranularity(HecTime.MINUTE_GRANULARITY);
-//        endHecTime.setTimeGranularity(HecTime.MINUTE_GRANULARITY);
-//        curTime.setTimeGranularity(HecTime.MINUTE_GRANULARITY);
-//        TimeInfo retval = new TimeInfo(startHecTime, endHecTime, curTime, MILLIS_PER_HOUR);
-//        return retval;
 	}
 
 	private List<IMapTemplate> getMapTemplates() throws DbIoException, DbConnectionException {
@@ -839,7 +840,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 			SwingUtilities.invokeLater(futureTask);
 			try {
 				// Not sure how long to wait here.  Infinite is wrong.
-				bImage = futureTask.get(1, TimeUnit.MINUTES);
+				bImage = futureTask.get(5, TimeUnit.MINUTES);
 			} catch (InterruptedException ex) {
 				Thread.currentThread().interrupt();
 				throw new IOException("Background paint was interrupted.", ex);
