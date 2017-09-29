@@ -1,5 +1,7 @@
 package usace.rowcps.headless.calculator.status;
 
+import com.rma.ui.pinnable.PinnableComponentGlassPane;
+import com.rma.ui.pinnable.PinnableComponentGlassPaneFactory;
 import hec.data.location.AssignedLocation;
 import hec.data.location.Location;
 import hec.data.location.LocationCategoryRef;
@@ -66,6 +68,7 @@ import javax.imageio.IIOImage;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.swing.JComponent;
+import javax.swing.JLayer;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import rma.services.GlobalServiceLoader;
@@ -83,6 +86,7 @@ import usace.rowcps.data.stream.IStreamLocation;
 import usace.rowcps.decisionsupport.ui.DecisionSupportEditor;
 import usace.rowcps.decisionsupport.ui.basinconnectivity.BasinConnectivityDataAdapter;
 import usace.rowcps.decisionsupport.ui.basinpie.BasinPieModel;
+import usace.rowcps.decisionsupport.ui.basinpie.annotations.BasinPieAnnotationLayer;
 import usace.rowcps.decisionsupport.ui.graphics.releases.ReleasesGraphicData;
 import usace.rowcps.decisionsupport.ui.graphics.utilities.GraphicConstants;
 import usace.rowcps.decisionsupport.ui.mappanel.OperationSupportBasinTreeModel;
@@ -769,6 +773,19 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		TimeZone timezone = regiDomain.getTimeZone();
 		piePanel.setTimeZone(timezone);
 
+		JLayer piePanelJLayerWrapper = new JLayer(piePanel);
+		BasinPieAnnotationLayer basinPieAnnotationLayer = new BasinPieAnnotationLayer();
+		PinnableComponentGlassPane glassPane = PinnableComponentGlassPaneFactory.createNewGlassPane(basinPieAnnotationLayer, piePanel);
+		
+		piePanelJLayerWrapper.setGlassPane(glassPane);
+		glassPane.addPinnableContainer(basinPieAnnotationLayer);
+		basinPieAnnotationLayer.setPinnableContainer(glassPane.getPinnableContainer(basinPieAnnotationLayer));
+				
+		PinnableComponentGlassPaneFactory.getGlassPane(basinPieAnnotationLayer).setVisible(true);
+		
+		basinPieAnnotationLayer.setChartTemplate(pieModel.getChartTemplate());
+		basinPieAnnotationLayer.resetFromChartTemplate();
+		
 		logger.fine("Filling panel with model.");
 		piePanel.fillPanel(pieModel);
 		logger.info("Setting active date:" + date);
@@ -787,7 +804,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 //			logger.info("Writing to output stream");
 //			saveToStream(bos, piePanel, imageFormat, 100.0f);
 //		}		
-		layoutAndSave(piePanel, d, file, imageFormat);
+		layoutAndSave(piePanelJLayerWrapper, d, file, imageFormat);
 	}
 
 	private IBasin findBasinById(String basinId) throws DbConnectionException {
