@@ -30,6 +30,7 @@ import usace.rowcps.computation.inflow.InflowCache;
 import usace.rowcps.computation.inflow.InflowComputation;
 import usace.rowcps.computation.inflow.ZeroNegativeAdjustedInflowsAction;
 import usace.rowcps.data.CacheInitializationException;
+import usace.rowcps.data.LocalOffset;
 import usace.rowcps.data.project.AtProjectDescriptor;
 import usace.rowcps.data.tabs.RegiTabSpec;
 import usace.rowcps.data.tabs.RegiTabType;
@@ -58,7 +59,8 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 
     private Map<LocationTemplate, InflowAdjustedTypeModel> statusMaps = new HashMap<>();
 
-    private IntervalProvider intervalProvider = new IntervalProvider() {
+    private IntervalProvider buildIntervalProvider(TimeZone projectTimeZone) {
+    return new IntervalProvider() {
         @Override
         public boolean isPeriodAverage() {
 //                return _periodAverageFlows;
@@ -87,8 +89,15 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
         public int getIntervalOffsetSeconds() {
             return (int) (_msTimeOffsetIntoInterval / 1000L);
         }
+
+        @Override
+        public int getUtcIntervalOffsetSeconds() {
+            LocalOffset localOffset = new LocalOffset(projectTimeZone, getInterval());
+				return localOffset.getUtcOffsetInSeconds();
+        }
     };
 
+    }
     public ScriptableInflowImpl(RegiDomain regiDomain, ManagerId managerId) {
         super(regiDomain, managerId);
     }
@@ -263,10 +272,10 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
                 return 31;
             }
         };
-
+        TimeZone projectTimeZone = atProjectManager.getIProject(projectDescriptor).getProjectTimeZone();
         InflowCache inflowCache = new InflowCache(currentDayControl, getManagerId(), projectDescriptor,
                 eventThreadExceptionProcessor, completionCallbackTarget,
-                modifiedDatesForCachedSettings, getIntervalProvider()) {
+                modifiedDatesForCachedSettings, projectTimeZone, getIntervalProvider(projectTimeZone)) {
 
             @Override
             protected void updateHeadTimeWindow(Calendar start, Calendar end, SortedMap<Date, ? extends Object> currentCache) {
@@ -314,8 +323,8 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
         return inflowCache;
     }
 
-    public IntervalProvider getIntervalProvider() {
-        return intervalProvider;
+    public IntervalProvider getIntervalProvider(TimeZone projectTimeZone) {
+        return buildIntervalProvider(projectTimeZone);
     }
 
     private InflowAdjustedTypeModel getOrCreateStatusMap(LocationTemplate template) {
