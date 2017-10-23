@@ -12,7 +12,7 @@ public class HeadlessHandleImpl implements IProgressHandle
 {
 	private static final Logger logger = Logger.getLogger(HeadlessHandleImpl.class.getName());
 	private String name;
-
+	private boolean _isRunning;
 
 	HeadlessHandleImpl(String string)
 	{
@@ -23,18 +23,21 @@ public class HeadlessHandleImpl implements IProgressHandle
 	public void start()
 	{
 		logger.log(Level.FINE, "start");
+		_isRunning = true;
 	}
 
 	@Override
 	public void start(int workunits)
 	{
 		logger.log(Level.FINE, "start");
+		_isRunning = true;
 	}
 
 	@Override
 	public void start(int workunits, long estimate)
 	{
 		logger.log(Level.FINE, "start");
+		_isRunning = true;
 	}
 
 	@Override
@@ -47,6 +50,7 @@ public class HeadlessHandleImpl implements IProgressHandle
 	public void suspend(String message)
 	{
 		logger.log(Level.FINE, "suspend");
+		_isRunning = false;
 	}
 
 	@Override
@@ -65,6 +69,7 @@ public class HeadlessHandleImpl implements IProgressHandle
 	public void finish()
 	{
 		logger.log(Level.FINE, "finish");
+		_isRunning = false;
 	}
 
 	@Override
@@ -95,6 +100,12 @@ public class HeadlessHandleImpl implements IProgressHandle
 	public void setDisplayName(String newDisplayName)
 	{
 		logger.log(Level.FINE, "setDisplayName");
+	}
+	
+	@Override
+	public boolean isRunning()
+	{
+		return _isRunning;
 	}
 
 }
