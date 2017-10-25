@@ -2,6 +2,7 @@ package usace.rowcps.headless.calculator.status;
 
 import com.rma.ui.pinnable.PinnableComponentGlassPane;
 import com.rma.ui.pinnable.PinnableComponentGlassPaneFactory;
+import com.rma.ui.pinnable.PinnableContainer;
 import hec.data.location.AssignedLocation;
 import hec.data.location.Location;
 import hec.data.location.LocationCategoryRef;
@@ -770,17 +771,20 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 	private void writeBasinImage(Dimension d, final BasinPieModel pieModel, Date date, String file, String imageFormat) throws FileNotFoundException, IOException {
 
 		final PiePanel piePanel = new PiePanel();
+
 		TimeZone timezone = regiDomain.getTimeZone();
 		piePanel.setTimeZone(timezone);
 
 		JLayer piePanelJLayerWrapper = new JLayer(piePanel);
 		BasinPieAnnotationLayer basinPieAnnotationLayer = new BasinPieAnnotationLayer();
 		PinnableComponentGlassPane glassPane = PinnableComponentGlassPaneFactory.createNewGlassPane(basinPieAnnotationLayer, piePanel);
-		
+
 		piePanelJLayerWrapper.setGlassPane(glassPane);
 		glassPane.addPinnableContainer(basinPieAnnotationLayer);
-		basinPieAnnotationLayer.setPinnableContainer(glassPane.getPinnableContainer(basinPieAnnotationLayer));
-				
+		PinnableContainer container = glassPane.getPinnableContainer(basinPieAnnotationLayer);
+		basinPieAnnotationLayer.setPinnableContainer(container);
+		container.setSize(d);
+
 		PinnableComponentGlassPaneFactory.getGlassPane(basinPieAnnotationLayer).setVisible(true);
 		
 		basinPieAnnotationLayer.setChartTemplate(pieModel.getChartTemplate());
