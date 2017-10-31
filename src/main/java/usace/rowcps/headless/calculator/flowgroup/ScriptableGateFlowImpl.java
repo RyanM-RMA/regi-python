@@ -106,8 +106,10 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 							//			intervalOffsetSeconds, startCal.getTime(), null);
 							logger.log(Level.INFO, "Computing {0}/{1} Group:{2}",
 									new Object[]{count, groupMapSize, flowGroup.getId()});
+                                                        List<FlowGroupTimeSeries> outputTimeSeries = flowGroup.getOutputTimeSeriesList();
 							Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries
-									= flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup, startTime, endTime, utcZone, options, CacheUsage.NORMAL);
+									= flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup, startTime, endTime, outputTimeSeries, utcZone, options, CacheUsage.NORMAL);
+//									= flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup, startTime, endTime, utcZone, options, CacheUsage.NORMAL);
 							if (calcTimeSeries == null) {
 								// I think that this means there was an error...
 								logger.log(Level.SEVERE, "Compute {0}/{1} Group:{2} returned null.", new Object[]{count, groupMapSize, flowGroup.getId()});
@@ -215,9 +217,10 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 					logger.log(Level.INFO, "Compute Project Total Flow Group:{0} completed normally.", 
 							new Object[]{flowGroup.getId()});
 					return;
-				}
+				}           
+                                List<FlowGroupTimeSeries> outputTimeSeries = flowGroup.getOutputTimeSeriesList();
 				Map<FlowGroupTimeSeries, ITimeSeriesComputationResult> calcTimeSeries
-						= flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup, startTime, endTime, utcZone, options, CacheUsage.NORMAL);
+						= flowGroupCalc.calcTimeSeries(getManagerId(), flowGroup, startTime, endTime, outputTimeSeries, options, CacheUsage.NORMAL);
 
 				if (calcTimeSeries == null) {
 					logger.log(Level.SEVERE, " Group:{0} returned null.", new Object[]{flowGroup.getId()});
@@ -323,7 +326,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 					intervalOffsetInSeconds = 0;
 				}
 
-				DataSetTx dstx = adapter.getMergedTimeSeries(flowGroup, new HashSet<IFlowGroup>(), fgts.getInterval(), fgts.getParameterTypeString(), startDate, endDate, null, null, null, options, intervalOffsetInSeconds, CacheUsage.NORMAL);
+				DataSetTx dstx = adapter.getMergedTimeSeries(flowGroup, new HashSet<IFlowGroup>(), fgts.getInterval(), fgts.getParameterTypeString(), startDate, endDate, null, null, null, options, intervalOffsetInSeconds, CacheUsage.NORMAL, true);
 
 				if (dstx == null) {
 					logger.log(Level.SEVERE, "Unable to compute {1}.{0} Time Series for flowgroup: {2}", new Object[]{fgts.getIntervalString(), fgts.getParameterTypeString(), flowGroup.toString()});
