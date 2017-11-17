@@ -76,6 +76,9 @@ import rma.services.GlobalServiceLoader;
 import rma.services.GlobalServiceLoaderDelegate;
 import usace.metrics.services.Metrics;
 import usace.metrics.services.MetricsServiceProvider;
+import usace.rowcps.computation.basinconnectivity.BasinConnectivityModel;
+import usace.rowcps.computation.basinconnectivity.IBasinConnectivityLocation;
+import usace.rowcps.computation.basinconnectivity.IBasinConnectivityModel;
 import usace.rowcps.computation.common.IEventThreadExceptionProcessor;
 import usace.rowcps.computation.services.CalcFlowGroupTimeSeriesService;
 import usace.rowcps.data.basin.IBasin;
@@ -85,7 +88,6 @@ import usace.rowcps.data.maptemplate.reservoir.ReservoirGraphicOptionData;
 import usace.rowcps.data.project.IProject;
 import usace.rowcps.data.stream.IStreamLocation;
 import usace.rowcps.decisionsupport.ui.DecisionSupportEditor;
-import usace.rowcps.decisionsupport.ui.basinconnectivity.BasinConnectivityDataAdapter;
 import usace.rowcps.decisionsupport.ui.basinpie.BasinPieModel;
 import usace.rowcps.decisionsupport.ui.basinpie.annotations.BasinPieAnnotationLayer;
 import usace.rowcps.decisionsupport.ui.graphics.releases.ReleasesGraphicData;
@@ -99,6 +101,7 @@ import usace.rowcps.regi.interfaces.model.ProjectChildLocationCacheService;
 import usace.rowcps.regi.model.AtBasinManager;
 import usace.rowcps.regi.model.AtChartTemplateManager;
 import usace.rowcps.regi.model.AtProjectManager;
+import usace.rowcps.regi.model.ManagerIdUtil;
 import usace.rowcps.regi.model.OptionalParams;
 import usace.rowcps.regi.ui.gfx2d.PiePanel;
 
@@ -554,10 +557,10 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 //				return managerId;
 //			}
 //		});
-		BasinConnectivityDataAdapter connDA = BasinConnectivityDataAdapter.getInstance();
+		IBasinConnectivityModel connModel = new BasinConnectivityModel(ManagerIdUtil.getReadOnlyManagerIdProvider().getManagerId());
 
 		// This also primes connDA for the getPrimary call..
-		LocationGroup lg = buildLocationGroupWithAssignedLocations(connDA, basinId);
+		LocationGroup lg = buildLocationGroupWithAssignedLocations(connModel, basinId);
 		Set<AssignedLocation> assignedLocations = lg.getAssignedLocations();
 
 		List<LocationTemplate> locs = new ArrayList<>();
@@ -601,16 +604,16 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		Date startDate = dateSet.first();
 		Date endDate = dateSet.last();
 
-		BasinConnectivityDataAdapter connDA = BasinConnectivityDataAdapter.getInstance();
+		IBasinConnectivityModel connModel = new BasinConnectivityModel(ManagerIdUtil.getReadOnlyManagerIdProvider().getManagerId());
 
 		// This also primes connDA for the getPrimary call..
-		LocationGroup lg = buildLocationGroupWithAssignedLocations(connDA, basinId);
+		LocationGroup lg = buildLocationGroupWithAssignedLocations(connModel, basinId);
 
 		boolean isBasin = true;
-		LocationGroup projectsOnly = DecisionSupportEditor.getProjectOnlyLocationGroup(lg, connDA, isBasin);
+		LocationGroup projectsOnly = DecisionSupportEditor.getProjectOnlyLocationGroup(lg, connModel, isBasin);
 
 		final OperationSupportBasinTreeModel treeModel = new OperationSupportBasinTreeModel(null);
-		treeModel.fillBasinTree(lg, connDA);
+		treeModel.fillBasinTree(lg, connModel);
 
 		for (IChartTemplate chartTemplate : templates) {
 			logger.info("Generating images for template:" + chartTemplate.getId());
@@ -738,7 +741,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		return pieModel;
 	}
 
-	public LocationGroup buildLocationGroupWithAssignedLocations(BasinConnectivityDataAdapter connDA, String basinId) throws DbConnectionException {
+	public LocationGroup buildLocationGroupWithAssignedLocations(IBasinConnectivityModel connModel, String basinId) throws DbConnectionException {
 		IBasin basin = findBasinById(basinId);
 
 		LocationCategoryRef categoryRef = new LocationCategoryRef(AtBasinManager.BASIN_CATEGORY_REF_ID, basin.getOfficeId());
@@ -748,26 +751,34 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc implemen
 		lg.setLocationGroupRef(new LocationGroupRef(categoryRef, basin.getOfficeId(), basin.getBasinId()));
 
 		// This also primes connDA for the getPrimary call..
-		List<IStreamLocation> streamLocations = connDA.getStreamLocations(basin);
+		connModel.fillModel(basin, null, new OptionalParams());
+		IBasinConnectivityLocation loc = connModel.getStreamBase(basin.getBasinId(), new OptionalParams());
 
-		LocationTemplate assocLoc = new LocationTemplate(basin.getOfficeId(), basin.getBasinId(), null);
-		Set<AssignedLocation> assLocs = new HashSet<>();
+		LocationTemplate assocLoc = new LocationTemplate(basin.getOfficeId(), basin.getPrimaryStream(), null);
+		Set<AssignedLocation> assignedLocations = new HashSet<>();
 
 		AtomicInteger counter = new AtomicInteger(0);
-		for (IStreamLocation loc : streamLocations) {
-			String locationKind = connDA.getLocationKind(loc);
-			LocationTemplate streamLocTemplate = new LocationTemplate(basin.getOfficeId(), loc.getLocationId(), null);
-			AssignedLocation aLoc = new AssignedLocation(streamLocTemplate, loc.getLocationId(), 0, assocLoc);
-			aLoc.setDescription("  (" + locationKind + ")");
-			aLoc.setAttribute(counter.getAndIncrement());
-			assLocs.add(aLoc);
-		}
 
-		lg.setAssignedLocations(assLocs);
+		populate(assocLoc, assignedLocations, loc, basin.getOfficeId(), counter);
+		
+		lg.setAssignedLocations(assignedLocations);
 
 		return lg;
 	}
 
+	private void populate(LocationTemplate associatedLocation, Set<AssignedLocation> assignedLocations, IBasinConnectivityLocation from, String officeId, AtomicInteger counter)
+	{
+		for(IBasinConnectivityLocation connLoc : from.getStreamBases())
+		{
+			LocationTemplate streamLocTemplate = new LocationTemplate(officeId, connLoc.getLocationId(), null);
+			AssignedLocation aLoc = new AssignedLocation(streamLocTemplate, from.getLocationId(), 0, associatedLocation);
+			aLoc.setDescription("  (" + from.getLocationKind() + ")");
+			aLoc.setAttribute(counter.getAndIncrement());
+			assignedLocations.add(aLoc);
+			populate(associatedLocation, assignedLocations, connLoc, officeId, counter);
+		}
+	}
+	
 	private void writeBasinImage(Dimension d, final BasinPieModel pieModel, Date date, String file, String imageFormat) throws FileNotFoundException, IOException {
 
 		final PiePanel piePanel = new PiePanel();
