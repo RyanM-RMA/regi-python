@@ -127,6 +127,7 @@ public class ScriptableExportTSAssociationsImpl implements ScriptableExportAssoc
 		}
 		else
 		{
+			configureFormatter(formatter, project.getProjectId());
 			IAssociationProvider<ITimeSeriesAssociation> timeSeriesAssociationProvider = project.getTimeSeriesAssociationProvider();
 			if(timeSeriesAssociationProvider != null)
 			{
