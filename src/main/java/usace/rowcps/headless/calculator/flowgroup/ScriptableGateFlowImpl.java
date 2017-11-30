@@ -75,9 +75,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
                         new Date(endTime),
                         CacheUsage.NORMAL,
                         options,
-                        logger,
                         timeZone);
-                
             } catch (DbIoException | DbConnectionException ex)
             {
                 logger.log(Level.SEVERE, null, ex);
@@ -135,7 +133,6 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
                         new Date(endTime),
                         CacheUsage.NORMAL,
                         options,
-                        logger,
                         timeZone);
                 
             } catch (DbIoException | DbConnectionException ex)
