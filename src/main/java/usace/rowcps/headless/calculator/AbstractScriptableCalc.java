@@ -5,8 +5,10 @@
  */
 package usace.rowcps.headless.calculator;
 
+import usace.rowcps.regi.interfaces.model.ManagerIdProvider;
 import usace.rowcps.regi.model.ManagerId;
 import usace.rowcps.regi.model.RegiDomain;
+import usace.rowcps.regi.model.SimpleManagerIdProvider;
 
 /**
  *
@@ -16,11 +18,13 @@ public abstract class AbstractScriptableCalc
 {
 	public final RegiDomain regiDomain;
 	public final ManagerId managerId;
+        public final ManagerIdProvider manIdProvider;
 
 	public AbstractScriptableCalc(RegiDomain regiDomain, ManagerId manId)
 	{
 		this.regiDomain = regiDomain;
 		this.managerId = manId;
+                this.manIdProvider = new SimpleManagerIdProvider(managerId);
 	}
 
 	/**
@@ -38,4 +42,9 @@ public abstract class AbstractScriptableCalc
 	{
 		return managerId;
 	}
+        
+        public ManagerIdProvider getManagerIdProvider()
+        {
+            return manIdProvider;
+        }
 }
