@@ -58,6 +58,7 @@ import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -65,6 +66,7 @@ import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
+import static java.util.stream.Collectors.toList;
 import javax.imageio.IIOImage;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
@@ -72,6 +74,7 @@ import javax.swing.JComponent;
 import javax.swing.JLayer;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
+import org.openide.util.Exceptions;
 import rma.services.GlobalServiceLoader;
 import rma.services.GlobalServiceLoaderDelegate;
 import usace.metrics.services.Metrics;
@@ -79,9 +82,9 @@ import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.basinpie.ui.BasinPieModel;
 import usace.rowcps.basinpie.ui.annotations.BasinPieAnnotationLayer;
 import usace.rowcps.computation.basinconnectivity.BasinConnectivityDataAdapter;
-import usace.rowcps.computation.basinconnectivity.BasinConnectivityModel;
 import usace.rowcps.computation.basinconnectivity.IBasinConnectivityLocation;
 import usace.rowcps.computation.basinconnectivity.IBasinConnectivityModel;
+import usace.rowcps.computation.basinconnectivity.LocationGroupFactory;
 import usace.rowcps.computation.common.IEventThreadExceptionProcessor;
 import usace.rowcps.computation.services.CalcFlowGroupTimeSeriesService;
 import usace.rowcps.data.basin.IBasin;
@@ -102,7 +105,14 @@ import usace.rowcps.regi.model.OptionalParams;
 import usace.rowcps.regi.ui.gfx2d.PiePanel;
 import usace.rowcps.decisionsupport.ui.basintree.OperationSupportBasinTreeModel;
 import usace.rowcps.mappanel.ui.template.MapTemplateLayer;
-import usace.rowcps.decisionsupport.LocationGroupUtil;
+import usace.rowcps.decisionsupport.ui.DateTimePlayerListener;
+import usace.rowcps.decisionsupport.ui.basintree.BasinTreeModel;
+import usace.rowcps.decisionsupport.ui.basintree.BasinTreeSelectionData;
+import usace.rowcps.decisionsupport.ui.basintree.BasinTreeSelectionService;
+import usace.rowcps.decisionsupport.ui.basintree.StaticBasinTreeSelectionData;
+import usace.rowcps.mappanel.ui.MapPanelDateRange;
+import usace.rowcps.mappanel.ui.MapPanelDateRangeService;
+import usace.rowcps.regi.executor.FutureDescriptor;
 
 /**
  *
@@ -127,7 +137,9 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
                                              final int width, final int height,
                                              String filename) throws DbConnectionException, DbIoException, IOException, InterruptedException, ExecutionException, TimeoutException
     {
-
+        MapDateService mapDateService = new MapDateService(current);
+        MapPanelDateRangeService.registerRange(getManagerId(), mapDateService);
+        
         LocationTemplate locTemp = new LocationTemplate(officeId, locationId);
 
         AtLocationManager locMan = this.regiDomain.getAtLocationManager(getManagerId());
@@ -552,49 +564,77 @@ return bImage;
         return retval;
     }
 
-    public void generateBasinPieImage(final String officeId,
+    public void generateBasinPieImageForGroup(final String officeId,
+                                      final String locationStr,
+                                      final String groupId,
+                                      final Date date, final int width,
+                                      final int height, final String template,
+                                      final String file) throws Exception
+    {
+        String[] locations = new String[] {locationStr};
+        Date[] dates = new Date[] {date};
+        String[] templates = new String[]{template};
+        generateBasinPieImagesForGroup(officeId, locations, groupId, dates, width, 
+                                    height, templates, file);
+    }
+    
+    public void generateBasinPieImageForBasin(final String officeId,
                                       final String locationStr,
                                       final String basinId,
                                       final Date date, final int width,
                                       final int height, final String template,
                                       final String file) throws Exception
     {
-
-        generateBasinPieImages(officeId, new String[]
-                       {
-                           locationStr
-        }, basinId, new Date[]
-                       {
-                           date
-        }, width, height, new String[]
-                       {
-                           template
-        }, file);
+        String[] locations = new String[] {locationStr};
+        Date[] dates = new Date[] {date};
+        String[] templates = new String[]{template};
+        generateBasinPieImagesForBasin(officeId, locations, basinId, dates, width, 
+                                    height, templates, file);
     }
 
-    public void generateBasinPieImagesForBasin(final String officeId,
+    /**
+     * This method generates a suite a basin pie images for a given basin
+     * 1 basin pie image for each possible assigned location as a reference.
+     * 
+     * @param officeId
+     * @param basinId
+     * @param dates
+     * @param width
+     * @param height
+     * @param templateIds
+     * @param file
+     * @throws Exception 
+     */
+    public void generateAllBasinPieImagesForBasin(final String officeId,
                                                final String basinId,
                                                final Date[] dates,
                                                final int width, final int height,
                                                final String[] templateIds,
                                                final String file) throws Exception
-    {               
-        LocationGroup locGroup = buildLocationGroup(basinId);
-        Set<AssignedLocation> assignedLocations = locGroup.getAssignedLocations();
-        List<LocationTemplate> locs = new ArrayList<>();
+    {
+        LocationGroupFactory locationGroupFactory = new LocationGroupFactory(getManagerIdProvider());        
+        LocationGroup locationGroup = locationGroupFactory.retrieveLocationGroupForBasin(basinId);
+        
+        OperationSupportBasinTreeModel basinTreeModel = new OperationSupportBasinTreeModel(null);
+        IBasinConnectivityModel basinConnModel = locationGroupFactory.getBasinConnectivityModel();
+        basinTreeModel.fillBasinTree(locationGroup, basinConnModel);        
+        
+        List<LocationTemplate> referenceLocations = new ArrayList<>();
+        
+        Set<AssignedLocation> assignedLocations = locationGroup.getAssignedLocations();
         for (AssignedLocation assignedLocation : assignedLocations)
         {
-            locs.add(assignedLocation.getLocRef());
+            referenceLocations.add(assignedLocation.getLocRef());
         }
 
         List<IChartTemplate> templates = getTemplates(templateIds, officeId);
         final Dimension d = new Dimension(width, height);
         String imageFormat = getFormatFromFile(file);
 
-        generateImages(officeId, locs, basinId, dates, d, templates, file, imageFormat);
+        generateImages(officeId, referenceLocations, locationGroup, basinTreeModel, dates, d, templates, file, imageFormat);
     }
 
-    public void generateBasinPieImages(final String officeId,
+    public void generateBasinPieImagesForBasin(final String officeId,
                                        final String locationStrs[],
                                        final String basinId,
                                        final Date[] dates, final int width,
@@ -608,7 +648,14 @@ return bImage;
             logger.warning("Width and Height parameters must be > 0");
             return;
         }
-
+        
+        LocationGroupFactory locationGroupFactory = new LocationGroupFactory(getManagerIdProvider());
+        LocationGroup locationGroup = locationGroupFactory.retrieveLocationGroupForBasin(basinId);
+        
+        OperationSupportBasinTreeModel basinTreeModel = new OperationSupportBasinTreeModel(null);
+        IBasinConnectivityModel basinConnModel = locationGroupFactory.getBasinConnectivityModel();
+        basinTreeModel.fillBasinTree(locationGroup, basinConnModel);
+        
         List<IChartTemplate> templates = getTemplates(templateIds, officeId);
 
         List<LocationTemplate> locs = new ArrayList<>();
@@ -619,13 +666,49 @@ return bImage;
         }
 
         String imageFormat = getFormatFromFile(filename);
-        final Dimension d = new Dimension(width, height);
+        final Dimension dimension = new Dimension(width, height);
 
-        generateImages(officeId, locs, basinId, dates, d, templates, filename, imageFormat);
+        generateImages(officeId, locs, locationGroup, basinTreeModel, dates, dimension, templates, filename, imageFormat);
+    }
+    
+    public void generateBasinPieImagesForGroup(final String officeId,
+                                       final String locationStrs[],
+                                       final String groupId,
+                                       final Date[] dates, final int width,
+                                       final int height,
+                                       final String[] templateIds,
+                                       final String filename) throws Exception
+    {
+        System.setProperty("java.awt.headless", "true");
+        if (width <= 0 || height <= 0)
+        {  // is there a max?
+            logger.warning("Width and Height parameters must be > 0");
+            return;
+        }
+        
+        LocationGroupFactory locationGroupFactory = new LocationGroupFactory(getManagerIdProvider());               
+        LocationGroup locationGroup = locationGroupFactory.retrieveProjectGroup(groupId);
+        BasinTreeModel treeModel = new BasinTreeModel();
+        treeModel.fillBasinTree(locationGroup);        
+        
+        List<IChartTemplate> templates = getTemplates(templateIds, officeId);
+
+        List<LocationTemplate> locs = new ArrayList<>();
+        for (String locationStr : locationStrs)
+        {
+            final LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
+            locs.add(locRef);
+        }
+
+        String imageFormat = getFormatFromFile(filename);
+        final Dimension dimension = new Dimension(width, height);
+
+        generateImages(officeId, locs, locationGroup, treeModel, dates, dimension, templates, filename, imageFormat);
     }
 
     public void generateImages(final String officeId,
-                               List<LocationTemplate> locs, final String basinId,
+                               List<LocationTemplate> referenceLocations, final LocationGroup locationGroup,
+                               BasinTreeModel treeModel,
                                final Date[] dates, final Dimension d,
                                List<IChartTemplate> templates,
                                final String filePattern, String imageFormat) throws ExecutionException, DbConnectionException, InterruptedException
@@ -635,45 +718,37 @@ return bImage;
 
         Date startDate = dateSet.first();
         Date endDate = dateSet.last();
-                
-        IBasinConnectivityModel basinConModel = new BasinConnectivityModel(getManagerId());
-        IBasin basin = findBasinById(basinId);                
         
-        NavigableMap<LocationTemplate, IProject> projects = retrieveProjectsMap();
+        AtBasinManager atBasinManager = regiDomain.getAtBasinManager(managerId);
+        AtProjectManager atProjectManager = regiDomain.getAtProjectManager(managerId);
         
-        //build the location gorup
-        LocationGroup locGroup = buildLocationGroup(basinId);
-
-        boolean isBasin = true;
-
-        LocationGroup projectsOnly = LocationGroupUtil.getProjectOnlyLocationGroup(locGroup, basinConModel, isBasin);
-
-        final OperationSupportBasinTreeModel treeModel = new OperationSupportBasinTreeModel(null);
-        treeModel.fillBasinTree(locGroup, basinConModel);
-
+        Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName(), "generateImages");
+        OptionalParams funcParams = new OptionalParams(metrics);
+        
+        NavigableMap<LocationTemplate, IProject> projects = new TreeMap<>();
+        try
+        {
+             projects = BasinConnectivityDataAdapter.retrieveAllProjects(atBasinManager, atProjectManager, funcParams);
+        }
+        catch (DbIoException ex)
+        {
+            Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.SEVERE, "Failed to retrieve all projects from database.");
+        }
+        
         for (IChartTemplate chartTemplate : templates)
         {
             logger.log(Level.INFO, "Generating images for template:{0}", chartTemplate.getId());
-            final BasinPieModel pieModel = buildAndInitializeBasinPieModel(projectsOnly, chartTemplate, startDate, endDate, treeModel);
+            final BasinPieModel pieModel = buildAndInitializeBasinPieModel(locationGroup, chartTemplate, startDate, endDate, treeModel);
 
             for (Date date : dateSet)
             {
-                for (LocationTemplate locRef : locs)
+                for (LocationTemplate locRef : referenceLocations)
                 {
-                    String file = getFileName(date, filePattern, locRef.getLocationId(), imageFormat, chartTemplate.getIdSuffix(), officeId, basinId, d.width, d.height);
+                    String file = getFileName(date, filePattern, locRef.getLocationId(), imageFormat, chartTemplate.getIdSuffix(), officeId, locationGroup.getName(), d.width, d.height);
                     drawImage(treeModel, locRef, pieModel, d, date, file, imageFormat);
                 }
             }
         }
-    }       
-    
-    public LocationGroup buildLocationGroup(String basinId)
-    {
-        IBasinConnectivityModel basinConModel = new BasinConnectivityModel(getManagerId());
-        IBasin basin = findBasinById(basinId);                        
-        NavigableMap<LocationTemplate, IProject> projects = retrieveProjectsMap();        
-        LocationGroup locGroup = buildLocationGroup(basin, basinConModel, projects);
-        return locGroup;
     }
     
     public LocationGroup buildLocationGroup(IBasin basin, IBasinConnectivityModel dataModel, NavigableMap<LocationTemplate, IProject> projects)
@@ -723,58 +798,6 @@ return bImage;
         streamBase.getStreamBases().forEach(sbase -> assignedLocations.addAll(buildAssignedLocations(sbase, assocLoc)));
 
         return assignedLocations;
-    }
-
-//    public LocationGroup buildLocationGroupWithAssignedLocations(
-//            BasinConnectivityDataAdapter connDA, String basinId) throws DbConnectionException
-//    {
-//        IBasin basin = findBasinById(basinId);
-//
-//        LocationCategoryRef categoryRef = new LocationCategoryRef(AtBasinManager.BASIN_CATEGORY_REF_ID, basin.getOfficeId());
-//        final LocationGroup lg = new LocationGroup();//getLocationGroup(basin);
-//        lg.setName(basin.getBasinId());
-//        lg.setDbOfficeId(basin.getOfficeId());
-//        lg.setLocationGroupRef(new LocationGroupRef(categoryRef, basin.getOfficeId(), basin.getBasinId()));
-//
-//        // This also primes connDA for the getPrimary call..
-//        List<IStreamLocation> streamLocations = connDA.getStreamLocations(basin);
-//
-//        LocationTemplate assocLoc = new LocationTemplate(basin.getOfficeId(), basin.getBasinId(), null);
-//        Set<AssignedLocation> assLocs = new HashSet<>();
-//
-//        AtomicInteger counter = new AtomicInteger(0);
-//        for (IStreamLocation loc : streamLocations)
-//        {
-//            String locationKind = connDA.getLocationKind(loc);
-//            LocationTemplate streamLocTemplate = new LocationTemplate(basin.getOfficeId(), loc.getLocationId(), null);
-//            AssignedLocation aLoc = new AssignedLocation(streamLocTemplate, loc.getLocationId(), 0, assocLoc);
-//            aLoc.setDescription("  (" + locationKind + ")");
-//            aLoc.setAttribute(counter.getAndIncrement());
-//            assLocs.add(aLoc);
-//        }
-//
-//        lg.setAssignedLocations(assLocs);
-//
-//        return lg;
-//    }
-
-    
-    
-    private NavigableMap<LocationTemplate, IProject> retrieveProjectsMap()
-    {
-        NavigableMap<LocationTemplate, IProject> retval = new TreeMap<>();
-        AtBasinManager atBasinManager = regiDomain.getAtBasinManager(managerId);
-        AtProjectManager atProjectManager = regiDomain.getAtProjectManager(managerId);
-        try
-        {
-            retval = BasinConnectivityDataAdapter.retrieveAllProjects(atBasinManager, atProjectManager, null);
-        }
-        catch (DbIoException | DbConnectionException ex)
-        {
-            Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.WARNING, "Failed to retrieve projects map:", ex);
-        }
-        
-        return retval;
     }
 
     public List<IChartTemplate> getTemplates(final String[] templateIds,
@@ -843,7 +866,7 @@ return bImage;
         return dateStr;
     }
 
-    public void drawImage(final OperationSupportBasinTreeModel treeModel,
+    public void drawImage(final BasinTreeModel treeModel,
                           final LocationTemplate locRef,
                           final BasinPieModel pieModel, final Dimension d,
                           final Date date, final String file,
@@ -893,12 +916,12 @@ return bImage;
     }
 
     public BasinPieModel buildAndInitializeBasinPieModel(
-            LocationGroup projectsOnly, final IChartTemplate chartTemplate,
+            LocationGroup locationGroup, final IChartTemplate chartTemplate,
             Date startDate, Date endDate,
-            final OperationSupportBasinTreeModel treeModel) throws InterruptedException
+            final BasinTreeModel treeModel) throws InterruptedException
     {
         IEventThreadExceptionProcessor eventThreadExceptionProcessor = null;
-        final BasinPieModel pieModel = new BasinPieModel(managerId, eventThreadExceptionProcessor, projectsOnly, chartTemplate, startDate, endDate);
+        final BasinPieModel pieModel = new BasinPieModel(managerId, locationGroup, chartTemplate, startDate, endDate);
         final CountDownLatch initlatch = new CountDownLatch(1);
         pieModel.addPropertyChangeListener((PropertyChangeEvent evt) ->
         {
@@ -928,14 +951,23 @@ return bImage;
     private void writeBasinImage(Dimension d, final BasinPieModel pieModel,
                                  Date date, String file, String imageFormat) throws FileNotFoundException, IOException
     {
-
-        final PiePanel piePanel = new PiePanel();
-
+        LocationGroup locationGroup = pieModel.getLocationGroup();
+        List<LocationTemplate> activeLocations = pieModel.getActiveLocations();
+        BasinTreeSelectionData basinTreeSelectionData = new StaticBasinTreeSelectionData(activeLocations, locationGroup);
+        BasinTreeSelectionService.registerBasinTreeSelectionData(getManagerId(), basinTreeSelectionData);
+        PiePanel piePanel = new PiePanel();
+        IChartTemplate chartTemplate = pieModel.getChartTemplate();
+        List<String> dataIdentifiers = chartTemplate.getDataIdentifiers();
+        Set<String> poolIds = new HashSet<>();
+        poolIds.addAll(dataIdentifiers);
+        
         TimeZone timezone = regiDomain.getTimeZone();
         piePanel.setTimeZone(timezone);
 
         JLayer piePanelJLayerWrapper = new JLayer(piePanel);
-        BasinPieAnnotationLayer basinPieAnnotationLayer = new BasinPieAnnotationLayer(getManagerIdProvider());
+        BasinPieAnnotationLayer basinPieAnnotationLayer = new BasinPieAnnotationLayer(getManagerIdProvider());        
+        basinPieAnnotationLayer.fillPanel(locationGroup, poolIds, date, chartTemplate);
+        
         PinnableComponentGlassPane glassPane = PinnableComponentGlassPaneFactory.createNewGlassPane(basinPieAnnotationLayer, piePanel);
 
         piePanelJLayerWrapper.setGlassPane(glassPane);
@@ -944,61 +976,35 @@ return bImage;
         basinPieAnnotationLayer.setPinnableContainer(container);
         container.setSize(d);
 
+        List<CompletableFuture<Void>> futures = basinPieAnnotationLayer.resetFromChartTemplate();
+        futures.stream().map((future) -> 
+        {
+            if (future instanceof FutureDescriptor)
+            {
+                return ((FutureDescriptor<Void>) future).getFuture();
+            }
+            return future;
+        }).forEach((future)->
+        {
+            try
+            {
+                future.get();
+            }
+            catch (InterruptedException | ExecutionException ex)
+            {
+                Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.INFO, "Well that didn't work...", ex);
+            }
+        });
+        
         PinnableComponentGlassPaneFactory.getGlassPane(basinPieAnnotationLayer).setVisible(true);
 
-        basinPieAnnotationLayer.setChartTemplate(pieModel.getChartTemplate());
-        basinPieAnnotationLayer.resetFromChartTemplate();
 
         logger.fine("Filling panel with model.");
         piePanel.fillPanel(pieModel);
         logger.log(Level.INFO, "Setting active date:{0}", date);
         piePanel.setActiveDate(date);
 
-//		piePanel.getLayout().layoutContainer(piePanel);
-//		piePanel.setSize(d);
-//		piePanel.addNotify();
-//		piePanel.invalidate();
-//		piePanel.validate();
-//		piePanel.addNotify();
-//		piePanel.getLayout().layoutContainer(piePanel);
-//
-//		try (FileOutputStream fos = new FileOutputStream(file);
-//				BufferedOutputStream bos = new BufferedOutputStream(fos);) {
-//			logger.info("Writing to output stream");
-//			saveToStream(bos, piePanel, imageFormat, 100.0f);
-//		}		
         layoutAndSave(piePanelJLayerWrapper, d, file, imageFormat);
-    }
-
-    private IBasin findBasinById(String basinId)
-    {
-        IBasin retval = null;
-        AtBasinManager atBasinManager = regiDomain.getAtBasinManager(managerId);
-
-        if (basinId != null && atBasinManager != null)
-        {
-            List<IBasin> allbasins;
-            try {
-                allbasins = atBasinManager.retrieveAllBasins(CacheUsage.NORMAL);
-                if (allbasins != null && !allbasins.isEmpty())
-                {
-                    for (IBasin basin : allbasins)
-                    {
-                        if (basinId.equals(basin.getBasinId()))
-                        {
-                            retval = basin;
-                            break;
-                        }
-                    }
-                }
-            }
-            catch (DbConnectionException ex) 
-            {
-                Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.SEVERE, "Database connection error:", ex);
-            }
-        }
-
-        return retval;
     }
 
     /**
@@ -1211,5 +1217,47 @@ return bImage;
             saveToStream(bos, component, imageFormat, 100.0f);
         }
     }
+    
+    private class MapDateService implements MapPanelDateRange
+    {
+        Date startDate;
+        Date endDate;
+        Date currentDate;
+        
+        public MapDateService(Date date)
+        {
+            this(date,date,date);
+        }
 
+        public MapDateService(Date startDate, Date endDate, Date currentDate)
+        {
+            this.startDate = startDate;
+            this.endDate = endDate;
+            this.currentDate = currentDate;
+        }        
+        
+        @Override
+        public Date getStartDate()
+        {
+            return startDate;
+        }
+
+        @Override
+        public Date getDate()
+        {
+            return currentDate;
+        }
+
+        @Override
+        public Date getEndDate()
+        {
+            return endDate;
+        }
+
+        @Override
+        public void addWeakDateChangeListener(DateTimePlayerListener dl)
+        {
+            //no-op
+        }        
+    }    
 }
