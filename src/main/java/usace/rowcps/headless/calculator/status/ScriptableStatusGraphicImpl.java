@@ -112,6 +112,7 @@ import usace.rowcps.decisionsupport.ui.basintree.BasinTreeSelectionService;
 import usace.rowcps.decisionsupport.ui.basintree.StaticBasinTreeSelectionData;
 import usace.rowcps.mappanel.ui.MapPanelDateRange;
 import usace.rowcps.mappanel.ui.MapPanelDateRangeService;
+import usace.rowcps.mappanel.ui.SimpleMapPanelDateRange;
 import usace.rowcps.regi.executor.FutureDescriptor;
 
 /**
@@ -137,8 +138,8 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
                                              final int width, final int height,
                                              String filename) throws DbConnectionException, DbIoException, IOException, InterruptedException, ExecutionException, TimeoutException
     {
-        MapDateService mapDateService = new MapDateService(current);
-        MapPanelDateRangeService.registerRange(getManagerId(), mapDateService);
+        SimpleMapPanelDateRange simpleDateRange = new SimpleMapPanelDateRange(current);
+        MapPanelDateRangeService.registerRange(getManagerId(), simpleDateRange);
         
         LocationTemplate locTemp = new LocationTemplate(officeId, locationId);
 
@@ -150,8 +151,6 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         final TimeInfoSource tis = () -> ti;
 
         checkForKnownNeededServices();
-
-        AtMapTemplateManager atMapTemplateManager = this.regiDomain.getAtMapTemplateManager(managerId);
 
         MapTemplateLayer mtl = getMapTemplateLayer(templateName);
 
@@ -274,11 +273,18 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 
         TimeInfoSource tis = () -> ti;
 
-        AtMapTemplateManager atMapTemplateManager = this.regiDomain.getAtMapTemplateManager(managerId);
-
-        MapTemplateLayer mtl = getMapTemplateLayer(templateName);
-
-        StreamGageGraphicOptionData sggod = mtl.getStreamGageGraphicOptions();
+        SimpleMapPanelDateRange simpleDateRange = new SimpleMapPanelDateRange(current);
+        MapPanelDateRangeService.registerRange(getManagerId(), simpleDateRange);
+        
+        MapTemplateLayer mapTemplateLayer = getMapTemplateLayer(templateName);        
+        
+        if(mapTemplateLayer == null)
+        {
+            Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.SEVERE, "Unable to locate MapTemplateLayer with the name:"+templateName);
+            return;
+        }                       
+        
+        StreamGageGraphicOptionData sggod = mapTemplateLayer.getStreamGageGraphicOptions();
         final StreamData streamData = new StreamData(loc, sggod, tis, getManagerId());
 
         final CountDownLatch cdl = new CountDownLatch(1);
@@ -339,8 +345,10 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 
         TimeInfoSource tis = () -> ti;
 
-        AtMapTemplateManager atMapTemplateManager = this.regiDomain.getAtMapTemplateManager(managerId);
 
+        SimpleMapPanelDateRange simpleDateRange = new SimpleMapPanelDateRange(current);
+        MapPanelDateRangeService.registerRange(getManagerId(), simpleDateRange);
+        
         MapTemplateLayer mtl = getMapTemplateLayer(templateName);
         IMapTemplate mapTemplate = mtl.getMapTemplate();
 
@@ -415,12 +423,13 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 //				layoutComponent(releasesGraphicPanel, d);
 //				releasesGraphicPanel.show(true);
 //				releasesGraphicPanel.setVisible(true);
-releasesGraphicPanel.paintImmediately(0, 0, width, height);
 
-releasesGraphicPanel.print(g);
-g.dispose();
+            releasesGraphicPanel.paintImmediately(0, 0, width, height);
 
-return bImage;
+            releasesGraphicPanel.print(g);
+            g.dispose();
+
+            return bImage;
         });
 
         SwingUtilities.invokeLater(biFuture);
@@ -592,7 +601,7 @@ return bImage;
                                     height, templates, file);
     }
 
-    /**
+/**
      * This method generates a suite a basin pie images for a given basin
      * 1 basin pie image for each possible assigned location as a reference.
      * 
@@ -619,6 +628,46 @@ return bImage;
         IBasinConnectivityModel basinConnModel = locationGroupFactory.getBasinConnectivityModel();
         basinTreeModel.fillBasinTree(locationGroup, basinConnModel);        
         
+        generateAllBasinPieImages(officeId, locationGroup, basinTreeModel, dates, width, height, templateIds, file);
+    }    
+    
+    /**
+     * This method generates a suite a basin pie images for a given basin
+     * 1 basin pie image for each possible assigned location as a reference.
+     * 
+     * @param officeId
+     * @param basinId
+     * @param dates
+     * @param width
+     * @param height
+     * @param templateIds
+     * @param file
+     * @throws Exception 
+     */
+    public void generateAllBasinPieImagesForGroup(final String officeId,
+                                               final String groupId,
+                                               final Date[] dates,
+                                               final int width, final int height,
+                                               final String[] templateIds,
+                                               final String file) throws Exception
+    {
+        LocationGroupFactory locationGroupFactory = new LocationGroupFactory(getManagerIdProvider());        
+        LocationGroup locationGroup = locationGroupFactory.retrieveProjectGroup(groupId);
+        
+        BasinTreeModel basinTreeModel = new BasinTreeModel(null);
+        basinTreeModel.fillBasinTree(locationGroup);
+        
+        generateAllBasinPieImages(officeId, locationGroup, basinTreeModel, dates, width, height, templateIds, file);
+    }
+    
+    private void generateAllBasinPieImages(final String officeId,
+                                               final LocationGroup locationGroup,
+                                               final BasinTreeModel basinTreeModel,
+                                               final Date[] dates,
+                                               final int width, final int height,
+                                               final String[] templateIds,
+                                               final String file) throws Exception
+    {
         List<LocationTemplate> referenceLocations = new ArrayList<>();
         
         Set<AssignedLocation> assignedLocations = locationGroup.getAssignedLocations();
@@ -965,8 +1014,8 @@ return bImage;
         piePanel.setTimeZone(timezone);
 
         JLayer piePanelJLayerWrapper = new JLayer(piePanel);
-        BasinPieAnnotationLayer basinPieAnnotationLayer = new BasinPieAnnotationLayer(getManagerIdProvider());        
-        basinPieAnnotationLayer.fillPanel(locationGroup, poolIds, date, chartTemplate);
+        BasinPieAnnotationLayer basinPieAnnotationLayer = new BasinPieAnnotationLayer(getManagerIdProvider(), locationGroup);        
+        basinPieAnnotationLayer.fillPanel(poolIds, date, chartTemplate);
         
         PinnableComponentGlassPane glassPane = PinnableComponentGlassPaneFactory.createNewGlassPane(basinPieAnnotationLayer, piePanel);
 
@@ -1216,48 +1265,5 @@ return bImage;
             logger.info("Writing to output stream");
             saveToStream(bos, component, imageFormat, 100.0f);
         }
-    }
-    
-    private class MapDateService implements MapPanelDateRange
-    {
-        Date startDate;
-        Date endDate;
-        Date currentDate;
-        
-        public MapDateService(Date date)
-        {
-            this(date,date,date);
-        }
-
-        public MapDateService(Date startDate, Date endDate, Date currentDate)
-        {
-            this.startDate = startDate;
-            this.endDate = endDate;
-            this.currentDate = currentDate;
-        }        
-        
-        @Override
-        public Date getStartDate()
-        {
-            return startDate;
-        }
-
-        @Override
-        public Date getDate()
-        {
-            return currentDate;
-        }
-
-        @Override
-        public Date getEndDate()
-        {
-            return endDate;
-        }
-
-        @Override
-        public void addWeakDateChangeListener(DateTimePlayerListener dl)
-        {
-            //no-op
-        }        
     }    
 }

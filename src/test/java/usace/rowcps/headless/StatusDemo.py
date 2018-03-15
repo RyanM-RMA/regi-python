@@ -1,5 +1,6 @@
 # the java Calendar class is used to create java Date objects
 from java.util import Calendar
+from java.util import TimeZone
 import sys
 import getopt
 
@@ -19,16 +20,16 @@ def headless_examples():
     streamStatus = registry.getCalculation(1.0, "Status")
 
     # Configure the calendar
-    startCal = Calendar.getInstance()
+    timeZone = TimeZone.getTimeZone("America/Chicago")
+    startCal = Calendar.getInstance(timeZone)
     startCal.clear()
     startCal.set(Calendar.YEAR, 2016)
     startCal.set(Calendar.MONTH, 3)
     startCal.set(Calendar.DATE, 2)
-    startCal.set(Calendar.HOUR, -7)
+    startCal.set(Calendar.HOUR, 0)
     # Month 4 means May to java...
 
     # If the filepath does not end in .jpg then the image will be saved in png format.
-    filepath = "J:\\temp\\headless\\stream.jpg"
 
     # Generate a single image,
     #   at a single location within a basin,
@@ -36,22 +37,16 @@ def headless_examples():
     #   with a single chart template
     #   and write to specified file.
     #print "Demonstrating a call to generateStreamStatusImage"
-    #streamStatus.generateStreamStatusImage("SWF", "RSRT2", "00-Flood Control Focus View",
-    #                      startCal.getTime(), 
-    #                    800, 600,                        
-    #                      filepath)
+    streamFilepath = "J:\\temp\\headless\\StatusGraphics\\streamStatus.jpg"
+    streamStatus.generateStreamStatusImage("SWF", "RSRT2", "Flood Control Focus View", startCal.getTime(), 800, 600, streamFilepath)
 
-    #print "Demonstrating a call to generateReservoirStatusImage"
-    #streamStatus.generateReservoirStatusImage("SWF", "GPVT2", "00-Flood Control Focus View",
-    #                      startCal.getTime(), 
-    #                    800, 600,                        
-    #                      "J:\\temp\\headless\\reservoir_GPVT2.jpg")
+    #print "Demonstrating a call  to generateReservoirStatusImage"
+    #reservoirFilePath = "J:\\temp\\headless\\StatusGraphics\\reservoirStatus.jpg"
+    #streamStatus.generateReservoirStatusImage("SWF", "GPVT2", "Flood Control Focus View", startCal.getTime(), 800, 600, reservoirFilePath)
 
     print "Demonstrating a call to generateReleasesStatusImage"
-    streamStatus.generateReleasesStatusImage("SWF", "WTYT2", "00-Flood Control Focus View",
-                          startCal.getTime(), 
-                        800, 600,                        
-                          "J:\\temp\\headless\\gate_WTYT2.jpg")
+    #releasesFilePath = "J:\\temp\\headless\\StatusGraphics\\releasesStatus.jpg"
+    #streamStatus.generateReleasesStatusImage("SWF", "WTYT2", "Flood Control Focus View", startCal.getTime(), 800, 600, releasesFilePath)
     
 if __name__ == "__builtin__":
     Usage()
