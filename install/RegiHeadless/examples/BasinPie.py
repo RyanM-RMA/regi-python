@@ -95,14 +95,23 @@ def headless_examples():
     #   replace %% patterns in the specified filepath template
     #   and write each image to its generated filepath
 
-#    print "Demonstrating a call to generateBasinPieImagesForBasin"
-    
+    print "Demonstrating a call to generateBasinPieImageForGroup"    
     generateBasinPieImageForGroup("SWF", "DAWT2", "Trinity", startCal.getTime(), 700, 807,"Design Capacity","J:\\temp\\headless\\generateBasinPieImageForGroup\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
-    #generateBasinPieImagesForGroup("SWF", ["LVNT2","STIT2"], "XYZ", [startCal.getTime()], 700, 807,["Design Capacity"],"J:\\temp\\headless\\generateBasinPieImagesForGroup\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
-    #generateBasinPieImageForBasin("SWF", "DAWT2", "Trinity_R_Basin", startCal.getTime(), 700, 807,"Design Capacity","J:\\temp\\headless\\generateBasinPieImageForBasin\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
-    #generateBasinPieImagesForBasin("SWF", ["LOLT2","DAWT2"], "Trinity_R_Basin", [startCal.getTime()], 700, 807,["Design Capacity"],"J:\\temp\\headless\\generateBasinPieImagesForBasin\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
-    #basinPie.generateAllBasinPieImagesForBasin("SWF", "Trinity_R_Basin", [startCal.getTime()], 800, 600, ["Conservation Pool (static)"], "J:\\temp\\headless\\generateAllForBasin\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
-    #basinPie.generateAllBasinPieImagesForGroup("SWF", "XYZ", [startCal.getTime()], 800, 600, ["Conservation Pool (static)"], "J:\\temp\\headless\\generateAllForGroup\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
+    
+    print "Demonstrating a call to generateBasinPieImagesForGroup"
+    generateBasinPieImagesForGroup("SWF", ["LVNT2","STIT2"], "XYZ", [startCal.getTime()], 700, 807,["Design Capacity"],"J:\\temp\\headless\\generateBasinPieImagesForGroup\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
+
+    print "Demonstrating a call to generateBasinPieImageForBasin"
+    generateBasinPieImageForBasin("SWF", "DAWT2", "Trinity_R_Basin", startCal.getTime(), 700, 807,"Design Capacity","J:\\temp\\headless\\generateBasinPieImageForBasin\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
+
+    print "Demonstrating a call to generateBasinPieImagesForBasin"
+    generateBasinPieImagesForBasin("SWF", ["LOLT2","DAWT2"], "Trinity_R_Basin", [startCal.getTime()], 700, 807,["Design Capacity"],"J:\\temp\\headless\\generateBasinPieImagesForBasin\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
+
+    print "Demonstrating a call to generateAllBasinPieImagesForBasin"
+    generateAllBasinPieImagesForBasin("SWF", "Trinity_R_Basin", [startCal.getTime()], 800, 600, ["Conservation Pool (static)"], "J:\\temp\\headless\\generateAllForBasin\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
+
+    print "Demonstrating a call to generateAllBasinPieImagesForGroup"
+    generateAllBasinPieImagesForGroup("SWF", "XYZ", [startCal.getTime()], 800, 600, ["Conservation Pool (static)"], "J:\\temp\\headless\\generateAllForGroup\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
 
 
 def generateBasinPieImageForBasin(office_id, location_id, basin_id,
@@ -190,28 +199,6 @@ def generateBasinPieImagesForGroup(office_id, location_ids, group_id,
     basinPie.generateBasinPieImagesForGroup(office_id, location_ids, group_id,
                           dates, width, height,
                           chart_template_ids,
-                          filepath)
-
-def generateBasinPieImageForBasin(office_id, location_id, basin_id,
-                          date, width, height,
-                          chart_template_id,
-                          filepath):
-    # type: (string, string, string, [date], int, int, [string], string) -> void
-    """
-
-    :param office_id: The office id used for finding the specified locations, basin and chart_template
-    :param location_id: A list of the locations for which basin pie images are desired
-    :param basin_id: The id of the Group
-    :param date: A list of the times for which the image should be generated
-    :param width: width in pixels
-    :param height: height in pixels
-    :param chart_template_id: The ids of the chart template to use.
-    :param filepath: Path (template) of where to write the file.
-    """
-    basinPie = registry.getCalculation(1.0, "Status")
-    basinPie.generateBasinPieImageForBasin(office_id, location_id, basin_id,
-                          date, width, height,
-                          chart_template_id,
                           filepath)
 
 def generateAllBasinPieImagesForBasin(office_id, basin_id,
