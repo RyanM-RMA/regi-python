@@ -32,7 +32,7 @@ public class RegiCLI
 //		if (args == null || args.length == 0) {
 //
 			args = new String[]{
-				"-Drowcps.timezone=GMT",
+				"-Drowcps.timezone=America/Chicago",
 				"-p", "src\\test\\java\\usace\\rowcps\\headless\\credentials.properties",
 //                                "-f", "src\\test\\java\\usace\\rowcps\\headless\\BasinPie.py",
 				"-f", "src\\test\\java\\usace\\rowcps\\headless\\StatusDemo.py",
@@ -59,7 +59,7 @@ public class RegiCLI
 			HeadlessRegiDomainFactory factory = new HeadlessRegiDomainFactory();
 			managerId = factory.getManagerId(opt);
 
-			regiDomain = factory.createDomain(opt, managerId, RegiDomain.RegiEnvironment.headless);
+			regiDomain = factory.createDomain(opt, managerId);
 			if (regiDomain !=
                             null) {
 				ScriptEvaluator pe = new PythonEvaluator();

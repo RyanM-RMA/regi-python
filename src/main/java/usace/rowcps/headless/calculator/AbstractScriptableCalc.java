@@ -5,6 +5,7 @@
  */
 package usace.rowcps.headless.calculator;
 
+import java.util.TimeZone;
 import usace.rowcps.regi.interfaces.model.ManagerIdProvider;
 import usace.rowcps.regi.model.ManagerId;
 import usace.rowcps.regi.model.RegiDomain;
@@ -41,10 +42,15 @@ public abstract class AbstractScriptableCalc
 	public ManagerId getManagerId()
 	{
 		return managerId;
-	}
+        }
         
         public ManagerIdProvider getManagerIdProvider()
         {
             return manIdProvider;
+        }        
+        
+        public TimeZone getRegiTimeZone()
+        {
+            return this.regiDomain.getTimeZone();
         }
 }

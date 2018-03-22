@@ -147,9 +147,9 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         AtLocationManager locMan = this.regiDomain.getAtLocationManager(getManagerId());
         Location loc = locMan.retrieveLocation(locTemp, CacheUsage.NORMAL);
 
-        final TimeInfo ti = getTimeInfo(current, this.regiDomain.getTimeZone());
+        final TimeInfo utcTimeInfo = getUtcTimeInfo(current, regiDomain.getTimeZone());
 
-        final TimeInfoSource tis = () -> ti;
+        final TimeInfoSource utcTimeInfoSource = () -> utcTimeInfo;
 
         checkForKnownNeededServices();
 
@@ -171,12 +171,12 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         AtProjectManager atProjectManager = this.regiDomain.getAtProjectManager(managerId);
         final IProject iProject = atProjectManager.getIProject(locTemp, CacheUsage.NORMAL);
 
-        final ReservoirPlotPanelData rppd = new ReservoirPlotPanelData(iProject, tis, managerId, rgod);
+        final ReservoirPlotPanelData rppd = new ReservoirPlotPanelData(iProject, utcTimeInfoSource, managerId, rgod);
         rppd.addListener(pcl);
 
         ReservoirPlotPanel rpp;
 
-        RunnableFuture<ReservoirPlotPanel> panelFuture = new FutureTask<>(() -> new ReservoirPlotPanel(iProject, managerId, tis, rgod, rppd));
+        RunnableFuture<ReservoirPlotPanel> panelFuture = new FutureTask<>(() -> new ReservoirPlotPanel(iProject, managerId, utcTimeInfoSource, rgod, rppd));
         SwingUtilities.invokeLater(panelFuture);
         rpp = panelFuture.get(1, TimeUnit.MINUTES);
 
@@ -270,7 +270,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         AtLocationManager locMan = this.regiDomain.getAtLocationManager(getManagerId());
         Location loc = locMan.retrieveLocation(locTemp, CacheUsage.NORMAL);
 
-        final TimeInfo ti = getTimeInfo(current, this.regiDomain.getTimeZone());
+        final TimeInfo ti = getUtcTimeInfo(current, this.regiDomain.getTimeZone());
 
         TimeInfoSource timeInfoSource = () -> ti;
 
@@ -330,7 +330,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         final StreamPlotPanel panel = panelFuture.get(11, TimeUnit.MINUTES);
 
         layoutAndSave(panel, d, filename, imageFormat);
-    }    
+    }
     
     public void generateReleasesStatusImage(String officeId, String locationId,
                                             String templateName, Date current,
@@ -343,9 +343,9 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         AtLocationManager locMan = this.regiDomain.getAtLocationManager(getManagerId());
         Location loc = locMan.retrieveLocation(locTemp, CacheUsage.NORMAL);
 
-        final TimeInfo ti = getTimeInfo(current, this.regiDomain.getTimeZone());
+        final TimeInfo utcTimeInfo = getUtcTimeInfo(current, this.regiDomain.getTimeZone());
 
-        TimeInfoSource tis = () -> ti;
+        TimeInfoSource utcTimeInfoSource = () -> utcTimeInfo;
 
 
         SimpleMapPanelDateRange simpleDateRange = new SimpleMapPanelDateRange(current);
@@ -359,7 +359,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         ReleasesGraphicOptionData rgod = new ReleasesGraphicOptionData();
 
         Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName());
-        final MyReleasesGraphicData data = new MyReleasesGraphicData(loc, managerId, tis, rgod, new OptionalParams(metrics));
+        final MyReleasesGraphicData data = new MyReleasesGraphicData(loc, managerId, utcTimeInfoSource, rgod, new OptionalParams(metrics));
 
         RunnableFuture<HeadlessReleasesGraphicPanel> rf = new FutureTask<>(() ->
         {
@@ -490,7 +490,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 
     }
 
-    public TimeInfo getTimeInfo(Date current, TimeZone tz)
+    public TimeInfo getUtcTimeInfo(Date current, TimeZone displayTimeZone)
     {
         final int MILLIS_PER_HOUR = 1000 * 60 * 60;
         // The time controls internally use HecTimes with utc values and Regi formats them to the display timezone in the ui
@@ -498,23 +498,23 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         // In headless the user is giving us a Date object and a timezone that date object is in.
         // So imagine the user wants a graphic displayed at midnight on 4/18 in CDT.  Say that UTC is ahead of CDT by 5 hours
         // so we need hectime to actually store the time at 5AM
+        HecTime utcStart = new HecTime();        
+        utcStart.setTimeInMillis(current.getTime());
 
-        HecTime start = new HecTime(current, 0);
-
-        Calendar endCal = new GregorianCalendar(tz);
+        Calendar endCal = Calendar.getInstance(displayTimeZone);
         endCal.setTime(current);
         endCal.add(Calendar.DAY_OF_MONTH, 1);
-        Date endDate = endCal.getTime();
-        HecTime end = new HecTime(endDate, 0);
+        //truncate down to start of day //
+        HecTime utcEnd = new HecTime();
+        utcEnd.setTimeInMillis(endCal.getTimeInMillis());
 
-        Calendar curCal = new GregorianCalendar(tz);
-        curCal.setTime(current);
-        Date curDate = curCal.getTime();
-        HecTime curTime = new HecTime(curDate, 0);
-        curTime.showTimeAsBeginningOfDay(true);
+        HecTime utcCurrent = new HecTime();
+        utcCurrent.setTimeInMillis(current.getTime());
+        
+        utcCurrent.showTimeAsBeginningOfDay(true);
 
         int stepSize = 1000 * 60 * 60;  // millisPerHour
-        TimeInfo ti = new TimeInfo(start, end, curTime, stepSize);
+        TimeInfo ti = new TimeInfo(utcStart, utcEnd, utcCurrent, stepSize);
         return ti;
     }
 
