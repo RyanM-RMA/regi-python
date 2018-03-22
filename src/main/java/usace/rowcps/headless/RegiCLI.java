@@ -31,15 +31,16 @@ public class RegiCLI
 	{
 //		if (args == null || args.length == 0) {
 //
-//			args = new String[]{
-//				"-Drowcps.timezone=GMT",
-//				"-p", "src\\test\\java\\usace\\rowcps\\headless\\credentials.properties",
-//////				"-f", "src\\test\\java\\usace\\rowcps\\headless\\hello.py",
+			args = new String[]{
+				"-Drowcps.timezone=GMT",
+				"-p", "src\\test\\java\\usace\\rowcps\\headless\\credentials.properties",
+//                                "-f", "src\\test\\java\\usace\\rowcps\\headless\\BasinPie.py",
+				"-f", "src\\test\\java\\usace\\rowcps\\headless\\StatusDemo.py",
 //////				"-f", "src\\test\\java\\usace\\rowcps\\headless\\GateFlowCalc2.py",
 ////					"-f", "src\\test\\java\\usace\\rowcps\\headless\\PoolPercentCalc.py",
 //					"-f", "src\\test\\java\\usace\\rowcps\\headless\\InflowCalcClone.py",
 ////					"-f", "src\\test\\java\\usace\\rowcps\\headless\\InflowCalcZeroNegative.py",
-//			};
+			};
 //		}
 
 		CLIOptions opt = new CLIOptions(System.getProperties());
@@ -58,8 +59,9 @@ public class RegiCLI
 			HeadlessRegiDomainFactory factory = new HeadlessRegiDomainFactory();
 			managerId = factory.getManagerId(opt);
 
-			regiDomain = factory.createDomain(opt, managerId);
-			if (regiDomain != null) {
+			regiDomain = factory.createDomain(opt, managerId, RegiDomain.RegiEnvironment.headless);
+			if (regiDomain !=
+                            null) {
 				ScriptEvaluator pe = new PythonEvaluator();
 				Map<String, Object> vars = new HashMap<>();
 

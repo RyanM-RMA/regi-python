@@ -77,6 +77,7 @@ import javax.swing.SwingWorker;
 import org.openide.util.Exceptions;
 import rma.services.GlobalServiceLoader;
 import rma.services.GlobalServiceLoaderDelegate;
+import rma.services.ServiceLookup;
 import usace.metrics.services.Metrics;
 import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.basinpie.ui.BasinPieModel;
@@ -271,7 +272,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 
         final TimeInfo ti = getTimeInfo(current, this.regiDomain.getTimeZone());
 
-        TimeInfoSource tis = () -> ti;
+        TimeInfoSource timeInfoSource = () -> ti;
 
         SimpleMapPanelDateRange simpleDateRange = new SimpleMapPanelDateRange(current);
         MapPanelDateRangeService.registerRange(getManagerId(), simpleDateRange);
@@ -285,7 +286,8 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         }                       
         
         StreamGageGraphicOptionData sggod = mapTemplateLayer.getStreamGageGraphicOptions();
-        final StreamData streamData = new StreamData(loc, sggod, tis, getManagerId());
+        TimeZone timeZone = this.regiDomain.getTimeZone();
+        final StreamData streamData = new StreamData(loc, sggod, timeInfoSource, timeZone, getManagerId());
 
         final CountDownLatch cdl = new CountDownLatch(1);
         PropertyChangeListener pcl = (PropertyChangeEvent evt) ->
@@ -328,8 +330,8 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         final StreamPlotPanel panel = panelFuture.get(11, TimeUnit.MINUTES);
 
         layoutAndSave(panel, d, filename, imageFormat);
-    }
-
+    }    
+    
     public void generateReleasesStatusImage(String officeId, String locationId,
                                             String templateName, Date current,
                                             final int width, final int height,

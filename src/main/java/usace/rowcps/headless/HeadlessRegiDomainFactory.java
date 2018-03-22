@@ -22,6 +22,7 @@ import usace.rowcps.regi.model.ManagerId;
 import usace.rowcps.regi.executor.ManagerIdType;
 
 import usace.rowcps.regi.model.RegiDomain;
+import usace.rowcps.regi.model.RegiDomain.RegiEnvironment;
 
 /**
  *
@@ -46,7 +47,7 @@ public class HeadlessRegiDomainFactory
 		}
 	}
 
-	public RegiDomain createDomain(CLIOptions options, ManagerId managerId) throws DbConnectionException,
+	public RegiDomain createDomain(CLIOptions options, ManagerId managerId, RegiEnvironment headless) throws DbConnectionException,
 		DbPluginNotFoundException, InvalidDbConnectionException
 	{
 		RegiDomain regiDomain = null;
@@ -94,7 +95,7 @@ public class HeadlessRegiDomainFactory
 
 			String name = "Headless";
 			String description = "Created for Headless execution.";
-			regiDomain = new RegiDomainFactory().createProject(name, description, prjFile);
+			regiDomain = new RegiDomainFactory().createProject(name, description, prjFile, RegiEnvironment.headless);
 
 			regiDomain.loadProjectFile();
 

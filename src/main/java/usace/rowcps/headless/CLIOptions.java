@@ -9,10 +9,13 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.Option;
+import rma.services.ServiceLookup;
+import rma.services.tz.TimeZoneDisplayService;
 
 /**
  *
@@ -187,9 +190,15 @@ public class CLIOptions
 	@Option(name = "-D" + TIMEZONE)
 	public void setRowcpsTimezone(String rowcpsTimezone) throws CmdLineException
 	{
-		setProperty(new String[]{TIMEZONE, rowcpsTimezone});
-		
-		//this.rowcpsTimezone = rowcpsTimezone;
+            setProperty(new String[]{TIMEZONE, rowcpsTimezone});
+            TimeZone timeZone = TimeZone.getTimeZone(rowcpsTimezone);
+            if(timeZone == null)
+            {
+                timeZone = TimeZone.getDefault();
+                Logger.getLogger(CLIOptions.class.getName()).log(Level.WARNING, "Attempted to set invalid time zone to Regi Domain: "+rowcpsTimezone);
+            }
+            TimeZoneDisplayService timeZoneDisplayService = ServiceLookup.getTimeZoneDisplayService();
+            timeZoneDisplayService.setTimeZone(timeZone);
 	}
 
 	/**

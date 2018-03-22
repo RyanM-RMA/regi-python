@@ -20,8 +20,9 @@ def headless_examples():
     streamStatus = registry.getCalculation(1.0, "Status")
 
     # Configure the calendar
-    timeZone = TimeZone.getTimeZone("America/Chicago")
-    startCal = Calendar.getInstance(timeZone)
+    # timeZone = TimeZone.getTimeZone("America/Chicago")
+    # startCal = Calendar.getInstance(timeZone)
+    startCal = Calendar.getInstance()
     startCal.clear()
     startCal.set(Calendar.YEAR, 2016)
     startCal.set(Calendar.MONTH, 3)
@@ -48,7 +49,7 @@ def headless_examples():
     #releasesFilePath = "J:\\temp\\headless\\StatusGraphics\\releasesStatus.jpg"
     #streamStatus.generateReleasesStatusImage("SWF", "WTYT2", "Flood Control Focus View", startCal.getTime(), 800, 600, releasesFilePath)
     
-if __name__ == "__builtin__":
+if __name__ == "__builtin__": 
     Usage()
     headless_examples()
 
