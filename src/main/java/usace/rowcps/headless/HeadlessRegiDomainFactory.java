@@ -36,7 +36,7 @@ public class HeadlessRegiDomainFactory
 	{
 		String cp = System.getProperties().getProperty("java.class.path");
 		String[] split = cp.split(File.pathSeparator);
-		final String dbiClientjar = "dbiClient.jar";
+		final String dbiClientjar = "dbiClient-v3.1.1.jar";
 		for (String cpentry : split) {
 			if (cpentry.endsWith(dbiClientjar)) {
 				String pluginDir = cpentry.split(dbiClientjar)[0];
@@ -55,7 +55,7 @@ public class HeadlessRegiDomainFactory
 		File rowcpsPojectDir = options.getRowcpsProjectDir();
 
 		String rowcpsProjectName = options.getRowcpsProjectName();
-
+                logger.log(Level.INFO, "Creating project dir: "+ (rowcpsPojectDir == null ? "null" : rowcpsPojectDir), rowcpsProjectName == null ? "null" : rowcpsProjectName); 
 		File projectDir = new File(rowcpsPojectDir, rowcpsProjectName);
 
 		if (projectDir == null) {

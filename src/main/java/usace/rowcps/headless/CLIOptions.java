@@ -304,7 +304,10 @@ public class CLIOptions
 				Logger.getLogger(CLIOptions.class.getName()).log(Level.SEVERE, null, ex);
 			}
 		}
-	}
+                 else{
+                        Logger.getLogger(CLIOptions.class.getName()).log(Level.SEVERE, "Unable to find credentials file at: "+(file ==null ? "null" : file));
+                }
+        }
 
 	@Option(name = "-f", aliases = {"-file"}, metaVar = "<file>",
 		usage = "script file to execute")

@@ -31,16 +31,16 @@ public class RegiCLI
 	{
 //		if (args == null || args.length == 0) {
 //
-			args = new String[]{
-				"-Drowcps.timezone=America/Chicago",
-				"-p", "src\\test\\java\\usace\\rowcps\\headless\\credentials.properties",
-//                                "-f", "src\\test\\java\\usace\\rowcps\\headless\\BasinPie.py",
-				"-f", "src\\test\\java\\usace\\rowcps\\headless\\StatusDemo.py",
-//////				"-f", "src\\test\\java\\usace\\rowcps\\headless\\GateFlowCalc2.py",
-////					"-f", "src\\test\\java\\usace\\rowcps\\headless\\PoolPercentCalc.py",
-//					"-f", "src\\test\\java\\usace\\rowcps\\headless\\InflowCalcClone.py",
-////					"-f", "src\\test\\java\\usace\\rowcps\\headless\\InflowCalcZeroNegative.py",
-			};
+//			args = new String[]{
+//				"-Drowcps.timezone=America/Chicago",
+//				"-p", "src\\test\\java\\usace\\rowcps\\headless\\credentials.properties",
+////                                "-f", "src\\test\\java\\usace\\rowcps\\headless\\BasinPie.py",
+//				"-f", "src\\test\\java\\usace\\rowcps\\headless\\StatusDemo.py",
+////////				"-f", "src\\test\\java\\usace\\rowcps\\headless\\GateFlowCalc2.py",
+//////					"-f", "src\\test\\java\\usace\\rowcps\\headless\\PoolPercentCalc.py",
+////					"-f", "src\\test\\java\\usace\\rowcps\\headless\\InflowCalcClone.py",
+//////					"-f", "src\\test\\java\\usace\\rowcps\\headless\\InflowCalcZeroNegative.py",
+//			};
 //		}
 
 		CLIOptions opt = new CLIOptions(System.getProperties());
@@ -88,10 +88,10 @@ public class RegiCLI
 			}
 
 		} catch (DbConnectionException | DbPluginNotFoundException | InvalidDbConnectionException ex) {
-			Logger.getLogger(RegiCLI.class.getName()).log(Level.SEVERE, null, ex);
+			Logger.getLogger(RegiCLI.class.getName()).log(Level.SEVERE,"Headless error connecting to database.", ex);
 			return;
 		} catch (Exception  e) {
-			System.err.println(e.getMessage());
+                        Logger.getLogger(RegiCLI.class.getName()).log(Level.SEVERE, "Error running headless", e);
 			System.err.println("java -jar myprogram.jar [options...] arguments...");
 			parser.printUsage(System.err);
 			return;
