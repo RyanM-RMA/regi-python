@@ -480,7 +480,12 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         {
             super.fireRepaintEvent(); //To change body of generated methods, choose Tools | Templates.
         }
-
+		
+		@Override
+		public CompletableFuture<Void> updateDataScope(OptionalParams params)
+		{
+			return super.updateDataScope(params);
+		}
     }
 
     public TimeInfo getUtcTimeInfo(Date current, TimeZone displayTimeZone)
