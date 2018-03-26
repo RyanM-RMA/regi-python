@@ -47,7 +47,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.NavigableMap;
@@ -55,7 +54,6 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TimeZone;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -66,7 +64,6 @@ import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
-import static java.util.stream.Collectors.toList;
 import javax.imageio.IIOImage;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
@@ -74,15 +71,12 @@ import javax.swing.JComponent;
 import javax.swing.JLayer;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
-import org.openide.util.Exceptions;
 import rma.services.GlobalServiceLoader;
 import rma.services.GlobalServiceLoaderDelegate;
-import rma.services.ServiceLookup;
 import usace.metrics.services.Metrics;
 import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.basinpie.ui.BasinPieModel;
 import usace.rowcps.basinpie.ui.annotations.BasinPieAnnotationLayer;
-import usace.rowcps.computation.basinconnectivity.BasinConnectivityDataAdapter;
 import usace.rowcps.computation.basinconnectivity.IBasinConnectivityLocation;
 import usace.rowcps.computation.basinconnectivity.IBasinConnectivityModel;
 import usace.rowcps.computation.basinconnectivity.LocationGroupFactory;
@@ -106,12 +100,9 @@ import usace.rowcps.regi.model.OptionalParams;
 import usace.rowcps.regi.ui.gfx2d.PiePanel;
 import usace.rowcps.decisionsupport.ui.basintree.OperationSupportBasinTreeModel;
 import usace.rowcps.mappanel.ui.template.MapTemplateLayer;
-import usace.rowcps.decisionsupport.ui.DateTimePlayerListener;
 import usace.rowcps.decisionsupport.ui.basintree.BasinTreeModel;
-import usace.rowcps.decisionsupport.ui.basintree.BasinTreeSelectionData;
 import usace.rowcps.decisionsupport.ui.basintree.BasinTreeSelectionService;
-import usace.rowcps.decisionsupport.ui.basintree.StaticBasinTreeSelectionData;
-import usace.rowcps.mappanel.ui.MapPanelDateRange;
+import usace.rowcps.decisionsupport.ui.basintree.SimpleBasinTreeSelectionData;
 import usace.rowcps.mappanel.ui.MapPanelDateRangeService;
 import usace.rowcps.mappanel.ui.SimpleMapPanelDateRange;
 import usace.rowcps.regi.executor.FutureDescriptor;
@@ -127,6 +118,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
     private static final Logger logger = Logger.getLogger(ScriptableStatusGraphicImpl.class.getName());
 
     public final static String LATCH_SECONDS = "rowcps.latchseconds";
+    private SimpleBasinTreeSelectionData _basinTreeSelectionData;
 
     public ScriptableStatusGraphicImpl(RegiDomain regiDomain, ManagerId manId)
     {
@@ -772,19 +764,13 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         
         AtBasinManager atBasinManager = regiDomain.getAtBasinManager(managerId);
         AtProjectManager atProjectManager = regiDomain.getAtProjectManager(managerId);
+                
+        //init the BasinTreeSelection Data with an empty location list 
+        _basinTreeSelectionData = new SimpleBasinTreeSelectionData(new ArrayList<>(), locationGroup);
+        BasinTreeSelectionService.registerBasinTreeSelectionData(getManagerId(), _basinTreeSelectionData);
         
         Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName(), "generateImages");
-        OptionalParams funcParams = new OptionalParams(metrics);
-        
-        NavigableMap<LocationTemplate, IProject> projects = new TreeMap<>();
-        try
-        {
-             projects = BasinConnectivityDataAdapter.retrieveAllProjects(atBasinManager, atProjectManager, funcParams);
-        }
-        catch (DbIoException ex)
-        {
-            Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.SEVERE, "Failed to retrieve all projects from database.");
-        }
+        OptionalParams funcParams = new OptionalParams(metrics);                
         
         for (IChartTemplate chartTemplate : templates)
         {
@@ -935,7 +921,9 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
                    {
                        relavantLocations.size(), locRef
                 });
+                _basinTreeSelectionData.setActiveLocations(relavantLocations);
                 pieModel.setActiveLocations(relavantLocations, true);
+                //THIS NEEDS TO TRIGGER THE ACTIVE LOCATIONS FOR THE BASIN ANNOTATION LAYER ALSO
                 return null;
             }
 
@@ -1003,9 +991,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
                                  Date date, String file, String imageFormat) throws FileNotFoundException, IOException
     {
         LocationGroup locationGroup = pieModel.getLocationGroup();
-        List<LocationTemplate> activeLocations = pieModel.getActiveLocations();
-        BasinTreeSelectionData basinTreeSelectionData = new StaticBasinTreeSelectionData(activeLocations, locationGroup);
-        BasinTreeSelectionService.registerBasinTreeSelectionData(getManagerId(), basinTreeSelectionData);
+        List<LocationTemplate> activeLocations = pieModel.getActiveLocations();        
         PiePanel piePanel = new PiePanel();
         IChartTemplate chartTemplate = pieModel.getChartTemplate();
         List<String> dataIdentifiers = chartTemplate.getDataIdentifiers();
