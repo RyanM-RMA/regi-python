@@ -77,6 +77,7 @@ import usace.metrics.services.Metrics;
 import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.basinpie.ui.BasinPieModel;
 import usace.rowcps.basinpie.ui.annotations.BasinPieAnnotationLayer;
+import usace.rowcps.basinpie.ui.annotations.HeadlessBasinPieAnnotationLayer;
 import usace.rowcps.computation.basinconnectivity.IBasinConnectivityLocation;
 import usace.rowcps.computation.basinconnectivity.IBasinConnectivityModel;
 import usace.rowcps.computation.basinconnectivity.LocationGroupFactory;
@@ -766,8 +767,8 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         AtProjectManager atProjectManager = regiDomain.getAtProjectManager(managerId);
                 
         //init the BasinTreeSelection Data with an empty location list 
-        _basinTreeSelectionData = new SimpleBasinTreeSelectionData(new ArrayList<>(), locationGroup);
-        BasinTreeSelectionService.registerBasinTreeSelectionData(getManagerId(), _basinTreeSelectionData);
+//        _basinTreeSelectionData = new SimpleBasinTreeSelectionData(new ArrayList<>(), locationGroup);
+//        BasinTreeSelectionService.registerBasinTreeSelectionData(getManagerId(), _basinTreeSelectionData);
         
         Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName(), "generateImages");
         OptionalParams funcParams = new OptionalParams(metrics);                
@@ -921,9 +922,9 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
                    {
                        relavantLocations.size(), locRef
                 });
-                _basinTreeSelectionData.setActiveLocations(relavantLocations);
+//                _basinTreeSelectionData.setActiveLocations(relavantLocations);
                 pieModel.setActiveLocations(relavantLocations, true);
-                //THIS NEEDS TO TRIGGER THE ACTIVE LOCATIONS FOR THE BASIN ANNOTATION LAYER ALSO
+                
                 return null;
             }
 
@@ -991,7 +992,6 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
                                  Date date, String file, String imageFormat) throws FileNotFoundException, IOException
     {
         LocationGroup locationGroup = pieModel.getLocationGroup();
-        List<LocationTemplate> activeLocations = pieModel.getActiveLocations();        
         PiePanel piePanel = new PiePanel();
         IChartTemplate chartTemplate = pieModel.getChartTemplate();
         List<String> dataIdentifiers = chartTemplate.getDataIdentifiers();
@@ -1002,7 +1002,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         piePanel.setTimeZone(timezone);
 
         JLayer piePanelJLayerWrapper = new JLayer(piePanel);
-        BasinPieAnnotationLayer basinPieAnnotationLayer = new BasinPieAnnotationLayer(getManagerIdProvider(), locationGroup);        
+        BasinPieAnnotationLayer basinPieAnnotationLayer = new HeadlessBasinPieAnnotationLayer(getManagerIdProvider(), locationGroup, pieModel.getActiveLocations());
         basinPieAnnotationLayer.fillPanel(poolIds, date, chartTemplate);
         
         PinnableComponentGlassPane glassPane = PinnableComponentGlassPaneFactory.createNewGlassPane(basinPieAnnotationLayer, piePanel);
