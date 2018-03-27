@@ -354,7 +354,6 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         
         try
         {
-            Thread.sleep(5000);
             SwingUtilities.invokeAndWait(() ->
             {
                 HeadlessReleasesGraphicPanel releasesGraphicPanel = new HeadlessReleasesGraphicPanel();
