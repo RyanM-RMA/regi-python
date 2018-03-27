@@ -33,7 +33,6 @@ import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.LayoutManager;
-import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -104,7 +103,6 @@ import usace.rowcps.regi.ui.gfx2d.PiePanel;
 import usace.rowcps.decisionsupport.ui.basintree.OperationSupportBasinTreeModel;
 import usace.rowcps.mappanel.ui.template.MapTemplateLayer;
 import usace.rowcps.decisionsupport.ui.basintree.BasinTreeModel;
-import usace.rowcps.decisionsupport.ui.basintree.BasinTreeSelectionService;
 import usace.rowcps.decisionsupport.ui.basintree.SimpleBasinTreeSelectionData;
 import usace.rowcps.mappanel.ui.MapPanelDateRangeService;
 import usace.rowcps.mappanel.ui.SimpleMapPanelDateRange;
@@ -345,12 +343,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 
         SimpleMapPanelDateRange simpleDateRange = new SimpleMapPanelDateRange(current);
         MapPanelDateRangeService.registerRange(getManagerId(), simpleDateRange);
-        
-        MapTemplateLayer mtl = getMapTemplateLayer(templateName);
-        IMapTemplate mapTemplate = mtl.getMapTemplate();
 
-//		List<ReleasesGraphicOptionData> rgods = mapTemplate.getGraphicOptionData(ReleasesGraphicOptionData.class);
-        // rgods is empty
         ReleasesGraphicOptionData graphicOptionData = new ReleasesGraphicOptionData();
 
         Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName());
@@ -432,6 +425,13 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
                         return super.updateDataScope(params);
                     }
                     return null;
+		}
+		
+		@Override
+		public CompletableFuture<Void> retrieveOutletGroups(OptionalParams options)
+		{
+			super.retrieveOutletGroups(options).join();
+			return null;
 		}
     }
 
