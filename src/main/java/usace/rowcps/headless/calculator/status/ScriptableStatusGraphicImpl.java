@@ -43,6 +43,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -71,6 +72,7 @@ import javax.swing.JComponent;
 import javax.swing.JLayer;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
+import org.openide.util.Exceptions;
 import rma.services.GlobalServiceLoader;
 import rma.services.GlobalServiceLoaderDelegate;
 import usace.metrics.services.Metrics;
@@ -167,11 +169,11 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         final ReservoirPlotPanelData rppd = new ReservoirPlotPanelData(iProject, utcTimeInfoSource, managerId, rgod);
         rppd.addListener(pcl);
 
-        ReservoirPlotPanel rpp;
+        ReservoirPlotPanel reservoirPlotPanel;
 
         RunnableFuture<ReservoirPlotPanel> panelFuture = new FutureTask<>(() -> new ReservoirPlotPanel(iProject, managerId, utcTimeInfoSource, rgod, rppd));
         SwingUtilities.invokeLater(panelFuture);
-        rpp = panelFuture.get(1, TimeUnit.MINUTES);
+        reservoirPlotPanel = panelFuture.get(1, TimeUnit.MINUTES);
 
         Integer seconds = Integer.getInteger(LATCH_SECONDS, 11 * 60); // This one goes to 11...
         boolean normalExit = cdl.await(seconds, TimeUnit.SECONDS);
@@ -188,7 +190,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 
         String imageFormat = getFormatFromFile(filename);
         final Dimension d = new Dimension(width, height);
-        layoutAndSave(rpp, d, filename, imageFormat);
+        layoutAndSave(reservoirPlotPanel, d, filename, imageFormat);
     }
 
     private boolean checkForKnownNeededServices()
@@ -349,101 +351,40 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 
 //		List<ReleasesGraphicOptionData> rgods = mapTemplate.getGraphicOptionData(ReleasesGraphicOptionData.class);
         // rgods is empty
-        ReleasesGraphicOptionData rgod = new ReleasesGraphicOptionData();
+        ReleasesGraphicOptionData graphicOptionData = new ReleasesGraphicOptionData();
 
         Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName());
-        final MyReleasesGraphicData data = new MyReleasesGraphicData(loc, managerId, utcTimeInfoSource, rgod, new OptionalParams(metrics));
+        final MyReleasesGraphicData data = new MyReleasesGraphicData(loc, managerId, utcTimeInfoSource, graphicOptionData, new OptionalParams(metrics));
 
-        RunnableFuture<HeadlessReleasesGraphicPanel> rf = new FutureTask<>(() ->
+        CompletableFuture<Void> futureData = data.updateDataScope(new OptionalParams(metrics));
+        futureData.get();
+        
+        try
         {
-            HeadlessReleasesGraphicPanel releasesGraphicPanel = new HeadlessReleasesGraphicPanel();
-            return releasesGraphicPanel;
-        });
-
-        SwingUtilities.invokeLater(rf);
-        HeadlessReleasesGraphicPanel gp = rf.get(11, TimeUnit.MINUTES);
-
-        final HeadlessReleasesGraphicPanel releasesGraphicPanel = gp;
-
-        final CountDownLatch dataFilledLatch = new CountDownLatch(1);
-        PropertyChangeListener pcl = (PropertyChangeEvent evt) ->
-        {
-            if (GraphicConstants.DATA_FILLED_EVENT.equals(evt.getPropertyName()))
+            Thread.sleep(5000);
+            SwingUtilities.invokeAndWait(() ->
             {
-                dataFilledLatch.countDown();
-            }
-        };
+                HeadlessReleasesGraphicPanel releasesGraphicPanel = new HeadlessReleasesGraphicPanel();
 
-        releasesGraphicPanel.setData(data);
-        logger.info("Adding data PCL");
-        data.addPropertyChangeListener(pcl);
+                releasesGraphicPanel.setData(data);
+                releasesGraphicPanel.paintImmediately(0, 0, width, height);
 
-        Thread.sleep(5000);
-
-        SwingUtilities.invokeLater(() ->
-        {
-            logger.info("Setting data in the graphic panel and firing data update request.");
-            releasesGraphicPanel.fireDataUpdateRequest();
-        });
-
-        logger.info("Waiting 11 minutes on latch.");
-        Integer seconds = Integer.getInteger(LATCH_SECONDS, 11 * 60);
-        boolean normalExit = dataFilledLatch.await(seconds, TimeUnit.SECONDS);
-        if (!normalExit)
-        {
-            logger.log(Level.WARNING, "Exceeded timeout waiting for releases status data to load.");
+                Dimension imageDimension = new Dimension(width, height);
+                String imageFormat = getFormatFromFile(filename);
+                try
+                {
+                    layoutAndSave(releasesGraphicPanel, imageDimension, filename, imageFormat);
+                }
+                catch (IOException ex)
+                {
+                    Exceptions.printStackTrace(ex);
+                }
+            });
         }
-
-        data.fireRepaintEvent();
-        Thread.sleep(1000);
-
-        RunnableFuture<BufferedImage> biFuture = new FutureTask<>(() ->
+        catch (InterruptedException | InvocationTargetException ex)
         {
-            BufferedImage bImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-            Graphics2D g = bImage.createGraphics();
             
-            Color color = new Color(255, 255, 255);
-            g.setPaint(color);
-            g.fillRect(0, 0, width, height);
-            g.setColor(color);
-            g.setClip(0, 0, width, height);
-            
-            final Dimension d = new Dimension(width, height);
-            releasesGraphicPanel.setMinimumSize(d);
-            releasesGraphicPanel.setMaximumSize(d);
-            releasesGraphicPanel.setPreferredSize(d);
-            releasesGraphicPanel.setSize(d);
-            releasesGraphicPanel.setBounds(new Rectangle(0, 0, width, height));
-//				releasesGraphicPanel.setDoubleBuffered(false);
-//				layoutComponent(releasesGraphicPanel, d);
-//				releasesGraphicPanel.show(true);
-//				releasesGraphicPanel.setVisible(true);
-
-            releasesGraphicPanel.paintImmediately(0, 0, width, height);
-
-            releasesGraphicPanel.print(g);
-            g.dispose();
-
-            return bImage;
-        });
-
-        SwingUtilities.invokeLater(biFuture);
-
-        BufferedImage bImage = biFuture.get(11, TimeUnit.MINUTES);
-
-//		Thread.sleep(5000);
-//		releasesGraphicPanel.print(g);
-        String imageFormat = getFormatFromFile(filename);
-        File file = new File(filename);
-        file.getParentFile().mkdirs();
-
-        try (FileOutputStream fos = new FileOutputStream(file);
-             BufferedOutputStream bos = new BufferedOutputStream(fos);)
-        {
-            logger.info("Writing releases image to output stream.");
-            writeImage(imageFormat, 100.0f, bos, bImage);
         }
-
     }
 
     private void layoutComponent(JComponent component, Dimension d)
@@ -466,6 +407,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 
     public static class MyReleasesGraphicData extends ReleasesGraphicData
     {
+        private boolean _hasRetrieved = false;
 
         public MyReleasesGraphicData(Location loc, ManagerId manId,
                                      TimeInfoSource tis,
@@ -484,7 +426,12 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 		@Override
 		public CompletableFuture<Void> updateDataScope(OptionalParams params)
 		{
-			return super.updateDataScope(params);
+                    if (!_hasRetrieved)
+                    {
+                        _hasRetrieved = true;
+                        return super.updateDataScope(params);
+                    }
+                    return null;
 		}
     }
 
