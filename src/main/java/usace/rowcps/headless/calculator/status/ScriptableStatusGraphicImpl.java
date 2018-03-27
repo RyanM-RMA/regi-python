@@ -71,7 +71,6 @@ import javax.swing.JComponent;
 import javax.swing.JLayer;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
-import org.openide.util.Exceptions;
 import rma.services.GlobalServiceLoader;
 import rma.services.GlobalServiceLoaderDelegate;
 import usace.metrics.services.Metrics;
@@ -104,6 +103,7 @@ import usace.rowcps.decisionsupport.ui.basintree.OperationSupportBasinTreeModel;
 import usace.rowcps.mappanel.ui.template.MapTemplateLayer;
 import usace.rowcps.decisionsupport.ui.basintree.BasinTreeModel;
 import usace.rowcps.decisionsupport.ui.basintree.SimpleBasinTreeSelectionData;
+import usace.rowcps.decisionsupport.ui.graphics.releases.ReleasesGraphicPanel;
 import usace.rowcps.mappanel.ui.MapPanelDateRangeService;
 import usace.rowcps.mappanel.ui.SimpleMapPanelDateRange;
 import usace.rowcps.regi.executor.FutureDescriptor;
@@ -330,54 +330,63 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
                                             final int width, final int height,
                                             String filename) throws DbConnectionException, DbIoException, IOException, InterruptedException, TimeoutException, ExecutionException
     {
-
-        LocationTemplate locTemp = new LocationTemplate(officeId, locationId);
-
-        AtLocationManager locMan = this.regiDomain.getAtLocationManager(getManagerId());
-        Location loc = locMan.retrieveLocation(locTemp, CacheUsage.NORMAL);
-
-        final TimeInfo utcTimeInfo = getUtcTimeInfo(current, this.regiDomain.getTimeZone());
-
-        TimeInfoSource utcTimeInfoSource = () -> utcTimeInfo;
-
-
-        SimpleMapPanelDateRange simpleDateRange = new SimpleMapPanelDateRange(current);
-        MapPanelDateRangeService.registerRange(getManagerId(), simpleDateRange);
-
-        ReleasesGraphicOptionData graphicOptionData = new ReleasesGraphicOptionData();
-
         Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName());
-        final MyReleasesGraphicData data = new MyReleasesGraphicData(loc, managerId, utcTimeInfoSource, graphicOptionData, new OptionalParams(metrics));
 
-        CompletableFuture<Void> futureData = data.updateDataScope(new OptionalParams(metrics));
-        futureData.get();
+        MyReleasesGraphicData data = buildReleasesGraphicData(officeId, locationId, current, metrics);
+
+		CompletableFuture<Void> future = data.retrieveOutletGroups(new OptionalParams(metrics));
+        data.updateDataScopeSynchronous(new OptionalParams(metrics));
+		future.join();
         
-        try
-        {
-            SwingUtilities.invokeAndWait(() ->
-            {
-                HeadlessReleasesGraphicPanel releasesGraphicPanel = new HeadlessReleasesGraphicPanel();
-
-                releasesGraphicPanel.setData(data);
-                releasesGraphicPanel.paintImmediately(0, 0, width, height);
-
-                Dimension imageDimension = new Dimension(width, height);
-                String imageFormat = getFormatFromFile(filename);
-                try
-                {
-                    layoutAndSave(releasesGraphicPanel, imageDimension, filename, imageFormat);
-                }
-                catch (IOException ex)
-                {
-                    Exceptions.printStackTrace(ex);
-                }
-            });
-        }
-        catch (InterruptedException | InvocationTargetException ex)
-        {
-            
-        }
+		saveReleasesToFile(data, width, height, filename);
     }
+
+	private MyReleasesGraphicData buildReleasesGraphicData(String officeId, String locationId, Date current, Metrics metrics) throws DbConnectionException, DbIoException
+	{
+		LocationTemplate locTemp = new LocationTemplate(officeId, locationId);
+		AtLocationManager locMan = this.regiDomain.getAtLocationManager(getManagerId());
+		Location loc = locMan.retrieveLocation(locTemp, CacheUsage.NORMAL);
+		final TimeInfo utcTimeInfo = getUtcTimeInfo(current, this.regiDomain.getTimeZone());
+		TimeInfoSource utcTimeInfoSource = () -> utcTimeInfo;
+		SimpleMapPanelDateRange simpleDateRange = new SimpleMapPanelDateRange(current);
+		MapPanelDateRangeService.registerRange(getManagerId(), simpleDateRange);
+		ReleasesGraphicOptionData graphicOptionData = new ReleasesGraphicOptionData();
+		
+		return new MyReleasesGraphicData(loc, managerId, utcTimeInfoSource, graphicOptionData, new OptionalParams(metrics));
+	}
+
+	private void saveReleasesToFile(final ReleasesGraphicData data, final int width, final int height, String filename)
+	{
+		try
+		{
+			SwingUtilities.invokeAndWait(() ->
+			{
+				ReleasesGraphicPanel releasesGraphicPanel = new HeadlessReleasesGraphicPanel();
+				
+				releasesGraphicPanel.setData(data);
+				releasesGraphicPanel.paintImmediately(0, 0, width, height);
+				
+				Dimension imageDimension = new Dimension(width, height);
+				String imageFormat = getFormatFromFile(filename);
+				try
+				{
+					layoutAndSave(releasesGraphicPanel, imageDimension, filename, imageFormat);
+				}
+				catch (IOException ex)
+				{
+					Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.SEVERE, "Unable to save to file " + filename, ex);
+				}
+			});
+		}
+		catch (InterruptedException ex)
+		{
+			Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.SEVERE, "Event thread was interrupted", ex);
+		}
+		catch (InvocationTargetException ex)
+		{
+			Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.SEVERE, "An uncaught exception occurred on the Event Thread for generateReleasesStatusImage.", ex);
+		}
+	}
 
     private void layoutComponent(JComponent component, Dimension d)
     {
@@ -418,19 +427,19 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 		@Override
 		public CompletableFuture<Void> updateDataScope(OptionalParams params)
 		{
-                    if (!_hasRetrieved)
-                    {
-                        _hasRetrieved = true;
-                        return super.updateDataScope(params);
-                    }
-                    return null;
+			if (!_hasRetrieved)
+			{
+				_hasRetrieved = true;
+				return super.updateDataScope(params);
+			}
+			CompletableFuture<Void> fut = new CompletableFuture<>();
+			fut.complete(null);
+			return fut;
 		}
 		
-		@Override
-		public CompletableFuture<Void> retrieveOutletGroups(OptionalParams options)
+		public void updateDataScopeSynchronous(OptionalParams params)
 		{
-			super.retrieveOutletGroups(options).join();
-			return null;
+			updateDataScope(params).join();
 		}
     }
 
