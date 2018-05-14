@@ -5,9 +5,7 @@ import com.rma.ui.pinnable.PinnableComponentGlassPaneFactory;
 import com.rma.ui.pinnable.PinnableContainer;
 import hec.data.location.AssignedLocation;
 import hec.data.location.Location;
-import hec.data.location.LocationCategoryRef;
 import hec.data.location.LocationGroup;
-import hec.data.location.LocationGroupRef;
 import hec.data.location.LocationTemplate;
 import hec.db.DbConnectionException;
 import hec.db.DbIoException;
@@ -49,7 +47,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.NavigableMap;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.SortedSet;
@@ -78,12 +75,9 @@ import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.basinpie.ui.BasinPieModel;
 import usace.rowcps.basinpie.ui.annotations.BasinPieAnnotationLayer;
 import usace.rowcps.basinpie.ui.annotations.HeadlessBasinPieAnnotationLayer;
-import usace.rowcps.computation.basinconnectivity.IBasinConnectivityLocation;
 import usace.rowcps.computation.basinconnectivity.IBasinConnectivityModel;
-import usace.rowcps.computation.basinconnectivity.LocationGroupFactory;
 import usace.rowcps.computation.common.IEventThreadExceptionProcessor;
 import usace.rowcps.computation.services.CalcFlowGroupTimeSeriesService;
-import usace.rowcps.data.basin.IBasin;
 import usace.rowcps.data.charttemplate.IChartTemplate;
 import usace.rowcps.data.maptemplate.graphicoptions.ReleasesGraphicOptionData;
 import usace.rowcps.data.maptemplate.reservoir.ReservoirGraphicOptionData;
@@ -94,7 +88,6 @@ import usace.rowcps.headless.calculator.AbstractScriptableCalc;
 import usace.rowcps.regi.interfaces.model.ProjectChildLocationCacheService;
 import usace.rowcps.pet.reservoirplot.ReservoirPlotPanel;
 import usace.rowcps.pet.reservoirplot.ReservoirPlotPanelData;
-import usace.rowcps.regi.model.AtBasinManager;
 import usace.rowcps.regi.model.AtChartTemplateManager;
 import usace.rowcps.regi.model.AtProjectManager;
 import usace.rowcps.regi.model.OptionalParams;
@@ -102,7 +95,6 @@ import usace.rowcps.regi.ui.gfx2d.PiePanel;
 import usace.rowcps.decisionsupport.ui.basintree.OperationSupportBasinTreeModel;
 import usace.rowcps.mappanel.ui.template.MapTemplateLayer;
 import usace.rowcps.decisionsupport.ui.basintree.BasinTreeModel;
-import usace.rowcps.decisionsupport.ui.basintree.SimpleBasinTreeSelectionData;
 import usace.rowcps.decisionsupport.ui.graphics.releases.ReleasesGraphicPanel;
 import usace.rowcps.mappanel.ui.MapPanelDateRangeService;
 import usace.rowcps.mappanel.ui.SimpleMapPanelDateRange;
@@ -115,11 +107,8 @@ import usace.rowcps.regi.executor.FutureDescriptor;
 public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         implements ScriptableCalc
 {
-
-    private static final Logger logger = Logger.getLogger(ScriptableStatusGraphicImpl.class.getName());
-
+    private static final Logger LOGGER = Logger.getLogger(ScriptableStatusGraphicImpl.class.getName());
     public final static String LATCH_SECONDS = "rowcps.latchseconds";
-    private SimpleBasinTreeSelectionData _basinTreeSelectionData;
 
     public ScriptableStatusGraphicImpl(RegiDomain regiDomain, ManagerId manId)
     {
@@ -136,9 +125,6 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         MapPanelDateRangeService.registerRange(getManagerId(), simpleDateRange);
         
         LocationTemplate locTemp = new LocationTemplate(officeId, locationId);
-
-        AtLocationManager locMan = this.regiDomain.getAtLocationManager(getManagerId());
-        Location loc = locMan.retrieveLocation(locTemp, CacheUsage.NORMAL);
 
         final TimeInfo utcTimeInfo = getUtcTimeInfo(current, regiDomain.getTimeZone());
 
@@ -177,7 +163,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         boolean normalExit = cdl.await(seconds, TimeUnit.SECONDS);
         if (!normalExit)
         {
-            logger.log(Level.WARNING, "Timeout exceeded loading reservoir status graphic data.");
+            LOGGER.log(Level.WARNING, "Timeout exceeded loading reservoir status graphic data.");
         }
 
         rgod.removePropertyChangeListener(pcl);
@@ -193,8 +179,6 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 
     private boolean checkForKnownNeededServices()
     {
-        boolean retval = false;
-
         boolean hasCalcFlow = hasGlobalService(CalcFlowGroupTimeSeriesService.class);
         if (!hasCalcFlow)
         {
@@ -210,7 +194,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
                           + "if the jars do not include the necessary META-INF services folder.  "
                           + "For example, public-package-jars\\usace-rowcps-computation.jar contains implementation classes "
                           + "but not the service definitions.";
-            logger.warning(mesg);
+            LOGGER.warning(mesg);
         }
 
         boolean hasProjectChild = hasGlobalService(ProjectChildLocationCacheService.class);
@@ -222,7 +206,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
                           + "if the jars do not include the necessary META-INF services folder.  "
                           + "For example, public-package-jars\\usace-rowcps-regi.jar contains implementation classes "
                           + "but not the service definitions.";
-            logger.warning(mesg);
+            LOGGER.warning(mesg);
         }
 
         return hasCalcFlow && hasProjectChild;
@@ -274,7 +258,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         
         if(mapTemplateLayer == null)
         {
-            Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.SEVERE, "Unable to locate MapTemplateLayer with the name:"+templateName);
+            Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.SEVERE, "Unable to locate MapTemplateLayer with the name:{0}", templateName);
             return;
         }                       
         
@@ -304,7 +288,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         boolean normalExit = cdl.await(seconds, TimeUnit.SECONDS);
         if (!normalExit)
         {
-            logger.log(Level.INFO, "Exceeded timeout waiting for status data model to load.");
+            LOGGER.log(Level.INFO, "Exceeded timeout waiting for status data model to load.");
         }
 
         final Dimension d = new Dimension(width, height);
@@ -591,7 +575,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
      * 1 basin pie image for each possible assigned location as a reference.
      * 
      * @param officeId
-     * @param basinId
+	 * @param groupId
      * @param dates
      * @param width
      * @param height
@@ -649,7 +633,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         System.setProperty("java.awt.headless", "true");
         if (width <= 0 || height <= 0)
         {  // is there a max?
-            logger.warning("Width and Height parameters must be > 0");
+            LOGGER.warning("Width and Height parameters must be > 0");
             return;
         }
         
@@ -686,7 +670,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         System.setProperty("java.awt.headless", "true");
         if (width <= 0 || height <= 0)
         {  // is there a max?
-            logger.warning("Width and Height parameters must be > 0");
+            LOGGER.warning("Width and Height parameters must be > 0");
             return;
         }
         
@@ -723,19 +707,9 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         Date startDate = dateSet.first();
         Date endDate = dateSet.last();
         
-        AtBasinManager atBasinManager = regiDomain.getAtBasinManager(managerId);
-        AtProjectManager atProjectManager = regiDomain.getAtProjectManager(managerId);
-                
-        //init the BasinTreeSelection Data with an empty location list 
-//        _basinTreeSelectionData = new SimpleBasinTreeSelectionData(new ArrayList<>(), locationGroup);
-//        BasinTreeSelectionService.registerBasinTreeSelectionData(getManagerId(), _basinTreeSelectionData);
-        
-        Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName(), "generateImages");
-        OptionalParams funcParams = new OptionalParams(metrics);                
-        
         for (IChartTemplate chartTemplate : templates)
         {
-            logger.log(Level.INFO, "Generating images for template:{0}", chartTemplate.getId());
+            LOGGER.log(Level.INFO, "Generating images for template:{0}", chartTemplate.getId());
             final BasinPieModel pieModel = buildAndInitializeBasinPieModel(locationGroup, chartTemplate, startDate, endDate, treeModel);
 
             for (Date date : dateSet)
@@ -747,55 +721,6 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
                 }
             }
         }
-    }
-    
-    public LocationGroup buildLocationGroup(IBasin basin, IBasinConnectivityModel dataModel, NavigableMap<LocationTemplate, IProject> projects)
-    {
-        Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName(), "getLocationGroup");
-        OptionalParams funcParams = new OptionalParams(metrics);
-        LocationGroup lg = new LocationGroup();
-        lg.setName(basin.getBasinId());
-        lg.setDbOfficeId(basin.getOfficeId());
-        lg.setLocationGroupRef(new LocationGroupRef(new LocationCategoryRef(AtBasinManager.BASIN_CATEGORY_REF_ID, basin.getOfficeId()), basin.getOfficeId(), basin.getBasinId()));
-
-        //all stream locations are associated with the 
-        LocationTemplate assocLoc = new LocationTemplate(basin.getOfficeId(), basin.getBasinId(), null);
-
-        if (!dataModel.isDataAvailableForLocation(basin.getLocationTemplate()))
-        {
-            dataModel.fillModel(basin, projects, funcParams);
-        }
-
-        IBasinConnectivityLocation primaryStream = dataModel.getStreamBase(new LocationTemplate(basin.getOfficeId(), basin.getPrimaryStream()));
-
-        List<AssignedLocation> assignedLocations = buildAssignedLocations(primaryStream, assocLoc);
-
-        for (int i = 0; i < assignedLocations.size(); i++)
-        {
-            assignedLocations.get(i).setAttribute(i);
-        }
-
-        lg.setAssignedLocations(new HashSet<>(assignedLocations));
-
-        return lg;
-    }
-    
-    private List<AssignedLocation> buildAssignedLocations(
-            IBasinConnectivityLocation streamBase, LocationTemplate assocLoc)
-    {
-        List<AssignedLocation> assignedLocations = new ArrayList<>();
-
-        LocationTemplate locRef = new LocationTemplate(streamBase.getOfficeId(), streamBase.getLocationId(), null);
-
-        AssignedLocation aLoc = new AssignedLocation(locRef, streamBase.getLocationId(), 0, assocLoc);
-
-        aLoc.setDescription("  (" + streamBase.getLocationKind() + ")");
-
-        assignedLocations.add(aLoc);
-
-        streamBase.getStreamBases().forEach(sbase -> assignedLocations.addAll(buildAssignedLocations(sbase, assocLoc)));
-
-        return assignedLocations;
     }
 
     public List<IChartTemplate> getTemplates(final String[] templateIds,
@@ -816,7 +741,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 
             if (chartTemplate == null)
             {
-                logger.log(Level.WARNING, "Could not locate chart:{0}", templateId);
+                LOGGER.log(Level.WARNING, "Could not locate chart:{0}", templateId);
             }
             else
             {
@@ -878,7 +803,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
             protected Void doInBackground() throws Exception
             {
                 List<LocationTemplate> relavantLocations = treeModel.getRelevantLocations(locRef);
-                logger.log(Level.INFO, "Found {0} locations relevant to {1}", new Object[]
+                LOGGER.log(Level.INFO, "Found {0} locations relevant to {1}", new Object[]
                    {
                        relavantLocations.size(), locRef
                 });
@@ -893,13 +818,13 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
             {
                 try
                 {
-                    logger.log(Level.INFO, "Creating Basin Pie Panel.");
+                    LOGGER.log(Level.INFO, "Creating Basin Pie Panel.");
                     writeBasinImage(d, pieModel, date, file, imageFormat);
                     latch.countDown();
                 }
                 catch (IOException ex)
                 {
-                    logger.log(Level.SEVERE, null, ex);
+                    LOGGER.log(Level.SEVERE, null, ex);
                 }
             }
         };
@@ -910,7 +835,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         boolean normalExit = latch.await(Integer.getInteger(LATCH_SECONDS, 11 * 60), TimeUnit.SECONDS);
         if (!normalExit)
         {
-            logger.log(Level.WARNING, "Exceeded timeout waiting for basin image to draw.");
+            LOGGER.log(Level.WARNING, "Exceeded timeout waiting for basin image to draw.");
         }
 
     }
@@ -927,7 +852,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         {
             if ("PieDataChangedProperty".equals(evt.getPropertyName()))
             {
-                logger.log(Level.FINER, "PieDataChanged edt:{0} latch:{1}",
+                LOGGER.log(Level.FINER, "PieDataChanged edt:{0} latch:{1}",
                                             new Object[]
                                             {
                                                 SwingUtilities.isEventDispatchThread(), initlatch.getCount()
@@ -936,13 +861,13 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
             }
         });
         List<LocationTemplate> forInitCache = treeModel.getRelevantLocations(null);
-        logger.log(Level.INFO, "Initializing BasinPieModel with {0} locations.", forInitCache.size());
+        LOGGER.log(Level.INFO, "Initializing BasinPieModel with {0} locations.", forInitCache.size());
         pieModel.initCache(forInitCache);  // this can take a while but it fires a property change event when its done.
 
         boolean normalExit = initlatch.await(Integer.getInteger(LATCH_SECONDS, 11 * 60), TimeUnit.SECONDS);
         if (!normalExit)
         {
-            logger.log(Level.WARNING, "Exceeded timeout waiting for basin pie model to load.");
+            LOGGER.log(Level.WARNING, "Exceeded timeout waiting for basin pie model to load.");
         }
 
         return pieModel;
@@ -996,9 +921,9 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         PinnableComponentGlassPaneFactory.getGlassPane(basinPieAnnotationLayer).setVisible(true);
 
 
-        logger.fine("Filling panel with model.");
+        LOGGER.fine("Filling panel with model.");
         piePanel.fillPanel(pieModel);
-        logger.log(Level.INFO, "Setting active date:{0}", date);
+        LOGGER.log(Level.INFO, "Setting active date:{0}", date);
         piePanel.setActiveDate(date);
 
         layoutAndSave(piePanelJLayerWrapper, d, file, imageFormat);
@@ -1067,7 +992,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         Iterator<ImageWriter> iter = javax.imageio.ImageIO.getImageWritersByFormatName(imageType);
         if (!iter.hasNext())
         {
-            logger.log(Level.WARNING, "No Image writers exist for Image Type = {0}", imageType);
+            LOGGER.log(Level.WARNING, "No Image writers exist for Image Type = {0}", imageType);
             return true;
         }
         ImageWriter next = iter.next();
@@ -1129,7 +1054,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         }
         catch (IOException e)
         {
-            logger.log(Level.SEVERE, "Exception encountered writing image.", e);
+            LOGGER.log(Level.SEVERE, "Exception encountered writing image.", e);
         }
         finally
         {
@@ -1144,7 +1069,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
             }
             catch (IOException ioe)
             {
-                logger.log(Level.SEVERE, "IOException encountered while closing OutputStream.", ioe);
+                LOGGER.log(Level.SEVERE, "IOException encountered while closing OutputStream.", ioe);
             }
         }
     }
@@ -1210,7 +1135,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         try (FileOutputStream fos = new FileOutputStream(f);
              BufferedOutputStream bos = new BufferedOutputStream(fos);)
         {
-            logger.info("Writing to output stream");
+            LOGGER.info("Writing to output stream");
             saveToStream(bos, component, imageFormat, 100.0f);
         }
     }    
