@@ -16,6 +16,8 @@ import hec.data.location.LocationGroup;
 import hec.data.location.LocationGroupRef;
 import hec.data.location.LocationGroupSet;
 import hec.data.location.LocationTemplate;
+import hec.data.rating.IRatingSpecification;
+import hec.data.rating.JDomRatingSpecification;
 import hec.data.tx.DataSetTx;
 import hec.data.tx.DataSetTxIllegalArgumentException;
 import hec.data.tx.DataSetTxTemplate;
@@ -103,12 +105,11 @@ import usace.rowcps.regi.model.CacheUsage;
 import usace.rowcps.regi.model.ManagerId;
 import usace.rowcps.regi.model.OptionalParams;
 import usace.rowcps.regi.model.RegiDomain;
-import usace.rowcps.regi.util.GateSettingsUtil;
 //import usace.rowcps.regi.util.RowcpsFutureDescriptor;
 
 public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implements ScriptableCalc, ScriptableGateSettings {
 
-	private static final Logger LOGGER = Logger.getLogger(ScriptableGateSettings.class.getName());
+	private static final Logger logger = Logger.getLogger(ScriptableGateSettings.class.getName());
 
 	public ScriptableGateSettingsImpl(RegiDomain regiDomain, ManagerId managerId) {
 		super(regiDomain, managerId);
@@ -234,13 +235,13 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 
 			@Override
 			public void asyncHeadCacheFetchCompleted() {
-				LOGGER.info("asyncHeadCacheFetchCompleted");
+				logger.info("asyncHeadCacheFetchCompleted");
 				latch.countDown();
 			}
 
 			@Override
 			public void asyncTailCacheFetchCompleted() {
-				LOGGER.info("asyncTailCacheFetchCompleted");
+				logger.info("asyncTailCacheFetchCompleted");
 				latch.countDown();
 			}
 
@@ -300,7 +301,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		ThreadIdProvider idprov = new DefaultThreadIdProvider();
 		gateCache.initCache(idprov, options);
 
-		LOGGER.info("Waiting for GateCache to initialize.");
+		logger.info("Waiting for GateCache to initialize.");
 		boolean completedWithoutTimeout = false;
 		try {
 			// This needs more thought.  Peter thinks db timesout at 10 minutes.
@@ -311,14 +312,15 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		} catch (InterruptedException ex) {
 			Thread.currentThread().interrupt();
 			Logger.getLogger(ScriptableGateSettingsImpl.class.getName()).log(Level.SEVERE, null, ex);
+			completedWithoutTimeout = false;
 		}
 
 		if (completedWithoutTimeout) {
-			LOGGER.info("GateCache is initialized.");
+			logger.info("GateCache is initialized.");
 		} else {
 			// error
 			gateCache = null;
-			LOGGER.info("GateCache failed to initialize.");
+			logger.info("GateCache failed to initialize.");
 		}
 
 		return gateCache;
@@ -384,11 +386,14 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	}
 
 	public DataSetTx getDataSetTx(ITimeSeriesDescription timeSeriesId, Date startDate, Date end, AtTimeSeriesManager tsManager, OptionalParams options) throws
-			DataSetTxIllegalArgumentException, DbException, DataSetException
-	{
+			DataSetTxIllegalArgumentException, DbException, DataSetException {
+		DataSetTx dstx = null;
+		//String timeSeriesId2 = timeSeriesId.getTimeSeriesId();
 		DescriptionTx dTx = timeSeriesId.getLookup().lookup(DescriptionTx.class);
 
-		return getDataSetTx(startDate, end, dTx, tsManager, options);
+		dstx = getDataSetTx(startDate, end, dTx, tsManager, options);
+
+		return dstx;
 	}
 
 	public DataSetTx getDataSetTx(Date startDate, Date end, DescriptionTx dTx, AtTimeSeriesManager tsManager, OptionalParams options) throws DbException,
@@ -498,39 +503,34 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	/**
 	 * Based on the method in OutletPanel..
 	 *
-	 * @param ratingLocGroup
+	 * @param rating
 	 * @param template
 	 *
 	 * @return
 	 */
-	private List<String> getControlParameters(LocationGroup ratingLocGroup, LocationTemplate template)
-	{
+	private List<String> getControlParameters(LocationGroup rating, LocationTemplate template) {
 
 		List<String> retval = new ArrayList<>();
-		if (ratingLocGroup != null)
-		{
-			for (AssignedLocation assignedLocation : ratingLocGroup.getAssignedLocations())
-			{
-				if (assignedLocation.getAssociatedLocRef() != null && assignedLocation.getAssociatedLocRef().equals(template))
-				{
+		if (rating != null) {
+			for (AssignedLocation assignedLocation : rating.getAssignedLocations()) {
+				if (assignedLocation.getAssociatedLocRef() != null && assignedLocation.getAssociatedLocRef().equals(template)) {
 					retval.add(assignedLocation.getAliasId());
 				}
 			}
 
-			if (retval.isEmpty())
-			{
-				try
-				{
+			if (retval.isEmpty()) {
+				try {
+					String ratingSpecId = rating.getSharedLocAliasId();
+					RegiDomain currentProject = (RegiDomain) RegiDomain.getCurrentProject();
+					IRatingSpecification ratingSpecification = new JDomRatingSpecification(currentProject.getUserOfficeId(), ratingSpecId);
 
-					Parameter controlParameter = GateSettingsUtil.getGateOpeningParameter(ratingLocGroup);
-					if (controlParameter != null)
-					{
+					AtRatingManager ratingManager = currentProject.getAtRatingManager(getManagerId());
+					Parameter controlParameter = ratingManager.getOutletOpeningParameter(ratingSpecification);
+					if (controlParameter != null) {
 						retval.add(controlParameter.toString());
 					}
-				}
-				catch (DataSetException ex)
-				{
-					LOGGER.log(Level.INFO, "unable to get control parameter for rating group {0}", ratingLocGroup.getDisplayName());
+				} catch (DataSetException ex) {
+					logger.log(Level.INFO, "unable to get control parameter for rating group {0}", rating.getDisplayName());
 				}
 			}
 		}
@@ -566,7 +566,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 //			outletsBySubMap.put(outlet.getLocation().getSubLocationId(), outlet);
 //		}
 //			String outletName = iControlledOutlet.getOutletName();   // this is like TG1 , not like WTYT2-TG1
-			LOGGER.log(Level.FINE, "Getting first TS Description {0} {1}", new Object[]{
+			logger.log(Level.FINE, "Getting first TS Description {0} {1}", new Object[]{
 				locRef.toString(), iControlledOutlet.toString()
 			});
 			String tsIdStr = getFirstTimeSeriesDescription(locRef, iControlledOutlet.toString(), tsIdsBySubMap);
@@ -578,7 +578,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 			IControlledOutlet iControlledOutlet, String tsIdStr, OptionalParams options) throws DataSetException, DbException, HecMathException {
 		AtTimeSeriesManager tsManager = getRegiDomain().getAtTimeSeriesManager(getManagerId());
 
-		LOGGER.log(Level.INFO, "Comparing Gate settings at:{0} to timeseries:{1}", new Object[]{
+		logger.log(Level.INFO, "Comparing Gate settings at:{0} to timeseries:{1}", new Object[]{
 			iControlledOutlet.getOutletName(), tsIdStr
 		});
 
@@ -586,7 +586,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 			DescriptionTx dtx = new DescriptionTx(locRef.getOfficeId(), tsIdStr);
 			DataSetTx dataSetTx = getDataSetTx(dtx, startDate, end, tsManager, options);
 
-			LOGGER.log(Level.INFO, "finding changes");
+			logger.log(Level.INFO, "finding changes");
 			NavigableSet<Long> timeOfChanges = findChanges(dataSetTx);
 			if (timeOfChanges != null && !timeOfChanges.isEmpty()) {
 
@@ -622,7 +622,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 
 								GateSettingsBlock gateSettingBlock = gc.getGateSetting(tsDate);
 								if (gateSettingBlock == null) {
-									LOGGER.log(Level.INFO, "buildGateSettingsBlock");
+									logger.log(Level.INFO, "buildGateSettingsBlock");
 									Date cacheFloorDate = null;
 									if (floorEntry != null) {
 										cacheFloorDate = floorEntry.getKey();
@@ -650,9 +650,9 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 				}
 
 				String message = getMessage(datesOfModifications, iControlledOutlet.getOutletName());
-				LOGGER.log(Level.INFO, message);
+				logger.log(Level.INFO, message);
 			} else {
-				LOGGER.log(Level.INFO, "no changes found");
+				logger.log(Level.INFO, "no changes found");
 			}
 		}
 	}
@@ -738,7 +738,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		HashMap<TimeSeriesDataContainer.TimeSeriesDataType, ConcurrentNavigableMap<Date, TimeSeriesDataContainer>> tsData = gc.getTimeSeriesDataForGateSettingsDateRange();
 
 		if (tsData.isEmpty()) {
-			LOGGER.fine("ts data is empty");
+			logger.fine("ts data is empty");
 			// this is based what BulkSettingsModel does.
 			ThreadIdProvider idprov = new DefaultThreadIdProvider();
 		
@@ -763,16 +763,13 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 			refElev = 0;
 		}
 
-		if(gsb != null)
-		{
-			gsb.setElevationCommon(poolElev);
-			gsb.setIsElevationOverridden(false);
-			gsb.setTailwaterCommon(tailElev);
-			gsb.setIsTailwaterOveridden(false);
-			gsb.setReferenceCommon(refElev);
-			gsb.setIsReferenceOveridden(false);
-			gsb.setModified(true);
-		}
+		gsb.setElevationCommon(poolElev);
+		gsb.setIsElevationOverridden(false);
+		gsb.setTailwaterCommon(tailElev);
+		gsb.setIsTailwaterOveridden(false);
+		gsb.setReferenceCommon(refElev);
+		gsb.setIsReferenceOveridden(false);
+		gsb.setModified(true);
 
 		return gsb;
 	}
@@ -978,7 +975,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	}
 
 	private Map<String, IOutlet> getOutletsBySubMap(LocationTemplate locRef, OptionalParams options) throws DbConnectionException, DbIoException {
-		Map<String, IOutlet> outletsBySubMap = new HashMap<>();
+		Map<String, IOutlet> outletsBySubMap = null;
 		RegiDomain regi = getRegiDomain();
 		ManagerId manId = getManagerId();
 
@@ -988,6 +985,8 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 
 		//	ITimeSeriesDescription timeSeriesId = association.getTimeSeriesId();
 		List<IOutlet> outlets = getIOutlets(regi, locProject, options);
+
+		outletsBySubMap = new HashMap<>();
 		for (IOutlet outlet : outlets) {
 			if (outlet != null) {
 				Location location = outlet.getLocation();
