@@ -32,8 +32,6 @@ import usace.rowcps.computation.inflow.ZeroNegativeAdjustedInflowsAction;
 import usace.rowcps.data.CacheInitializationException;
 import usace.rowcps.data.LocalOffset;
 import usace.rowcps.data.project.AtProjectDescriptor;
-import usace.rowcps.data.tabs.RegiTabSpec;
-import usace.rowcps.data.tabs.RegiTabType;
 import usace.rowcps.headless.calculator.AbstractScriptableCalc;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
 import usace.rowcps.regi.executor.DefaultThreadIdProvider;
@@ -52,12 +50,12 @@ import usace.rowcps.regi.model.RegiDomain;
  */
 public class ScriptableInflowImpl extends AbstractScriptableCalc implements ScriptableCalc, ScriptableInflow {
 
-    private static final Logger logger = Logger.getLogger(ScriptableInflowImpl.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ScriptableInflowImpl.class.getName());
 
-    private long _msTimeOffsetIntoInterval = 7 * 3600 * 1000;  //TODO  7am for now
-    private String _intervalName = "1Day";
+    private final long _msTimeOffsetIntoInterval = 7 * 3600 * 1000;  //TODO  7am for now
+    private final String _intervalName = "1Day";
 
-    private Map<LocationTemplate, InflowAdjustedTypeModel> statusMaps = new HashMap<>();
+    private final Map<LocationTemplate, InflowAdjustedTypeModel> statusMaps = new HashMap<>();
 
     private IntervalProvider buildIntervalProvider(TimeZone projectTimeZone) {
     return new IntervalProvider() {
@@ -77,7 +75,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
                     interval = new Interval(_intervalName);
                 }
             } catch (DataSetIllegalArgumentException ex) {
-                logger.log(Level.WARNING,
+                LOGGER.log(Level.WARNING,
                         "Error instantiating interval for: " + _intervalName + ".",
                         ex);
             }
@@ -119,14 +117,14 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
             InflowCache inflowCache = getCache(locRef, startDate, options);
             startDate = inflowCache.getCeilingDateKey(startDate);
 
-            logger.info("performing AutoAdjustInflowsAction");
+            LOGGER.info("performing AutoAdjustInflowsAction");
 
             AutoAdjustInflowsAction aaia = new AutoAdjustInflowsAction(startDate, inflowCache, hec.data.Units.ENGLISH_ID, asm);
             aaia.setFreezeRainDays(freezeRain);
             aaia.setUseLimits(useLimits);
 
             aaia.actionPerformed(null);
-            logger.info("AutoAdjustInflowsAction complete. Saving cache data.");
+            LOGGER.info("AutoAdjustInflowsAction complete. Saving cache data.");
 
             inflowCache.saveData(options);
 
@@ -154,11 +152,11 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
             InflowCache inflowCache = getCache(locRef, startDate, options);
             startDate = inflowCache.getCeilingDateKey(startDate);
 
-            logger.info("performing CloneInflowsAction");
+            LOGGER.info("performing CloneInflowsAction");
             CloneInflowsAction cloneAction
                     = new CloneInflowsAction(startDate, inflowCache, hec.data.Units.ENGLISH_ID, asm);
             cloneAction.actionPerformed(null);
-            logger.info("CloneInflowsAction completed. Saving cache data.");
+            LOGGER.info("CloneInflowsAction completed. Saving cache data.");
 
             inflowCache.saveData(options);
 
@@ -184,11 +182,11 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
             InflowCache inflowCache = getCache(locRef, startDate, options);
             startDate = inflowCache.getCeilingDateKey(startDate);
 
-            logger.info("performing ZeroNegativeAdjustedInflowsAction");
+            LOGGER.info("performing ZeroNegativeAdjustedInflowsAction");
             ZeroNegativeAdjustedInflowsAction zeroAction = new ZeroNegativeAdjustedInflowsAction(startDate, inflowCache,
                     hec.data.Units.ENGLISH_ID, asm);
             zeroAction.actionPerformed(null);
-            logger.info("ZeroNegativeAdjustedInflowsAction complete.  Saving cache data.");
+            LOGGER.info("ZeroNegativeAdjustedInflowsAction complete.  Saving cache data.");
             inflowCache.saveData(options);
 
         } catch (DbConnectionException ex) {
@@ -212,11 +210,11 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 
             InflowAdjustedTypeModel asm = getOrCreateStatusMap(locRef);
 
-            logger.info("performing BalanceAdjustedInflowsAction");
+            LOGGER.info("performing BalanceAdjustedInflowsAction");
             BalanceAdjustedInflowsAction balanceAll = new BalanceAdjustedInflowsAction(startDate, inflowCache,
                     hec.data.Units.ENGLISH_ID, asm);
             balanceAll.actionPerformed(null);
-            logger.info("BalanceAdjustedInflowsAction complete.  Saving data.");
+            LOGGER.info("BalanceAdjustedInflowsAction complete.  Saving data.");
 
             inflowCache.saveData(options);
 
@@ -229,9 +227,10 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
         }
     }
 
-    public InflowCache getCache(LocationTemplate locRef, final Date startDate, OptionalParams options)
+    private InflowCache getCache(LocationTemplate locRef, final Date startDate, OptionalParams options)
             throws DbConnectionException, DbIoException,
-            InterruptedException, CacheInitializationException {
+            InterruptedException, CacheInitializationException
+	{
         RegiDomain domain = getRegiDomain();
         AtProjectManager atProjectManager = domain.getAtProjectManager(getManagerId());
         AtProjectDescriptor projectDescriptor = atProjectManager.getProjectDescriptor(locRef, CacheUsage.NORMAL);
@@ -243,36 +242,16 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 
             @Override
             public void asyncHeadCacheFetchCompleted() {
-                logger.info("asyncHeadCacheFetchCompleted");
+                LOGGER.info("asyncHeadCacheFetchCompleted");
                 headLatch.countDown();
             }
         };
         
         Set<Date> modifiedDatesForCachedSettings = null;
 
-        ICurrentDayControl currentDayControl = new ICurrentDayControl() {
-
-            @Override
-            public void setDate(Date date, boolean fireEvents) {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-            }
-
-            @Override
-            public Date getCurrentDate() {
-                return startDate;
-            }
-
-            @Override
-            public int getLookbackDays() {
-                return 31;
-            }
-
-            @Override
-            public int getLookForwardDays() {
-                return 31;
-            }
-        };
         TimeZone projectTimeZone = atProjectManager.getIProject(projectDescriptor).getProjectTimeZone();
+        ICurrentDayControl currentDayControl = new HeadlessCurrentDayControl(startDate, projectTimeZone);
+		
         InflowCache inflowCache = new InflowCache(currentDayControl, getManagerId(), projectDescriptor,
                 eventThreadExceptionProcessor, completionCallbackTarget,
                 modifiedDatesForCachedSettings, projectTimeZone, getIntervalProvider(projectTimeZone)) {
@@ -289,7 +268,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	    ThreadIdProvider idprov = new DefaultThreadIdProvider(); // new RegiTabSpec(RegiTabType.INFLOW));
         inflowCache.initCache( idprov, options);
 
-        logger.info("Waiting for InflowCache to initialize.");
+        LOGGER.info("Waiting for InflowCache to initialize.");
 		Integer seconds = Integer.getInteger("rowcps.latchseconds", 11*60);
 		headLatch.await(seconds, TimeUnit.SECONDS);        
 
@@ -319,11 +298,11 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
             inflowCache.computeInflowMassDelta(dateKey, hec.data.Units.ENGLISH_ID);
         }
 
-        logger.info("InflowCache is initialized.");
+        LOGGER.info("InflowCache is initialized.");
         return inflowCache;
     }
 
-    public IntervalProvider getIntervalProvider(TimeZone projectTimeZone) {
+    private IntervalProvider getIntervalProvider(TimeZone projectTimeZone) {
         return buildIntervalProvider(projectTimeZone);
     }
 
@@ -340,4 +319,51 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
         return retval;
     }
 
+	private class HeadlessCurrentDayControl implements ICurrentDayControl
+	{
+		private final Date _startDate;
+		private final int _lookBack;
+		private final int _lookForward;
+
+		public HeadlessCurrentDayControl(Date currentDate, TimeZone projectTimeZone)
+		{
+			_startDate = currentDate;
+			System.out.println("Date: " + currentDate);
+			List<Date> dates = InflowComputation.getDatesInMonth(currentDate, projectTimeZone);
+			
+			Calendar curCal = Calendar.getInstance(projectTimeZone);
+			Calendar startCal = Calendar.getInstance(projectTimeZone);
+			Calendar endCal = Calendar.getInstance(projectTimeZone);
+			
+			curCal.setTime(currentDate);
+			startCal.setTime(dates.get(0));
+			endCal.setTime(dates.get(dates.size() - 2));
+			
+			_lookBack = curCal.get(Calendar.DATE) - (startCal.get(Calendar.DATE) - 1);
+			_lookForward = endCal.get(Calendar.DATE) - curCal.get(Calendar.DATE);
+			System.out.println("Start Date of Dates In Month: " + dates.get(0));
+			System.out.println("Look Forward: " + _lookForward);
+			System.out.println("Look Back: " + _lookBack);
+		}
+		
+		@Override
+		public void setDate(Date date, boolean fireEvents) {
+			throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		}
+
+		@Override
+		public Date getCurrentDate() {
+			return _startDate;
+		}
+
+		@Override
+		public int getLookbackDays() {
+			return _lookBack;
+		}
+
+		@Override
+		public int getLookForwardDays() {
+			return _lookForward;
+		}
+	}
 }
