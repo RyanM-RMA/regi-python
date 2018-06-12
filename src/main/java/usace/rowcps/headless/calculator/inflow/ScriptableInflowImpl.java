@@ -328,7 +328,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 		public HeadlessCurrentDayControl(Date currentDate, TimeZone projectTimeZone)
 		{
 			_startDate = currentDate;
-			System.out.println("Date: " + currentDate);
+//			System.out.println("Date: " + currentDate);
 			List<Date> dates = InflowComputation.getDatesInMonth(currentDate, projectTimeZone);
 			
 			Calendar curCal = Calendar.getInstance(projectTimeZone);
@@ -341,9 +341,9 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 			
 			_lookBack = curCal.get(Calendar.DATE) - (startCal.get(Calendar.DATE) - 1);
 			_lookForward = endCal.get(Calendar.DATE) - curCal.get(Calendar.DATE);
-			System.out.println("Start Date of Dates In Month: " + dates.get(0));
-			System.out.println("Look Forward: " + _lookForward);
-			System.out.println("Look Back: " + _lookBack);
+//			System.out.println("Start Date of Dates In Month: " + dates.get(0));
+//			System.out.println("Look Forward: " + _lookForward);
+//			System.out.println("Look Back: " + _lookBack);
 		}
 		
 		@Override
