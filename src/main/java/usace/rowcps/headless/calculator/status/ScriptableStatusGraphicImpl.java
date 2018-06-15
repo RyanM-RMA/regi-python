@@ -151,7 +151,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         final IProject iProject = atProjectManager.getIProject(locTemp, CacheUsage.NORMAL);
 
         final ReservoirPlotPanelData rppd = new ReservoirPlotPanelData(iProject, utcTimeInfoSource, managerId, rgod);
-        rppd.addListener(pcl);
+        rppd.addPropertyChangeListener(pcl);
 
         ReservoirPlotPanel reservoirPlotPanel;
 
