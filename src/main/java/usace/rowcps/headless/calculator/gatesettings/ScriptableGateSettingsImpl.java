@@ -34,18 +34,15 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -71,7 +68,6 @@ import usace.rowcps.computation.gatesettings.common.GateCache;
 import usace.rowcps.computation.gatesettings.common.GateMergeException;
 import usace.rowcps.computation.gatesettings.common.GateOpeningEntry;
 import usace.rowcps.computation.gatesettings.common.GateSettingsBlock;
-import usace.rowcps.computation.gatesettings.common.OutletGroup;
 import usace.rowcps.computation.gatesettings.finetuning.FineTuneRowElementSynthetic;
 import usace.rowcps.computation.gatesettings.finetuning.FineTuningRowType;
 import usace.rowcps.computation.util.LookupRecordBase;
@@ -119,7 +115,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "createGateSettings");
 		OptionalParams options = new OptionalParams(metrics);
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
-		GateCache gc = getCache(locRef, startDate, end, options);
+		HeadlessGateCache gc = getCache(locRef, startDate, end, options);
 
 		IControlledOutletGroupContainer outletGroupContainer = gc.getOutletGroupContainer();
 		if (outletGroupContainer != null) {
@@ -141,7 +137,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "createGateSettingsOutlet");
 		OptionalParams options = new OptionalParams(metrics);
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
-		GateCache gc = getCache(locRef, startDate, end, options);
+		HeadlessGateCache gc = getCache(locRef, startDate, end, options);
 
 		IControlledOutlet iControlledOutlet = getIControlledOutlet(gc, outletId);
 		if (iControlledOutlet != null) {
@@ -179,7 +175,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "createGateSettingsOutletFromTs");
 		OptionalParams options = new OptionalParams(metrics);
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
-		GateCache gc = getCache(locRef, startDate, end, options);
+		HeadlessGateCache gc = getCache(locRef, startDate, end, options);
 
 		IControlledOutlet iControlledOutlet = getIControlledOutlet(gc, outletId);
 		if (iControlledOutlet != null) {
@@ -206,7 +202,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "createGateSettingsGroup");
 		OptionalParams options = new OptionalParams(metrics);
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
-		GateCache gc = getCache(locRef, startDate, end, options);
+		HeadlessGateCache gc = getCache(locRef, startDate, end, options);
 
 		IControlledOutletGroupContainer ogc = gc.getOutletGroupContainer();
 		if (ogc != null) {
@@ -220,7 +216,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	}
 
 //	GateCache GateCache = getCache(locRef, startDate);
-	public GateCache getCache(LocationTemplate locRef, final Date startDate, final Date endDate, OptionalParams options) throws DbConnectionException, DbIoException,
+	public HeadlessGateCache getCache(LocationTemplate locRef, final Date startDate, final Date endDate, OptionalParams options) throws DbConnectionException, DbIoException,
 			CacheInitializationException {
 
 		RegiDomain domain = getRegiDomain();
@@ -271,26 +267,10 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 				return 3;
 			}
 		};
-
-		GateCache gateCache = new GateCache(getManagerId(), projectDescriptor, MAXROWSTORETRIEVE, currentDayControl, eventThreadExceptionProcessor, completionCallbackTarget, modifiedDatesForCachedSettings) {
-			@Override
-			protected void updateHeadTimeWindow(Calendar start, Calendar end, SortedMap<Date, ? extends Object> currentCache) {
-				super.updateHeadTimeWindow(start, end, currentCache);
-				if (start.getTime().after(startDate)) {
-					start.setTime(startDate);
-				}
-			}
-
-			@Override
-			protected void updateTailTimeWindow(Calendar start, Calendar end, SortedMap<Date, ? extends Object> currentCache) {
-				super.updateTailTimeWindow(start, end, currentCache);
-				if (end.getTime().before(endDate)) {
-					end.setTime(endDate);
-				}
-
-			}
-
-		};
+		
+		HeadlessGateCache gateCache = new HeadlessGateCache(startDate, endDate, getManagerId(),
+				projectDescriptor, MAXROWSTORETRIEVE, currentDayControl, eventThreadExceptionProcessor,
+				completionCallbackTarget, modifiedDatesForCachedSettings);
 
 		//GateCache gateCache = new GateCache(getManagerId(), projectDescriptor, 35, completionCallbackTarget, modifiedDatesForCachedSettings);
 //        gateCache.setDisplayUnitSystem(hec.data.Units.SI_ID);  // does this matter?
@@ -432,7 +412,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		return set;
 	}
 
-	public void createGateSettingsGroup(GateCache gc, LocationTemplate locRef, Date startDate, Date end, IControlledOutletGroup outletGroup, OptionalParams options)
+	public void createGateSettingsGroup(HeadlessGateCache gc, LocationTemplate locRef, Date startDate, Date end, IControlledOutletGroup outletGroup, OptionalParams options)
 			throws DataSetException, DbException, HecMathException {
 		List<IControlledOutlet> outlets = outletGroup.getOutlets();
 
@@ -552,7 +532,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		return retval;
 	}
 
-	private void createGateSettingsOutlet(GateCache gc, LocationTemplate locRef, Date startDate, Date end,
+	private void createGateSettingsOutlet(HeadlessGateCache gc, LocationTemplate locRef, Date startDate, Date end,
 			IControlledOutlet iControlledOutlet, Map<String, TimeSeriesIds> tsIdsBySubMap, OptionalParams options) throws DbConnectionException, DbIoException,
 			DataSetIllegalArgumentException, DbException,
 			DataSetException, HecMathException {
@@ -574,7 +554,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		}
 	}
 
-	public void createGateSettingsOutlet(GateCache gc, LocationTemplate locRef, Date startDate, Date end,
+	public void createGateSettingsOutlet(HeadlessGateCache gc, LocationTemplate locRef, Date startDate, Date end,
 			IControlledOutlet iControlledOutlet, String tsIdStr, OptionalParams options) throws DataSetException, DbException, HecMathException {
 		AtTimeSeriesManager tsManager = getRegiDomain().getAtTimeSeriesManager(getManagerId());
 
@@ -587,46 +567,46 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 			DataSetTx dataSetTx = getDataSetTx(dtx, startDate, end, tsManager, options);
 
 			LOGGER.log(Level.INFO, "finding changes");
-			NavigableSet<Long> timeOfChanges = findChanges(dataSetTx);
-			if (timeOfChanges != null && !timeOfChanges.isEmpty()) {
+			NavigableSet<Long> changeTimes = findChanges(dataSetTx);
+			if (changeTimes != null && !changeTimes.isEmpty()) {
 
+				NavigableSet<Date> closedDates = new TreeSet<>();
 				NavigableMap<Date, Double> tsMap = dataSetTx.getDateValueNavigableMap();
-				NavigableMap<Date, GateOpeningEntry> cacheEntries = findEntriesForOutlet(iControlledOutlet, gc, startDate, end);
+				NavigableMap<Date, GateOpeningEntry> cacheEntries = findEntriesForOutlet(iControlledOutlet, gc, startDate, end, closedDates);
 				// What if dateEntryMap is null or empty?
 // 
 				TreeSet<Date> datesOfModifications = new TreeSet<>();
 				// Coming from the back lets us ignore the gate-entries we are adding.
 				// Also we only care about the changes in the timeseries.
-				for (Iterator<Long> iterator = timeOfChanges.descendingIterator(); iterator.hasNext();) {
-					Long next = iterator.next();
-					if (next != null) {
-						Date tsDate = new Date(next);
+				for (Long changeTime : changeTimes)
+				{
+					if (changeTime != null) {
+						Date tsDate = new Date(changeTime);
 						Double tsValue = tsMap.get(tsDate);
 
-						boolean hasDiff = hasDifferenceAtDate(cacheEntries, tsValue, tsDate);
-
-//
-//                        if (tsValue != null && RMAConst.isValidValue(tsValue)) 
-//			{
-//
-//                            Map.Entry<Date, GateOpeningEntry> floorEntry = getValidFloorEntry(dateEntryMap, tsDate);
-//			    // what if there isn't a floorEntry?   
-//                            Double cacheValueInEffectAtDate = getValueFromEntry(floorEntry);
-//
-//                            if (!Objects.equals(cacheValueInEffectAtDate, tsValue)) 
-						if (hasDiff) {
+						boolean hasDiff = hasDifferenceAtDate(cacheEntries, tsValue, tsDate, closedDates);
+						
+						if (hasDiff)
+						{
 							Map.Entry<Date, GateOpeningEntry> floorEntry = getValidFloorEntry(cacheEntries, tsDate);
-							try {
+							try
+							{
 								// difference detected
 								// immediately make the change and apply it
 
 								GateSettingsBlock gateSettingBlock = gc.getGateSetting(tsDate);
 								if (gateSettingBlock == null) {
 									LOGGER.log(Level.INFO, "buildGateSettingsBlock");
-									Date cacheFloorDate = null;
-									if (floorEntry != null) {
-										cacheFloorDate = floorEntry.getKey();
+									Date cacheFloorDate = closedDates.floor(tsDate);
+									if (floorEntry != null)
+									{
+										Date floorEntryDate = floorEntry.getKey();
+										if (cacheFloorDate == null || floorEntryDate.after(cacheFloorDate))
+										{
+											cacheFloorDate = floorEntryDate;
+										}
 									}
+									
 									gateSettingBlock = buildGateSettingsBlock(gc, cacheFloorDate, tsDate);
 
 									gateSettingBlock.setModified(true);
@@ -805,24 +785,28 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		return retval;
 	}
 
-	public NavigableMap<Date, GateOpeningEntry> findEntriesForOutlet(IControlledOutlet iControlledOutlet, GateCache gc, Date startDate,
-			Date end) {
+	public NavigableMap<Date, GateOpeningEntry> findEntriesForOutlet(IControlledOutlet iControlledOutlet,
+																	 GateCache gc, Date startDate, Date end,
+																	 Set<Date> closedDates)
+	{
 		NavigableMap<Date, GateOpeningEntry> dateEntryMap = null;
 		if (iControlledOutlet != null) {
 			Date[] gateSettingKeys = gc.getGateSettingKeys();
 
 			TreeSet<Date> dateset = new TreeSet<>();
-			if (gateSettingKeys != null && gateSettingKeys.length > 0) {
+			if (gateSettingKeys != null)
+			{
 				dateset.addAll(Arrays.asList(gateSettingKeys));
 			}
 
 			Date startAt = dateset.floor(startDate);
 			// I think I need the date before the startDate too so that I know what it changed from at startDate?
-			if (startAt == null) {
+			if (startAt == null)
+			{
 				startAt = startDate;
 			}
 
-			SortedSet<Date> subSet = dateset.subSet(startAt, end);
+			SortedSet<Date> subSet = dateset.subSet(startAt, true, end, true);
 
 			// this is the way its structured in the cache
 			NavigableMap<Date, Map<IControlledOutletGroup, Map<IControlledOutlet, GateOpeningEntry>>> dateGrpOutletEntryMap
@@ -839,7 +823,16 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 			}
 			if (outletDateEntryMap != null) {
 				dateEntryMap = outletDateEntryMap.get(iControlledOutlet);
+				
+				for (Date date : subSet)
+				{
+					if (!dateEntryMap.containsKey(date))
+					{
+						closedDates.add(date);
+					}
+				}
 			}
+			
 		}
 		return dateEntryMap;
 	}
@@ -852,7 +845,6 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 				GateSettingsBlock gsb = gc.getGateSetting(date);
 
 				if (gsb != null) {
-
 					List<AggregateGateOpeningEntry> entryList = gsb.getReadOnlyAggregateOpenings();
 					if (entryList != null && !entryList.isEmpty()) {
 						Map<IControlledOutletGroup, Map<IControlledOutlet, GateOpeningEntry>> map = new HashMap<>();
@@ -863,17 +855,8 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 
 								if (gateSettings != null && !gateSettings.isEmpty()) {
 									IControlledOutletGroup controlledOutletGroup = entry.getOutletGroup();
-									if (controlledOutletGroup instanceof OutletGroup) {
-										OutletGroup outletGroup = (OutletGroup) controlledOutletGroup;
-//									try {
-//										String openingsUnitsForGroupSI = outletGroup.getOpeningsUnitsForGroup(hec.data.Units.SI_ID);
-//									} catch (Exception ex) {
-//										Logger.getLogger(ScriptableGateSettingsImpl.class.getName()).log(Level.SEVERE, null, ex);
-//									}
-
-									}
-
 									Map<IControlledOutlet, GateOpeningEntry> entries = map.get(controlledOutletGroup);
+									
 									if (entries == null) {
 										entries = new HashMap<>();
 										map.put(controlledOutletGroup, entries);
@@ -1050,23 +1033,48 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 
 		return retval;
 	}
+	
+	private boolean isEntryAfterNearestClosedDate(NavigableSet<Date> closedDates, Map.Entry<Date, GateOpeningEntry> floorEntry, Date tsDate)
+	{
+		boolean output = false;
+		Date nearestClose = closedDates.floor(tsDate);
+		
+		if (floorEntry != null && nearestClose != null)
+		{
+			Date key = floorEntry.getKey();
+			output = key.after(nearestClose);
+		}
+		
+		return output;
+	}
 
-	private boolean hasDifferenceAtDate(NavigableMap<Date, GateOpeningEntry> dateEntryMap, Double tsValue, Date tsDate) {
-		if (dateEntryMap != null && tsValue != null && RMAConst.isValidValue(tsValue)) {
-
+	private boolean hasDifferenceAtDate(NavigableMap<Date, GateOpeningEntry> dateEntryMap, Double tsValue, Date tsDate, NavigableSet<Date> closedDates)
+	{
+		boolean output = true;
+		
+		if (dateEntryMap != null && tsValue != null && RMAConst.isValidValue(tsValue))
+		{
 			Map.Entry<Date, GateOpeningEntry> floorEntry = getValidFloorEntry(dateEntryMap, tsDate);
-			// what if there isn't a floorEntry?  - I guess you assume its a change.
-			if (floorEntry != null) {
-
+			boolean afterNearestClose = isEntryAfterNearestClosedDate(closedDates, floorEntry, tsDate);
+			
+			if (floorEntry != null && afterNearestClose)
+			{
 				Double cacheValueInEffectAtDate = getValueFromEntry(floorEntry);
-
-				if (Objects.equals(cacheValueInEffectAtDate, tsValue)) {
-					return false;
+				
+				if (Objects.equals(cacheValueInEffectAtDate, tsValue))
+				{
+					output = false;
 				}
+			}
+			//Floor entry is null, or there's a closed entry before this date.
+			//If it's closed, and there's a null or closed value before it, then we haven't changed.
+			else if (HeadlessGateCache.isClosedGateOpening(tsValue))
+			{
+				output = false;
 			}
 		}
 
-		return true;
+		return output;
 	}
 
 }
