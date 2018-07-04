@@ -27,6 +27,7 @@ import usace.rowcps.regi.model.RegiDomain;
 import hec.map.geoui.interp.TimeInfo;
 import java.awt.AlphaComposite;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -56,6 +57,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.TimeUnit;
@@ -173,9 +175,26 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         Thread.sleep(2000);
 
         String imageFormat = getFormatFromFile(filename);
-        final Dimension d = new Dimension(width, height);
+		
+		Dimension d = computePreferredSize(reservoirPlotPanel, width, height);
+		
         layoutAndSave(reservoirPlotPanel, d, filename, imageFormat);
     }
+	
+	private Dimension computePreferredSize(Component comp, int requestedWidth, int requestedHeight)
+	{
+		comp.setPreferredSize(null);	//Causes the component to recompute its pref size
+		Dimension prefSize = comp.getPreferredSize();
+		Dimension reqSize = new Dimension(requestedWidth, requestedHeight);
+		
+		//This should prevent most clipping issues where the size provided is too small for the data.
+		return computeLargestDimension(prefSize, reqSize);
+	}
+	
+	private Dimension computeLargestDimension(Dimension dim1, Dimension dim2)
+	{
+		return new Dimension(Math.max(dim1.width, dim2.width), Math.max(dim1.height, dim2.height));
+	}
 
     private boolean checkForKnownNeededServices()
     {
@@ -276,35 +295,14 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         };
 
         streamData.addPropertyChangeListener(pcl);
-
-//		logger.info("calling getCurrentEmbankment");
-        streamData.getCurrentEmbankment();
-//		logger.info("calling getCurrentFlow");
-        streamData.getCurrentFlow();
-//		logger.info("calling getCurrentStage");
-        streamData.getCurrentStage();
-
-        Integer seconds = Integer.getInteger(LATCH_SECONDS, 11 * 60); // This one goes to 11...
-        boolean normalExit = cdl.await(seconds, TimeUnit.SECONDS);
-        if (!normalExit)
-        {
-            LOGGER.log(Level.INFO, "Exceeded timeout waiting for status data model to load.");
-        }
-
-        final Dimension d = new Dimension(width, height);
+		Future future = streamData.retrieveData();
+        future.get(11, TimeUnit.MINUTES);	//No return from this, but we need to wait until it's done.
 
         String imageFormat = getFormatFromFile(filename);
-
-        RunnableFuture<StreamPlotPanel> panelFuture = new FutureTask<>(() ->
-        {
-            StreamPlotPanel spp = new StreamPlotPanel();  // Why is this building a panel on background thread?
-            spp.setData(streamData);
-            return spp;
-        });
-
-        SwingUtilities.invokeLater(panelFuture);
-
-        final StreamPlotPanel panel = panelFuture.get(11, TimeUnit.MINUTES);
+		
+		StreamPlotPanel panel = new StreamPlotPanel(streamData);  // Why is this building a panel on background thread?
+		
+		Dimension d = computePreferredSize(panel, width, height);
 
         layoutAndSave(panel, d, filename, imageFormat);
     }
@@ -350,8 +348,9 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 				releasesGraphicPanel.setData(data);
 				releasesGraphicPanel.paintImmediately(0, 0, width, height);
 				
-				Dimension imageDimension = new Dimension(width, height);
+				Dimension imageDimension = computePreferredSize(releasesGraphicPanel, width, height);
 				String imageFormat = getFormatFromFile(filename);
+				
 				try
 				{
 					layoutAndSave(releasesGraphicPanel, imageDimension, filename, imageFormat);
