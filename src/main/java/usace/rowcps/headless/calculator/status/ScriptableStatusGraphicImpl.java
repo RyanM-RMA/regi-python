@@ -318,7 +318,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 
 		CompletableFuture<Void> future = data.retrieveOutletGroups(new OptionalParams(metrics));
         data.updateDataScopeSynchronous(new OptionalParams(metrics));
-		future.join();
+		future.get();
         
 		saveReleasesToFile(data, width, height, filename);
     }
@@ -328,7 +328,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 		LocationTemplate locTemp = new LocationTemplate(officeId, locationId);
 		AtLocationManager locMan = this.regiDomain.getAtLocationManager(getManagerId());
 		Location loc = locMan.retrieveLocation(locTemp, CacheUsage.NORMAL);
-		final TimeInfo utcTimeInfo = getUtcTimeInfo(current, this.regiDomain.getTimeZone());
+		TimeInfo utcTimeInfo = getUtcTimeInfo(current, this.regiDomain.getTimeZone());
 		TimeInfoSource utcTimeInfoSource = () -> utcTimeInfo;
 		SimpleMapPanelDateRange simpleDateRange = new SimpleMapPanelDateRange(current);
 		MapPanelDateRangeService.registerRange(getManagerId(), simpleDateRange);
@@ -337,16 +337,21 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 		return new MyReleasesGraphicData(loc, managerId, utcTimeInfoSource, graphicOptionData, new OptionalParams(metrics));
 	}
 
-	private void saveReleasesToFile(final ReleasesGraphicData data, final int width, final int height, String filename)
+	private void saveReleasesToFile(ReleasesGraphicData data, int width, int height, String filename)
 	{
 		try
 		{
 			SwingUtilities.invokeAndWait(() ->
 			{
-				ReleasesGraphicPanel releasesGraphicPanel = new HeadlessReleasesGraphicPanel();
-				
+				ReleasesGraphicPanel releasesGraphicPanel = new ReleasesGraphicPanel(false, true);
 				releasesGraphicPanel.setData(data);
-				releasesGraphicPanel.paintImmediately(0, 0, width, height);
+				
+				//This is a bit assinine, but it's used to massage the preferred sizes
+				//The detail component's pref size is constantly recomputed on paint....why?  because science!  and my youthful ignorance.
+				renderGraphic(releasesGraphicPanel);
+				renderGraphic(releasesGraphicPanel);
+				renderGraphic(releasesGraphicPanel);
+				renderGraphic(releasesGraphicPanel);
 				
 				Dimension imageDimension = computePreferredSize(releasesGraphicPanel, width, height);
 				String imageFormat = getFormatFromFile(filename);
@@ -369,6 +374,15 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 		{
 			Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.SEVERE, "An uncaught exception occurred on the Event Thread for generateReleasesStatusImage.", ex);
 		}
+	}
+
+	private void renderGraphic(JComponent comp)
+	{
+		layoutComponent(comp, comp.getSize());
+		BufferedImage img = new BufferedImage(comp.getWidth(), comp.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = img.createGraphics();
+		comp.print(g);
+		computePreferredSize(comp, comp.getWidth(), comp.getHeight());
 	}
 
     private void layoutComponent(JComponent component, Dimension d)
@@ -401,12 +415,6 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
             super(loc, manId, tis, options, optionalParams);
         }
 
-        @Override
-        public void fireRepaintEvent()
-        {
-            super.fireRepaintEvent(); //To change body of generated methods, choose Tools | Templates.
-        }
-		
 		@Override
 		public CompletableFuture<Void> updateDataScope(OptionalParams params)
 		{
@@ -415,9 +423,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 				_hasRetrieved = true;
 				return super.updateDataScope(params);
 			}
-			CompletableFuture<Void> fut = new CompletableFuture<>();
-			fut.complete(null);
-			return fut;
+			return CompletableFuture.completedFuture(null);
 		}
 		
 		public void updateDataScopeSynchronous(OptionalParams params)
