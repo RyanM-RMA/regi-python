@@ -13,7 +13,6 @@ import usace.metrics.services.Metrics;
 import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.computation.ITimeSeriesComputationResult;
 import usace.rowcps.computation.TimeSeriesComputationError;
-import usace.rowcps.computation.flowgroup.DbCommitFlowGroupCalc;
 import usace.rowcps.data.flowgroup.FlowGroupTimeSeries;
 import usace.rowcps.data.flowgroup.IFlowGroup;
 import usace.rowcps.data.project.AtProjectDescriptor;
@@ -66,7 +65,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
                 
                 possiblyWarnAboutMilliseconds(startTime, endTime);
                 
-                DbCommitFlowGroupCalc calc = new DbCommitFlowGroupCalc(projDesc);
+                HeadlessDbCommitFlowGroupCalc calc = new HeadlessDbCommitFlowGroupCalc(projDesc);
                 calc.calcTimeSeries(getManagerId(),
                         projDesc.getProjectLocationRef(),
                         null,
@@ -124,7 +123,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
                 
                 possiblyWarnAboutMilliseconds(startTime, endTime);
                 
-                DbCommitFlowGroupCalc calc = new DbCommitFlowGroupCalc(projDesc);
+                HeadlessDbCommitFlowGroupCalc calc = new HeadlessDbCommitFlowGroupCalc(projDesc);
                 calc.calcTimeSeries(getManagerId(),
                         projDesc.getProjectLocationRef(),
                         null,
