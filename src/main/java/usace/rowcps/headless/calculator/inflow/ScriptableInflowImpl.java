@@ -1,9 +1,11 @@
 package usace.rowcps.headless.calculator.inflow;
 
+import hec.data.DataSetException;
 import hec.data.DataSetIllegalArgumentException;
 import hec.data.Interval;
 import hec.data.location.LocationTemplate;
 import hec.db.DbConnectionException;
+import hec.db.DbException;
 import hec.db.DbIoException;
 import java.util.Calendar;
 import java.util.Date;
@@ -229,7 +231,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 
     private InflowCache getCache(LocationTemplate locRef, final Date startDate, OptionalParams options)
             throws DbConnectionException, DbIoException,
-            InterruptedException, CacheInitializationException
+            InterruptedException, CacheInitializationException, DbException, DataSetException
 	{
         RegiDomain domain = getRegiDomain();
         AtProjectManager atProjectManager = domain.getAtProjectManager(getManagerId());
@@ -250,7 +252,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
         Set<Date> modifiedDatesForCachedSettings = null;
 
         TimeZone projectTimeZone = atProjectManager.getIProject(projectDescriptor).getProjectTimeZone();
-        ICurrentDayControl currentDayControl = new HeadlessCurrentDayControl(startDate, projectTimeZone);
+        ICurrentDayControl currentDayControl = new HeadlessInflowCurrentDayControl(managerId, startDate, projectTimeZone, locRef);
 		
         InflowCache inflowCache = new InflowCache(currentDayControl, getManagerId(), projectDescriptor,
                 eventThreadExceptionProcessor, completionCallbackTarget,
@@ -318,52 +320,4 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 
         return retval;
     }
-
-	private class HeadlessCurrentDayControl implements ICurrentDayControl
-	{
-		private final Date _startDate;
-		private final int _lookBack;
-		private final int _lookForward;
-
-		public HeadlessCurrentDayControl(Date currentDate, TimeZone projectTimeZone)
-		{
-			_startDate = currentDate;
-//			System.out.println("Date: " + currentDate);
-			List<Date> dates = InflowComputation.getDatesInMonth(currentDate, projectTimeZone);
-			
-			Calendar curCal = Calendar.getInstance(projectTimeZone);
-			Calendar startCal = Calendar.getInstance(projectTimeZone);
-			Calendar endCal = Calendar.getInstance(projectTimeZone);
-			
-			curCal.setTime(currentDate);
-			startCal.setTime(dates.get(0));
-			endCal.setTime(dates.get(dates.size() - 2));
-			
-			_lookBack = curCal.get(Calendar.DATE) - (startCal.get(Calendar.DATE) - 1);
-			_lookForward = endCal.get(Calendar.DATE) - curCal.get(Calendar.DATE);
-//			System.out.println("Start Date of Dates In Month: " + dates.get(0));
-//			System.out.println("Look Forward: " + _lookForward);
-//			System.out.println("Look Back: " + _lookBack);
-		}
-		
-		@Override
-		public void setDate(Date date, boolean fireEvents) {
-			throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-		}
-
-		@Override
-		public Date getCurrentDate() {
-			return _startDate;
-		}
-
-		@Override
-		public int getLookbackDays() {
-			return _lookBack;
-		}
-
-		@Override
-		public int getLookForwardDays() {
-			return _lookForward;
-		}
-	}
 }
