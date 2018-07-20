@@ -318,8 +318,13 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 
 		CompletableFuture<Void> future = data.retrieveOutletGroups(new OptionalParams(metrics));
         data.updateDataScopeSynchronous(new OptionalParams(metrics));
+		Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.FINE, "(Headless)Data scope retrieval complete.");
 		future.get();
+		Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.FINE, "(Headless)Retrieval of outlet groups complete.");
         
+		//This needs to occur *after* all of the futures have been completed.
+		data.fireDataUpdateEvent();
+		
 		saveReleasesToFile(data, width, height, filename);
     }
 
@@ -420,15 +425,23 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 		{
 			if (!_hasRetrieved)
 			{
+				LOGGER.log(Level.FINE, "(Headless)Updating data scope");
 				_hasRetrieved = true;
 				return super.updateDataScope(params);
 			}
 			return CompletableFuture.completedFuture(null);
 		}
 		
-		public void updateDataScopeSynchronous(OptionalParams params)
+		public void updateDataScopeSynchronous(OptionalParams params) throws InterruptedException, ExecutionException
 		{
-			updateDataScope(params).join();
+			updateDataScope(params).get();
+		}
+
+		@Override
+		public void fireDataUpdateEvent()
+		{
+			//Exposing this publicly
+			super.fireDataUpdateEvent(); //To change body of generated methods, choose Tools | Templates.
 		}
     }
 
