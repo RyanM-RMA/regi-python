@@ -822,7 +822,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 				outletDateEntryMap = grpOutletDateMap.get(group);
 			}
 			if (outletDateEntryMap != null) {
-				dateEntryMap = outletDateEntryMap.get(iControlledOutlet);
+				dateEntryMap = outletDateEntryMap.getOrDefault(iControlledOutlet, new HashMap<>());
 				
 				for (Date date : subSet)
 				{
