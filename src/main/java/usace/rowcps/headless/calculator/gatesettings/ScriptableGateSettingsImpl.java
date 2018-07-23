@@ -1036,7 +1036,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	
 	private boolean isEntryAfterNearestClosedDate(NavigableSet<Date> closedDates, Map.Entry<Date, GateOpeningEntry> floorEntry, Date tsDate)
 	{
-		boolean output = false;
+		boolean output = true;
 		Date nearestClose = closedDates.floor(tsDate);
 		
 		if (floorEntry != null && nearestClose != null)
