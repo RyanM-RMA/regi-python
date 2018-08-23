@@ -446,16 +446,22 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	public static void updateParameters(TimeSeriesIds tsIds, List<String> controlParameters) {
 		if (tsIds != null && controlParameters != null && !controlParameters.isEmpty()) {
 			String firstControlParam = controlParameters.get(0);
-
-			tsIds.setParameter(0, firstControlParam);  // updates parameter from "Opening" to "Opening-Spillway_Gate"
-
-			if (controlParameters.size() > 1) {
-				// not exactly sure how this next bit works but this is what OutletPanel does....
-				for (int j = 1; j < controlParameters.size(); j++) {
-					tsIds.add(tsIds.getId(0), tsIds.getOffset(0));
-					tsIds.setParameter(j, controlParameters.get(j));
+			String originalParameter = tsIds.getParameter(0);
+			
+			if (originalParameter.endsWith("<None>"))//Special case for gate opening settings with <None>
+			{
+				try
+				{
+					Parameter param = new Parameter(firstControlParam);
+					firstControlParam = param.getBaseParameter();
+				}
+				catch (DataSetIllegalArgumentException ex)
+				{
+					LOGGER.log(Level.SEVERE, "Unable to parse parameter " + originalParameter, ex);
 				}
 			}
+
+			tsIds.setParameter(0, firstControlParam);  // updates parameter from "Opening" to "Opening-Spillway_Gate"
 		}
 	}
 
