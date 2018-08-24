@@ -34,8 +34,6 @@ import usace.rowcps.regi.model.ManagerId;
  */
 public class HeadlessGateCache extends GateCache
 {
-	private static final double MIN_OPENING_FOR_ZERO = 1e-6;
-	
 	private final Date _startDate;
 	private final Date _endDate;
 
@@ -44,11 +42,6 @@ public class HeadlessGateCache extends GateCache
 		super(managerId, projectDescriptor, recordsToCacheInThread, currentDayControl, eventThreadExceptionProcessor, completionCallbackTarget, modifiedGateSettingDates);
 		this._startDate = _startDate;
 		this._endDate = _endDate;
-	}
-
-	static boolean isClosedGateOpening(double opening)
-	{
-		return Math.abs(opening) <= MIN_OPENING_FOR_ZERO;
 	}
 
 	@Override

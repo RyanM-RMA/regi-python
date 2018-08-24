@@ -590,7 +590,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 						Date tsDate = new Date(changeTime);
 						Double tsValue = tsMap.get(tsDate);
 
-						boolean hasDiff = hasDifferenceAtDate(cacheEntries, tsValue, tsDate, closedDates);
+						boolean hasDiff = hasDifferenceAtDate(gc, cacheEntries, tsValue, tsDate, closedDates);
 						
 						if (hasDiff)
 						{
@@ -1054,7 +1054,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		return output;
 	}
 
-	private boolean hasDifferenceAtDate(NavigableMap<Date, GateOpeningEntry> dateEntryMap, Double tsValue, Date tsDate, NavigableSet<Date> closedDates)
+	private boolean hasDifferenceAtDate(HeadlessGateCache cache, NavigableMap<Date, GateOpeningEntry> dateEntryMap, Double tsValue, Date tsDate, NavigableSet<Date> closedDates)
 	{
 		boolean output = true;
 		
@@ -1074,7 +1074,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 			}
 			//Floor entry is null, or there's a closed entry before this date.
 			//If it's closed, and there's a null or closed value before it, then we haven't changed.
-			else if (HeadlessGateCache.isClosedGateOpening(tsValue))
+			else if (cache.isClosedGateOpening(tsValue))
 			{
 				output = false;
 			}
