@@ -1,6 +1,8 @@
 package usace.rowcps.headless.calculator.flowgroup;
 
 import hec.data.location.LocationTemplate;
+import hec.data.project.AtProjectDescriptor;
+import hec.data.project.IProject;
 import hec.db.DbConnectionException;
 import hec.db.DbIoException;
 import java.util.Calendar;
@@ -15,15 +17,13 @@ import usace.rowcps.computation.ITimeSeriesComputationResult;
 import usace.rowcps.computation.TimeSeriesComputationError;
 import usace.rowcps.data.flowgroup.FlowGroupTimeSeries;
 import usace.rowcps.data.flowgroup.IFlowGroup;
-import usace.rowcps.data.project.AtProjectDescriptor;
-import usace.rowcps.data.project.IProject;
 import usace.rowcps.headless.calculator.AbstractScriptableCalc;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
-import usace.rowcps.regi.model.AtProjectManager;
 import usace.rowcps.regi.model.CacheUsage;
 import usace.rowcps.regi.model.ManagerId;
 import usace.rowcps.regi.model.OptionalParams;
 import usace.rowcps.regi.model.RegiDomain;
+import usace.rowcps.regi.status.AtProjectManager;
 
 /**
  *

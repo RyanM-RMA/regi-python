@@ -6,6 +6,9 @@
 package usace.rowcps.headless.assocexport;
 
 import hec.data.location.LocationTemplate;
+import hec.data.project.AtProjectDescriptor;
+import hec.data.project.IProject;
+import hec.data.project.IProjectCatalog;
 import hec.db.DbConnectionException;
 import hec.db.DbIoException;
 import java.util.ArrayList;
@@ -21,14 +24,12 @@ import usace.rowcps.data.association.IAssociationProvider;
 import usace.rowcps.data.association.ITimeSeriesAssociation;
 import usace.rowcps.data.outputformatter.CSVOutputFormatter;
 import usace.rowcps.data.outputformatter.OutputFormatter;
-import usace.rowcps.data.project.AtProjectDescriptor;
-import usace.rowcps.data.project.IProject;
-import usace.rowcps.data.project.IProjectCatalog;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
-import usace.rowcps.regi.model.AtProjectManager;
+import usace.rowcps.regi.model.AtAssociationCache;
 import usace.rowcps.regi.model.CacheUsage;
 import usace.rowcps.regi.model.ManagerId;
 import usace.rowcps.regi.model.RegiDomain;
+import usace.rowcps.regi.status.AtProjectManager;
 
 /**
  *
@@ -79,7 +80,8 @@ public class ScriptableExportTSAssociationsImpl implements ScriptableExportAssoc
 		for(IProject project : allProjects)
 		{
 			configureFormatter(formatter, project.getProjectId());
-			IAssociationProvider<ITimeSeriesAssociation> timeSeriesAssociationProvider = project.getTimeSeriesAssociationProvider();
+			AtAssociationCache atAssociationCache = _regiDomain.getAtAssociationCache(_managerId);
+			IAssociationProvider<ITimeSeriesAssociation> timeSeriesAssociationProvider = atAssociationCache.getTimeSeriesAssociationsProvider(project.getLocation().getLocationTemplate());
 			if(timeSeriesAssociationProvider != null)
 			{
 				timeSeriesAssociationProvider.serializeToFormat(formatter);
@@ -128,7 +130,8 @@ public class ScriptableExportTSAssociationsImpl implements ScriptableExportAssoc
 		else
 		{
 			configureFormatter(formatter, project.getProjectId());
-			IAssociationProvider<ITimeSeriesAssociation> timeSeriesAssociationProvider = project.getTimeSeriesAssociationProvider();
+			AtAssociationCache atAssociationCache = _regiDomain.getAtAssociationCache(_managerId);
+			IAssociationProvider<ITimeSeriesAssociation> timeSeriesAssociationProvider = atAssociationCache.getTimeSeriesAssociationsProvider(project.getLocation().getLocationTemplate());
 			if(timeSeriesAssociationProvider != null)
 			{
 				timeSeriesAssociationProvider.serializeToFormat(formatter);

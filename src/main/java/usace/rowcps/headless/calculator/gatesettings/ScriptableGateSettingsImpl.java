@@ -1,5 +1,6 @@
 package usace.rowcps.headless.calculator.gatesettings;
 
+import hec.data.DataObjectException;
 import hec.data.DataSetException;
 import hec.data.DataSetIllegalArgumentException;
 import hec.data.Duration;
@@ -16,6 +17,10 @@ import hec.data.location.LocationGroup;
 import hec.data.location.LocationGroupRef;
 import hec.data.location.LocationGroupSet;
 import hec.data.location.LocationTemplate;
+import hec.data.outlet.IOutlet;
+import hec.data.physicalstructure.IPhysicalStructure;
+import hec.data.project.AtProjectDescriptor;
+import hec.data.project.IProject;
 import hec.data.tx.DataSetTx;
 import hec.data.tx.DataSetTxIllegalArgumentException;
 import hec.data.tx.DataSetTxTemplate;
@@ -56,7 +61,6 @@ import usace.metrics.services.Metrics;
 import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.computation.TimeSeriesIds;
 import usace.rowcps.computation.common.IEventThreadExceptionProcessor;
-import usace.rowcps.computation.common.IThreadedBlockRetriever;
 import usace.rowcps.computation.common.grouping.IControlledOutlet;
 import usace.rowcps.computation.common.grouping.IControlledOutletGroup;
 import usace.rowcps.computation.common.grouping.IControlledOutletGroupContainer;
@@ -72,33 +76,30 @@ import usace.rowcps.computation.gatesettings.finetuning.FineTuneRowElementSynthe
 import usace.rowcps.computation.gatesettings.finetuning.FineTuningRowType;
 import usace.rowcps.computation.util.LookupRecordBase;
 import usace.rowcps.data.CacheInitializationException;
-import usace.rowcps.data.DataObjectException;
 import usace.rowcps.data.InputOutput;
 import usace.rowcps.data.association.IAssociationCatalog;
 import usace.rowcps.data.association.IAssociationProvider;
 import usace.rowcps.data.association.ITimeSeriesAssociation;
-import usace.rowcps.data.outlet.IOutlet;
-import usace.rowcps.data.physicalstructure.IPhysicalStructure;
-import usace.rowcps.data.project.AtProjectDescriptor;
-import usace.rowcps.data.project.IProject;
 import usace.rowcps.data.project.TsUsageId;
 import usace.rowcps.headless.calculator.AbstractScriptableCalc;
 import usace.rowcps.headless.calculator.inflow.AbstractThreadedBlockRetriever;
 import static usace.rowcps.headless.calculator.status.ScriptableStatusGraphicImpl.LATCH_SECONDS;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
+import usace.rowcps.regi.event.IThreadedBlockRetriever;
 import usace.rowcps.regi.executor.DefaultThreadIdProvider;
 import usace.rowcps.regi.executor.ThreadIdProvider;
 import usace.rowcps.regi.interfaces.model.ICurrentDayControl;
+import usace.rowcps.regi.model.AtAssociationCache;
 import usace.rowcps.regi.model.AtAssociationManager;
 import usace.rowcps.regi.model.AtLocationGroupManager;
 import usace.rowcps.regi.model.AtOutletManager;
-import usace.rowcps.regi.model.AtProjectManager;
 import usace.rowcps.regi.model.AtRatingManager;
 import usace.rowcps.regi.model.AtTimeSeriesManager;
 import usace.rowcps.regi.model.CacheUsage;
 import usace.rowcps.regi.model.ManagerId;
 import usace.rowcps.regi.model.OptionalParams;
 import usace.rowcps.regi.model.RegiDomain;
+import usace.rowcps.regi.status.AtProjectManager;
 import usace.rowcps.regi.util.GateSettingsUtil;
 //import usace.rowcps.regi.util.RowcpsFutureDescriptor;
 
@@ -961,7 +962,8 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		AtProjectManager atProjectManager = regi.getAtProjectManager(manId);
 
 		IProject locProject = atProjectManager.getIProject(locRef, CacheUsage.NORMAL);
-		final IAssociationProvider<ITimeSeriesAssociation> tsProvider = locProject.getTimeSeriesAssociationProvider();
+		AtAssociationCache atAssociationCache = regi.getAtAssociationCache(manId);
+		final IAssociationProvider<ITimeSeriesAssociation> tsProvider = atAssociationCache.getTimeSeriesAssociationsProvider(locProject.getLocation().getLocationTemplate());
 		ITimeSeriesAssociation association = tsProvider.getInputAssociation(TsUsageId.GATESETTINGS_GATE_OPENING.usage);
 		return association;
 	}

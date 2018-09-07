@@ -5,12 +5,15 @@
  */
 package usace.rowcps.headless.calculator.status;
 
+import hec.data.basin.IBasin;
 import hec.data.location.AssignedLocation;
 import hec.data.location.LocationCategoryRef;
 import hec.data.location.LocationGroup;
 import hec.data.location.LocationGroupRef;
 import hec.data.location.LocationTemplate;
+import hec.data.project.IProject;
 import hec.db.DbConnectionException;
+import hec.db.DbException;
 import hec.db.DbIoException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -23,16 +26,14 @@ import usace.metrics.services.Metrics;
 import usace.metrics.services.MetricsServiceProvider;
 import usace.metrics.services.Timer;
 import usace.rowcps.computation.basinconnectivity.BasinConnectivityModel;
-import usace.rowcps.computation.basinconnectivity.IBasinConnectivityLocation;
-import usace.rowcps.computation.basinconnectivity.IBasinConnectivityModel;
-import usace.rowcps.data.basin.IBasin;
-import usace.rowcps.data.project.IProject;
+import usace.rowcps.regi.basin.IBasinConnectivityLocation;
+import usace.rowcps.regi.basin.IBasinConnectivityModel;
 import usace.rowcps.regi.interfaces.model.ManagerIdProvider;
 import usace.rowcps.regi.model.AtBasinManager;
-import usace.rowcps.regi.model.AtProjectManager;
 import usace.rowcps.regi.model.CacheUsage;
 import usace.rowcps.regi.model.OptionalParams;
 import usace.rowcps.regi.model.RegiDomain;
+import usace.rowcps.regi.status.AtProjectManager;
 
 /**
  *
@@ -193,7 +194,7 @@ public class LocationGroupFactory
                 }
             }
         }
-        catch (DbConnectionException ex)
+        catch (DbException ex)
         {
             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Error retrieving Basin:", ex);
         }

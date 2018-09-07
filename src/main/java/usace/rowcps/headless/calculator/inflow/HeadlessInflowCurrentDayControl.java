@@ -9,6 +9,7 @@ import com.rma.model.Project;
 import hec.data.DataSetException;
 import hec.data.ITimeSeriesDescription;
 import hec.data.location.LocationTemplate;
+import hec.data.project.IProject;
 import hec.data.tx.DataSetTx;
 import hec.data.tx.DataSetTxIllegalArgumentException;
 import hec.data.tx.DataSetTxTemplate;
@@ -29,15 +30,15 @@ import rma.util.RMAConst;
 import usace.rowcps.computation.inflow.InflowComputation;
 import usace.rowcps.data.association.IAssociationProvider;
 import usace.rowcps.data.association.ITimeSeriesAssociation;
-import usace.rowcps.data.project.IProject;
 import usace.rowcps.data.project.TsUsageId;
 import usace.rowcps.regi.interfaces.model.ICurrentDayControl;
-import usace.rowcps.regi.model.AtProjectManager;
+import usace.rowcps.regi.model.AtAssociationCache;
 import usace.rowcps.regi.model.AtTimeSeriesManager;
 import usace.rowcps.regi.model.CacheUsage;
 import usace.rowcps.regi.model.ManagerId;
 import usace.rowcps.regi.model.OptionalParams;
 import usace.rowcps.regi.model.RegiDomain;
+import usace.rowcps.regi.status.AtProjectManager;
 
 /**
  *
@@ -137,7 +138,7 @@ public class HeadlessInflowCurrentDayControl implements ICurrentDayControl
 		
 		if (prj instanceof RegiDomain)
 		{
-			DataSetTxTemplate tsId = makeTemplateForAssociation(TsUsageId.INFLOWPANEL_PROJECT_ELEVATION, startDate, endDate, project);
+			DataSetTxTemplate tsId = makeTemplateForAssociation(manId, TsUsageId.INFLOWPANEL_PROJECT_ELEVATION, startDate, endDate, project);
 			
 			if(tsId != null)
 			{
@@ -153,10 +154,13 @@ public class HeadlessInflowCurrentDayControl implements ICurrentDayControl
 		return output;
 	}
 	
-	private DescriptionTx getDescriptionFromAssociation(TsUsageId usageId, IProject project)
+	private DescriptionTx getDescriptionFromAssociation(ManagerId managerId, TsUsageId usageId, IProject project)
 			throws DataSetTxIllegalArgumentException
 	{
-		IAssociationProvider<ITimeSeriesAssociation> tsAssocProvider = project.getTimeSeriesAssociationProvider();
+		
+		RegiDomain prj = (RegiDomain)RegiDomain.getCurrentProject();
+		AtAssociationCache atAssociationCache = prj.getAtAssociationCache(managerId);
+		IAssociationProvider<ITimeSeriesAssociation> tsAssocProvider = atAssociationCache.getTimeSeriesAssociationsProvider(project.getLocation().getLocationTemplate());
 		ITimeSeriesAssociation tsAssoc = null;
 		ITimeSeriesDescription tsId = null;
 		DescriptionTx output = null;
@@ -179,10 +183,10 @@ public class HeadlessInflowCurrentDayControl implements ICurrentDayControl
 		return output;
 	}
 	
-	private DataSetTxTemplate makeTemplateForAssociation(TsUsageId usageId, Date startDate, Date endDate, IProject project)
+	private DataSetTxTemplate makeTemplateForAssociation(ManagerId managerId, TsUsageId usageId, Date startDate, Date endDate, IProject project)
 			throws DataSetTxIllegalArgumentException
 	{
-		DescriptionTx desc = getDescriptionFromAssociation(usageId, project);
+		DescriptionTx desc = getDescriptionFromAssociation(managerId, usageId, project);
 		DataSetTxTemplate template = null;
 		
 		if (desc != null)

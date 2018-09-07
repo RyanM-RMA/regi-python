@@ -6,6 +6,8 @@
 package usace.rowcps.headless.calculator.gatesettings;
 
 import hec.data.location.Location;
+import hec.data.outlet.IOutlet;
+import hec.data.project.AtProjectDescriptor;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -13,7 +15,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
 import usace.rowcps.computation.common.IEventThreadExceptionProcessor;
-import usace.rowcps.computation.common.IThreadedBlockRetriever;
 import usace.rowcps.computation.common.grouping.IControlledOutlet;
 import usace.rowcps.computation.common.grouping.IControlledOutletGroup;
 import usace.rowcps.computation.gatesettings.CompoundOutletHolder;
@@ -23,8 +24,7 @@ import usace.rowcps.computation.gatesettings.common.GateCache;
 import usace.rowcps.computation.gatesettings.common.GateMergeException;
 import usace.rowcps.computation.gatesettings.common.GateOpeningEntry;
 import usace.rowcps.computation.gatesettings.common.GateSettingsBlock;
-import usace.rowcps.data.outlet.IOutlet;
-import usace.rowcps.data.project.AtProjectDescriptor;
+import usace.rowcps.regi.event.IThreadedBlockRetriever;
 import usace.rowcps.regi.interfaces.model.ICurrentDayControl;
 import usace.rowcps.regi.model.ManagerId;
 

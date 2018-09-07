@@ -1,7 +1,7 @@
 package usace.rowcps.headless.calculator.inflow;
 
 import java.beans.PropertyChangeListener;
-import usace.rowcps.computation.common.IThreadedBlockRetriever;
+import usace.rowcps.regi.event.IThreadedBlockRetriever;
 
 /**
  *
