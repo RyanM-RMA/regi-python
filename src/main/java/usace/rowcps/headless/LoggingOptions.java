@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 import usace.metrics.services.MetricsInitializationException;
 import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.regi.factories.RegiDomainFactory;
-import usace.rowcps.regi.model.RegiDomain;
+import usace.rowcps.regi.preferences.RegiPreferences;
 import wcds.dbi.DbiProperties;
 
 /**
@@ -73,7 +73,7 @@ public class LoggingOptions
 
             try
             {
-                MetricsServiceProvider.init(RegiDomain.getAppDefaultRootNode().node("Metrics"), format.format(now), RegiDomainFactory.getRegiBaseDir());
+				MetricsServiceProvider.init(RegiPreferences.getClientNode().node("Metrics"), format.format(now), RegiDomainFactory.getRegiBaseDir());
                 _metricsInitialized = true;
             }
             catch (MetricsInitializationException ex)
