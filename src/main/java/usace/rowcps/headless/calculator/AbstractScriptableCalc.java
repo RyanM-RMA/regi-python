@@ -17,21 +17,22 @@ import usace.rowcps.regi.model.SimpleManagerIdProvider;
  */
 public abstract class AbstractScriptableCalc
 {
+
 	public final RegiDomain regiDomain;
 	public final ManagerId managerId;
-        public final ManagerIdProvider manIdProvider;
+	public final ManagerIdProvider manIdProvider;
 
 	public AbstractScriptableCalc(RegiDomain regiDomain, ManagerId manId)
 	{
 		this.regiDomain = regiDomain;
-		this.managerId = manId;
-                this.manIdProvider = new SimpleManagerIdProvider(managerId);
+		managerId = manId;
+		manIdProvider = new SimpleManagerIdProvider(managerId);
 	}
 
 	/**
 	 * @return the regiDomain
 	 */
-	public RegiDomain getRegiDomain()
+	public final RegiDomain getRegiDomain()
 	{
 		return regiDomain;
 	}
@@ -39,18 +40,18 @@ public abstract class AbstractScriptableCalc
 	/**
 	 * @return the managerId
 	 */
-	public ManagerId getManagerId()
+	public final ManagerId getManagerId()
 	{
 		return managerId;
-        }
-        
-        public ManagerIdProvider getManagerIdProvider()
-        {
-            return manIdProvider;
-        }        
-        
-        public TimeZone getRegiTimeZone()
-        {
-            return this.regiDomain.getTimeZone();
-        }
+	}
+
+	public final ManagerIdProvider getManagerIdProvider()
+	{
+		return manIdProvider;
+	}
+
+	public final TimeZone getRegiTimeZone()
+	{
+		return regiDomain.getTimeZone();
+	}
 }

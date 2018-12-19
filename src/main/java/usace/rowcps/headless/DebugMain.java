@@ -19,12 +19,14 @@ public class DebugMain
 		{
 			"-Drowcps.timezone=America/Chicago",
 			"-p", "src\\test\\java\\usace\\rowcps\\headless\\credentials.properties",
-			"-f", "src\\test\\java\\usace\\rowcps\\headless\\GateSettings2.py",
+//			"-f", "src\\test\\java\\usace\\rowcps\\headless\\GateSettings2.py",
 //			"-f", "src\\test\\java\\usace\\rowcps\\headless\\StatusDemo.py",
 //			"-f", "src\\test\\java\\usace\\rowcps\\headless\\GateFlowCalc2.py",
 //			"-f", "src\\test\\java\\usace\\rowcps\\headless\\PoolPercentCalc.py",
 //			"-f", "src\\test\\java\\usace\\rowcps\\headless\\InflowCalcClone.py",
 //			"-f", "src\\test\\java\\usace\\rowcps\\headless\\InflowCalcZeroNegative.py",
+//			"-f", "src\\test\\java\\usace\\rowcps\\headless\\InflowCalcComputedInflow.py",
+			"-f", "src\\test\\java\\usace\\rowcps\\headless\\InflowCalcComputeEvapAsFlow.py",
 		};
 
 		RegiCLI.main(args);

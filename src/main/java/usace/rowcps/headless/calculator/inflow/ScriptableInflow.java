@@ -17,5 +17,10 @@ public interface ScriptableInflow {
     void zeroNegatives(String officeId, String locationStr, Date startDate);
 
     void balanceAll(String officeId, String locationStr, Date startDate);
-
+	
+	void computeInflow(String officeId, String locationStr, Date startDate, Date endDate);
+	
+	void computeEvapAsFlow(String officeId, String locationStr, Date startDate, Date endDate);
+	
+	void setStorageOptions(InflowStorageOptions options);
 }
