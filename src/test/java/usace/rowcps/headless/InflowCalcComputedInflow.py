@@ -1,7 +1,7 @@
 # the java Calendar class is used to create java Date objects
 from java.util import Calendar
 from java.util import TimeZone
-from usace.rowcps.headless.calculator.inflow import InflowStorageOptions
+from usace.rowcps.headless.calculator.inflow import InflowComputationStorageOption
 
 # this gets a ScriptableInflow instance.
 inflowCalc = registry.getCalculation(1.0, "Inflow")
@@ -20,33 +20,21 @@ endCal.set(Calendar.YEAR, 2018)
 endCal.set(Calendar.MONTH, 4)
 endCal.set(Calendar.DAY_OF_MONTH, 4)
 
-# This example creates storage options which can be used by the inflow calc to identify additional computed data that will be saved to the database.
-# Usage of this class is entirely optional, and if it is not used, it will save any additional computed data along with the compute.
-# InflowStorageOptions is also only used by the computeInflow function.
+# inflowCalc includes a setComputationStorageOptions function, which takes in either one or many
+# InflowComputationStorageOption values.  This is used by computeInflow to determine if it should save additional
+# computed values like evaporation as flow and project releases.
 # 
-# There are three methods for creating this object:
-# 	inflowStorageOptions = InflowStorageOptions()
-# 	inflowStorageOptions = InflowStorageOptions.storeAllComputedData()
-# 	inflowStorageOptions = InflowStorageOptions.doNotStoreAllComputedData()
-# 
-inflowStorageOptions = InflowStorageOptions()
-
-# InflowStorageOptions has 4 publicly available methods for storing or not storing computed data
-# 	inflowStorageOptions.storeComputedEvapAsFlow()
-# 	inflowStorageOptions.storeComputedProjectReleases()
-# 	inflowStorageOptions.doNotStoreComputedEvapAsFlow()
-# 	inflowStorageOptions.doNotStoreComputedProjectReleases()
-# 
-inflowStorageOptions.storeComputedEvapAsFlow()
-inflowStorageOptions.storeComputedProjectReleases()
-
-# inflowCalc  includes a setStorageOptions function, which takes in an InflowStorageOptions instance, or None
-# 
-# Passing in None is effectively the same as calling:
-# 	inflowCalc.setStorageOptions(InflowStorageOptions.doNotStoreAllComputedData())
+# The InflowComputationStorageOption enum contains two values:
+# 	EVAP_AS_FLOW
+# 	PROJECT_RELEASES
 #
-#inflowCalc.setStorageOptions(inflowStorageOptions)
-inflowCalc.setStorageOptions(None)
+# None is supported by setComputationStorageOptions as well, and clears out all storage options.
+#inflowCalc.setComputationStorageOptions(None)
+# 
+# inflowCalc.setComputationStorageOptions is entirely optional, and if it's not used no additional computed values will
+# be stored with the computed inflow
+# 
+inflowCalc.setComputationStorageOptions(InflowComputationStorageOption.EVAP_AS_FLOW, InflowComputationStorageOption.PROJECT_RELEASES)
 
-# This computes and saves inflow for EUFA in May 2018 given the InflowStorageOptions set above
-inflowCalc.computeInflow("SWT", "EUFA",  startCal.getTime(), endCal.getTime())
+# This computes and saves inflow for EUFA in May 2018 given the computation options set above
+inflowCalc.computeInflow("SWT", "EUFA", startCal.getTime(), endCal.getTime())

@@ -7,70 +7,34 @@
 package usace.rowcps.headless.calculator.inflow;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import usace.rowcps.data.inflow.InflowDataType;
 
 /**
- * This class is intended to be used for data storage options for Inflow comps and actions.
- * 
+ * This class is intended to be used for data storage options for Inflow comps and actions. Additional options can be
+ * added to this class as needed.
+ *
  * @author @author <a href="mailto:ryanm@rmanet.com">Ryan A. Miles (ryanm@rmanet.com)</a>
  */
-public final class InflowStorageOptions
+final class InflowStorageOptions
 {
 
-	private final Set<InflowDataType> _dataTypesToStore = new HashSet<>();
-	
-	public InflowStorageOptions()
+	private final Set<InflowComputationStorageOption> _dataTypesToStore = new HashSet<>();
+
+	public void setComputationStorageOptions(List<InflowComputationStorageOption> options)
 	{
-		this(true);
-	}
-	
-	private InflowStorageOptions(boolean storeAdditionalData)
-	{
-		if (storeAdditionalData)
+		_dataTypesToStore.clear();
+
+		for (InflowComputationStorageOption option : options)
 		{
-			storeComputedEvapAsFlow();
-			storeComputedProjectReleases();
+			_dataTypesToStore.add(option);
 		}
 	}
-	
-	public static InflowStorageOptions storeAllComputedData()
+
+	public boolean isComputedDataTypeStored(InflowDataType dataType)
 	{
-		return new InflowStorageOptions(true);
-	}
-	
-	public static InflowStorageOptions doNotStoreAllComputedData()
-	{
-		return new InflowStorageOptions(false);
-	}
-	
-	boolean isStoringEvapAsFlow()
-	{
-		return _dataTypesToStore.contains(InflowDataType.ProjectEvapAsFlow);
-	}
-	
-	boolean isStoringProjectReleases()
-	{
-		return _dataTypesToStore.contains(InflowDataType.AverageRelease);
-	}
-	
-	public void storeComputedEvapAsFlow()
-	{
-		_dataTypesToStore.add(InflowDataType.ProjectEvapAsFlow);
-	}
-	
-	public void storeComputedProjectReleases()
-	{
-		_dataTypesToStore.add(InflowDataType.AverageRelease);
-	}
-	
-	public void doNotStoreComputedEvapAsFlow()
-	{
-		_dataTypesToStore.remove(InflowDataType.ProjectEvapAsFlow);
-	}
-	
-	public void doNotStoreComputedProjectReleases()
-	{
-		_dataTypesToStore.remove(InflowDataType.AverageRelease);
+		return _dataTypesToStore.stream()
+				.anyMatch((option) -> option.getDataType() == dataType);
 	}
 }

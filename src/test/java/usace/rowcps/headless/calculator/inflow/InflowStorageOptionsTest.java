@@ -6,8 +6,10 @@
  */
 package usace.rowcps.headless.calculator.inflow;
 
+import java.util.Arrays;
 import static org.junit.Assert.*;
 import org.junit.Test;
+import usace.rowcps.data.inflow.InflowDataType;
 
 /**
  *
@@ -15,115 +17,52 @@ import org.junit.Test;
  */
 public class InflowStorageOptionsTest
 {
-	
-	public InflowStorageOptionsTest()
-	{
-	}
 
 	@Test
 	public void testDefaultCtor()
 	{
+		//By default, we should not have extra data types to store.
 		InflowStorageOptions options = new InflowStorageOptions();
-		
-		assertTrue(options.isStoringEvapAsFlow());
-		assertTrue(options.isStoringProjectReleases());
+
+		assertFalse(options.isComputedDataTypeStored(InflowDataType.ProjectEvapAsFlow));
+		assertFalse(options.isComputedDataTypeStored(InflowDataType.AverageRelease));
 	}
-	
+
 	@Test
-	public void testStoreAllComputedData()
+	public void testOneOption()
 	{
-		InflowStorageOptions options = InflowStorageOptions.storeAllComputedData();
-		assertTrue(options.isStoringEvapAsFlow());
-		assertTrue(options.isStoringProjectReleases());
+		InflowStorageOptions options = new InflowStorageOptions();
+		options.setComputationStorageOptions(Arrays.asList(InflowComputationStorageOption.EVAP_AS_FLOW));
+
+		assertTrue(options.isComputedDataTypeStored(InflowDataType.ProjectEvapAsFlow));
+		assertFalse(options.isComputedDataTypeStored(InflowDataType.AverageRelease));
 	}
-	
+
 	@Test
-	public void testDoNotStoreAllComputedData()
+	public void testAllComps()
 	{
-		InflowStorageOptions options = InflowStorageOptions.doNotStoreAllComputedData();
-		assertFalse(options.isStoringEvapAsFlow());
-		assertFalse(options.isStoringProjectReleases());
+		/*
+		Any and all computations in InflowComputationStorageOption should return true if we add them all in
+		Uniqueness is checked in InflowComputationStorageOptionTest
+		 */
+		InflowStorageOptions options = new InflowStorageOptions();
+		options.setComputationStorageOptions(Arrays.asList(InflowComputationStorageOption.values()));
+
+		for (InflowComputationStorageOption option : InflowComputationStorageOption.values())
+		{
+			assertTrue(options.isComputedDataTypeStored(option.getDataType()));
+		}
 	}
-	
+
 	@Test
-	public void testStoreComputedEvapAsFlow()
+	public void testDoubleSetCompOptions()
 	{
-		InflowStorageOptions options = InflowStorageOptions.doNotStoreAllComputedData();
-		
-		assertFalse(options.isStoringEvapAsFlow());
-		options.storeComputedEvapAsFlow();
-		assertTrue(options.isStoringEvapAsFlow());
-	}
-	
-	@Test
-	public void testDoNotStoreComputedEvapAsFlow()
-	{
-		InflowStorageOptions options = InflowStorageOptions.storeAllComputedData();
-		
-		assertTrue(options.isStoringEvapAsFlow());
-		options.doNotStoreComputedEvapAsFlow();
-		assertFalse(options.isStoringEvapAsFlow());
-	}
-	
-	@Test
-	public void testStoreComputedProjectReleases()
-	{
-		InflowStorageOptions options = InflowStorageOptions.doNotStoreAllComputedData();
-		
-		assertFalse(options.isStoringProjectReleases());
-		options.storeComputedProjectReleases();
-		assertTrue(options.isStoringProjectReleases());
-	}
-	
-	@Test
-	public void testDoNotStoreComputedProjectReleases()
-	{
-		InflowStorageOptions options = InflowStorageOptions.storeAllComputedData();
-		
-		assertTrue(options.isStoringProjectReleases());
-		options.doNotStoreComputedProjectReleases();
-		assertFalse(options.isStoringProjectReleases());
-	}
-	
-	@Test
-	public void testDoubleStoreThenNotStoreEvapAsFlow()
-	{
-		InflowStorageOptions options = InflowStorageOptions.storeAllComputedData();
-		options.storeComputedEvapAsFlow();
-		options.storeComputedEvapAsFlow();
-		options.doNotStoreComputedEvapAsFlow();
-		assertFalse(options.isStoringEvapAsFlow());
-	}
-	
-	@Test
-	public void testDoubleNotStoreThenStoreEvapAsFlow()
-	{
-		InflowStorageOptions options = InflowStorageOptions.storeAllComputedData();
-		options.doNotStoreComputedEvapAsFlow();
-		options.doNotStoreComputedEvapAsFlow();
-		options.storeComputedEvapAsFlow();
-		assertTrue(options.isStoringEvapAsFlow());
-	}
-	
-	@Test
-	public void testDoubleStoreThenNotStoreReleases()
-	{
-		InflowStorageOptions options = InflowStorageOptions.storeAllComputedData();
-		
-		options.storeComputedProjectReleases();
-		options.storeComputedProjectReleases();
-		options.doNotStoreComputedProjectReleases();
-		assertFalse(options.isStoringProjectReleases());
-	}
-	
-	@Test
-	public void testDoubleNotStoreThenStoreReleases()
-	{
-		InflowStorageOptions options = InflowStorageOptions.storeAllComputedData();
-		
-		options.doNotStoreComputedProjectReleases();
-		options.doNotStoreComputedProjectReleases();
-		options.storeComputedProjectReleases();
-		assertTrue(options.isStoringProjectReleases());
+		//setComputationStorageOptions should clear out the original values not add to them
+		InflowStorageOptions options = new InflowStorageOptions();
+		options.setComputationStorageOptions(Arrays.asList(InflowComputationStorageOption.EVAP_AS_FLOW));
+		options.setComputationStorageOptions(Arrays.asList(InflowComputationStorageOption.PROJECT_RELEASES));
+
+		assertFalse(options.isComputedDataTypeStored(InflowDataType.ProjectEvapAsFlow));
+		assertTrue(options.isComputedDataTypeStored(InflowDataType.AverageRelease));
 	}
 }

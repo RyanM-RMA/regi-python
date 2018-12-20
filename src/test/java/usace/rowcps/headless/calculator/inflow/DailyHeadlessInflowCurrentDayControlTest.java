@@ -73,7 +73,7 @@ public class DailyHeadlessInflowCurrentDayControlTest
 	{
 		Calendar temp = Calendar.getInstance();
 		Date endDate = getEndDate(temp);
-		testStartDate(temp, endDate);
+		testStartDateIsMaintained(temp, endDate);
 	}
 
 	@Test
@@ -110,7 +110,7 @@ public class DailyHeadlessInflowCurrentDayControlTest
 		Calendar temp = Calendar.getInstance();
 		Date endDate = getEndDateApr(temp);
 		Date startDate = getStartDate(temp);
-		testEndDate(startDate, endDate, endDate, temp);
+		testEndDateRespectsElevDate(startDate, endDate, endDate, temp);
 	}
 
 	@Test
@@ -119,7 +119,7 @@ public class DailyHeadlessInflowCurrentDayControlTest
 		Calendar temp = Calendar.getInstance();
 		Date endDate = getEndDateApr(temp);
 		Date startDate = getStartDate(temp);
-		testStartDate(startDate, endDate, endDate, temp);
+		testStartDateIsMaintained(startDate, endDate, endDate, temp);
 	}
 
 	@Test
@@ -130,31 +130,31 @@ public class DailyHeadlessInflowCurrentDayControlTest
 		getStartDate(temp);
 		temp.add(Calendar.DAY_OF_MONTH, -15);
 		Date startDate = temp.getTime();
-		testStartDate(startDate, endDate, endDate, temp);
+		testStartDateIsMaintained(startDate, endDate, endDate, temp);
 	}
 
 	private void testEndDate(Calendar temp, Date elevationDate) throws Exception
 	{
 		Date startDate = getStartDate(temp);
 		Date endDate = getEndDate(temp);
-		testEndDate(startDate, endDate, elevationDate, temp);
+		testEndDateRespectsElevDate(startDate, endDate, elevationDate, temp);
 	}
 
-	private void testStartDate(Calendar temp, Date elevationDate) throws Exception
+	private void testStartDateIsMaintained(Calendar temp, Date elevationDate) throws Exception
 	{
 		Date startDate = getStartDate(temp);
 		Date endDate = getEndDate(temp);
-		testStartDate(startDate, endDate, elevationDate, temp);
+		testStartDateIsMaintained(startDate, endDate, elevationDate, temp);
 	}
 
-	private void testEndDate(Date startDate, Date endDate, Date elevationDate, Calendar temp) throws Exception
+	private void testEndDateRespectsElevDate(Date startDate, Date endDate, Date elevationDate, Calendar temp) throws Exception
 	{
 		TestControl control = new TestControl(startDate, endDate)
 		{
 			@Override
 			protected Date findLastElevDataDate(ManagerId manId, NavigableSet<Date> dates, LocationTemplate locRef) throws DbException, DbConnectionException, DbIoException, DataSetTxIllegalArgumentException, DataSetException
 			{
-				//This is the only way I could get this in here...
+				//This function normally serves as a data retrieval for elevation, so let's simulate that via elevationDate
 				return elevationDate;
 			}
 		};
@@ -171,7 +171,7 @@ public class DailyHeadlessInflowCurrentDayControlTest
 		assertEquals(expectedEndDate, controlEndDate);
 	}
 
-	private void testStartDate(Date startDate, Date endDate, Date elevationDate, Calendar temp) throws Exception
+	private void testStartDateIsMaintained(Date startDate, Date endDate, Date elevationDate, Calendar temp) throws Exception
 	{
 		Date expectedStartDate = getExpectedStartDate(temp, startDate);
 		TestControl control = new TestControl(startDate, endDate)

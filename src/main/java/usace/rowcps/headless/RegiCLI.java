@@ -36,45 +36,7 @@ public class RegiCLI
 
 		try
 		{
-			parser.parseArgument(args);
-			System.setProperties(opt.getProperties());
-
-			HeadlessRegiDomainFactory factory = new HeadlessRegiDomainFactory();
-			ManagerId managerId = factory.getManagerId(opt);
-			RegiDomain regiDomain = factory.createDomain(opt, managerId);
-
-			if (regiDomain != null)
-			{
-				ScriptEvaluator pe = new PythonEvaluator();
-				Map<String, Object> vars = new HashMap<>();
-
-				RegiCalcRegistry reg = new RegiCalcRegistry(regiDomain, managerId);
-				vars.put("registry", reg);
-
-				File scriptFile = opt.getScriptFile();
-
-				try
-				{
-					FileReader fr = new FileReader(scriptFile);
-					LOGGER.info("Evaluating script file");
-					Object retval = pe.evaluateExpression(fr, vars);
-
-					LOGGER.info("Jython script completed normally, commiting data.");
-					regiDomain.commitData(managerId);
-					LOGGER.info("RegiDomain committed data.");
-				}
-				catch (DbConnectionException | DbIoException | FileNotFoundException ex)
-				{
-					LOGGER.log(Level.SEVERE, "Exception occurred while evaluating Jython file:" + System.lineSeparator() + scriptFile, ex);
-				}
-				finally
-				{
-					LOGGER.info("RegiDomain closing.");
-					shutdownRowcpsAccessFactory(managerId);
-					regiDomain.closing();
-				}
-			}
-
+			runHeadless(parser, args, opt);
 		}
 		catch (DbConnectionException | DbPluginNotFoundException | InvalidDbConnectionException ex)
 		{
@@ -91,6 +53,64 @@ public class RegiCLI
 
 		LOGGER.info("Exitting.");
 		System.exit(0);
+	}
+	
+	/**
+	 * Used by TestHeadless unit test class to run headless without calling System.exit(0)
+	 * 
+	 * @param args
+	 * @throws DbConnectionException
+	 * @throws InvalidDbConnectionException
+	 * @throws CmdLineException
+	 * @throws DbPluginNotFoundException 
+	 */
+	static void runHeadlessTest(String[] args) throws DbConnectionException, InvalidDbConnectionException, CmdLineException, DbPluginNotFoundException
+	{
+		CLIOptions opt = new CLIOptions(System.getProperties());
+		CmdLineParser parser = new CmdLineParser(opt);
+		runHeadless(parser, args, opt);
+	}
+
+	private static void runHeadless(CmdLineParser parser, String[] args, CLIOptions opt) throws DbConnectionException, InvalidDbConnectionException, CmdLineException, DbPluginNotFoundException
+	{
+		parser.parseArgument(args);
+		System.setProperties(opt.getProperties());
+		
+		HeadlessRegiDomainFactory factory = new HeadlessRegiDomainFactory();
+		ManagerId managerId = factory.getManagerId(opt);
+		RegiDomain regiDomain = factory.createDomain(opt, managerId);
+		
+		if (regiDomain != null)
+		{
+			ScriptEvaluator pe = new PythonEvaluator();
+			Map<String, Object> vars = new HashMap<>();
+			
+			RegiCalcRegistry reg = new RegiCalcRegistry(regiDomain, managerId);
+			vars.put("registry", reg);
+			
+			File scriptFile = opt.getScriptFile();
+			
+			try
+			{
+				FileReader fr = new FileReader(scriptFile);
+				LOGGER.info("Evaluating script file");
+				Object retval = pe.evaluateExpression(fr, vars);
+				
+				LOGGER.info("Jython script completed normally, commiting data.");
+				regiDomain.commitData(managerId);
+				LOGGER.info("RegiDomain committed data.");
+			}
+			catch (DbConnectionException | DbIoException | FileNotFoundException ex)
+			{
+				LOGGER.log(Level.SEVERE, "Exception occurred while evaluating Jython file:" + System.lineSeparator() + scriptFile, ex);
+			}
+			finally
+			{
+				LOGGER.info("RegiDomain closing.");
+				shutdownRowcpsAccessFactory(managerId);
+				regiDomain.closing();
+			}
+		}
 	}
 
 	private static void shutdownRowcpsAccessFactory(ManagerId managerId)

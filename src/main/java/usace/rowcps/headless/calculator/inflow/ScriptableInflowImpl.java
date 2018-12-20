@@ -1,16 +1,17 @@
 package usace.rowcps.headless.calculator.inflow;
 
 import hec.data.DataSetException;
-import hec.data.DataSetIllegalArgumentException;
-import hec.data.Interval;
 import hec.data.location.LocationTemplate;
 import hec.data.project.AtProjectDescriptor;
 import hec.db.DbConnectionException;
 import hec.db.DbException;
 import hec.db.DbIoException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TimeZone;
@@ -26,7 +27,6 @@ import usace.rowcps.computation.inflow.InflowAdjustedTypeModel;
 import usace.rowcps.computation.inflow.InflowCache;
 import usace.rowcps.computation.inflow.ZeroNegativeAdjustedInflowsAction;
 import usace.rowcps.data.CacheInitializationException;
-import usace.rowcps.data.LocalOffset;
 import usace.rowcps.data.inflow.InflowDataType;
 import usace.rowcps.headless.calculator.AbstractScriptableCalc;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
@@ -48,58 +48,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	private final long _msTimeOffsetIntoInterval = 7 * 3600 * 1000;  //TODO  7am for now
 	private final String _intervalName = "1Day";
 	private final Map<LocationTemplate, InflowAdjustedTypeModel> _statusMaps = new HashMap<>();
-	private InflowStorageOptions _storageOptions = InflowStorageOptions.storeAllComputedData();
-
-	private IntervalProvider buildIntervalProvider(TimeZone projectTimeZone)
-	{
-		return new IntervalProvider()
-		{
-			@Override
-			public boolean isPeriodAverage()
-			{
-				return false;
-			}
-
-			@Override
-			public Interval getInterval()
-			{
-				Interval interval = null;
-				try
-				{
-					if (_intervalName == null)
-					{
-						interval = new Interval("1Day");
-					}
-					else
-					{
-						interval = new Interval(_intervalName);
-					}
-				}
-				catch (DataSetIllegalArgumentException ex)
-				{
-					LOGGER.log(Level.WARNING,
-							"Error instantiating interval for: " + _intervalName + ".",
-							ex);
-				}
-
-				return interval;
-			}
-
-			@Override
-			public int getIntervalOffsetSeconds()
-			{
-				return (int) (_msTimeOffsetIntoInterval / 1000L);
-			}
-
-			@Override
-			public int getUtcIntervalOffsetSeconds()
-			{
-				LocalOffset localOffset = new LocalOffset(projectTimeZone, getInterval());
-				return localOffset.getUtcOffsetInSeconds();
-			}
-		};
-
-	}
+	private final InflowStorageOptions _options = new InflowStorageOptions();
 
 	public ScriptableInflowImpl(RegiDomain regiDomain, ManagerId managerId)
 	{
@@ -115,8 +64,16 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	@Override
 	public void autoAdjust(String officeId, String locationStr, Date startDate, boolean useLimits, boolean freezeRain)
 	{
-		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "autoAdjust");
+		Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName(), "autoAdjust");
 		OptionalParams options = new OptionalParams(metrics);
+
+		LOGGER.info("Running ScriptableInflow.autoAdjust");
+		LOGGER.log(Level.INFO, "\tofficeId: {0}", officeId);
+		LOGGER.log(Level.INFO, "\tlocationStr: {0}", locationStr);
+		LOGGER.log(Level.INFO, "\tstartDate: {0}", startDate);
+		LOGGER.log(Level.INFO, "\tuseLimits: {0}", useLimits);
+		LOGGER.log(Level.INFO, "\tfreezeRain: {0}", freezeRain);
+
 		try
 		{
 			LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
@@ -155,8 +112,13 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	@Override
 	public void cloneInflows(String officeId, String locationStr, Date startDate)
 	{
-		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "cloneInflows");
+		Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName(), "cloneInflows");
 		OptionalParams options = new OptionalParams(metrics);
+
+		LOGGER.info("Running ScriptableInflow.cloneInflows");
+		LOGGER.log(Level.INFO, "\tofficeId: {0}", officeId);
+		LOGGER.log(Level.INFO, "\tlocationStr: {0}", locationStr);
+		LOGGER.log(Level.INFO, "\tstartDate: {0}", startDate);
 
 		try
 		{
@@ -189,8 +151,13 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	@Override
 	public void zeroNegatives(String officeId, String locationStr, Date startDate)
 	{
-		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "zeroNegatives");
+		Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName(), "zeroNegatives");
 		OptionalParams options = new OptionalParams(metrics);
+
+		LOGGER.info("Running ScriptableInflow.zeroNegatives");
+		LOGGER.log(Level.INFO, "\tofficeId: {0}", officeId);
+		LOGGER.log(Level.INFO, "\tlocationStr: {0}", locationStr);
+		LOGGER.log(Level.INFO, "\tstartDate: {0}", startDate);
 
 		try
 		{
@@ -222,8 +189,14 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	@Override
 	public void balanceAll(String officeId, String locationStr, Date startDate)
 	{
-		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "balanceAll");
+		Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName(), "balanceAll");
 		OptionalParams options = new OptionalParams(metrics);
+
+		LOGGER.info("Running ScriptableInflow.balanceAll");
+		LOGGER.log(Level.INFO, "\tofficeId: {0}", officeId);
+		LOGGER.log(Level.INFO, "\tlocationStr: {0}", locationStr);
+		LOGGER.log(Level.INFO, "\tstartDate: {0}", startDate);
+
 		try
 		{
 			LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
@@ -316,7 +289,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 
 	private IntervalProvider getIntervalProvider(TimeZone projectTimeZone)
 	{
-		return buildIntervalProvider(projectTimeZone);
+		return new HeadlessInflowIntervalProvider(_msTimeOffsetIntoInterval, projectTimeZone, _intervalName);
 	}
 
 	private InflowAdjustedTypeModel getOrCreateStatusMap(LocationTemplate template)
@@ -324,12 +297,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 		InflowAdjustedTypeModel retval = null;
 		if (template != null)
 		{
-			retval = _statusMaps.get(template);
-			if (retval == null)
-			{
-				retval = new InflowAdjustedTypeModelImpl();
-				_statusMaps.put(template, retval);
-			}
+			retval = _statusMaps.computeIfAbsent(template, (t) -> new InflowAdjustedTypeModelImpl());
 		}
 
 		return retval;
@@ -338,14 +306,20 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	@Override
 	public void computeEvapAsFlow(String officeId, String locationStr, Date startDate, Date endDate)
 	{
-		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "zeroNegatives");
+		Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName(), "computeEvapAsFlow");
 		OptionalParams options = new OptionalParams(metrics);
+
+		LOGGER.info("Running ScriptableInflow.computeEvapAsFlow");
+		LOGGER.log(Level.INFO, "\tofficeId: {0}", officeId);
+		LOGGER.log(Level.INFO, "\tlocationStr: {0}", locationStr);
+		LOGGER.log(Level.INFO, "\tstartDate: {0}", startDate);
+		LOGGER.log(Level.INFO, "\tendDate: {0}", endDate);
 
 		try
 		{
 			LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
 			HeadlessInflowCache cache = getInitializedDailyCache(locRef, startDate, endDate, options);
-			
+
 			cache.clearModifiedState();
 			cache.setModifiedOnAllDataTypeValuesInTimeRange(InflowDataType.ProjectEvapAsFlow, true);
 
@@ -364,8 +338,14 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	@Override
 	public void computeInflow(String officeId, String locationStr, Date startDate, Date endDate)
 	{
-		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "zeroNegatives");
+		Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName(), "computeInflow");
 		OptionalParams options = new OptionalParams(metrics);
+
+		LOGGER.info("Running ScriptableInflow.computeInflow");
+		LOGGER.log(Level.INFO, "\tofficeId: {0}", officeId);
+		LOGGER.log(Level.INFO, "\tlocationStr: {0}", locationStr);
+		LOGGER.log(Level.INFO, "\tstartDate: {0}", startDate);
+		LOGGER.log(Level.INFO, "\tendDate: {0}", endDate);
 
 		try
 		{
@@ -375,12 +355,12 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 			cache.clearModifiedState();
 			cache.setModifiedOnAllDataTypeValuesInTimeRange(InflowDataType.ComputedInflow, true);
 
-			if (_storageOptions.isStoringEvapAsFlow())
+			if (_options.isComputedDataTypeStored(InflowDataType.ProjectEvapAsFlow))
 			{
 				cache.setModifiedOnAllDataTypeValuesInTimeRange(InflowDataType.ProjectEvapAsFlow, true);
 			}
 
-			if (_storageOptions.isStoringProjectReleases())
+			if (_options.isComputedDataTypeStored(InflowDataType.AverageRelease))
 			{
 				cache.setModifiedOnAllDataTypeValuesInTimeRange(InflowDataType.AverageRelease, true);
 			}
@@ -398,16 +378,19 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	}
 
 	@Override
-	public void setStorageOptions(InflowStorageOptions options)
+	public void setComputationStorageOptions(InflowComputationStorageOption option, InflowComputationStorageOption ... options)
 	{
-		if (options == null)
+		List<InflowComputationStorageOption> optionList = new ArrayList<>();
+		
+		if (option != null)
 		{
-			//Null is implied to be no additional data, so users can use this from the script like:
-			//inflowCalc.setStorageOptions(None)
-			//And nothing extra is stored.
-			options = InflowStorageOptions.doNotStoreAllComputedData();
+			optionList.add(option);
 		}
-
-		_storageOptions = options;
+		
+		if (options != null)
+		{
+			optionList.addAll(Arrays.asList(options));
+		}
+		_options.setComputationStorageOptions(optionList);
 	}
 }
