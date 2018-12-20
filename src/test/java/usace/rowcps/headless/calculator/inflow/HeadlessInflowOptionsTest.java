@@ -15,14 +15,14 @@ import usace.rowcps.data.inflow.InflowDataType;
  *
  * @author Ryan A. Miles (ryanm@rmanet.com)
  */
-public class InflowStorageOptionsTest
+public class HeadlessInflowOptionsTest
 {
 
 	@Test
 	public void testDefaultCtor()
 	{
 		//By default, we should not have extra data types to store.
-		InflowStorageOptions options = new InflowStorageOptions();
+		HeadlessInflowOptions options = new HeadlessInflowOptions();
 
 		assertFalse(options.isComputedDataTypeStored(InflowDataType.ProjectEvapAsFlow));
 		assertFalse(options.isComputedDataTypeStored(InflowDataType.AverageRelease));
@@ -31,7 +31,7 @@ public class InflowStorageOptionsTest
 	@Test
 	public void testOneOption()
 	{
-		InflowStorageOptions options = new InflowStorageOptions();
+		HeadlessInflowOptions options = new HeadlessInflowOptions();
 		options.setComputationStorageOptions(Arrays.asList(InflowComputationStorageOption.EVAP_AS_FLOW));
 
 		assertTrue(options.isComputedDataTypeStored(InflowDataType.ProjectEvapAsFlow));
@@ -45,7 +45,7 @@ public class InflowStorageOptionsTest
 		Any and all computations in InflowComputationStorageOption should return true if we add them all in
 		Uniqueness is checked in InflowComputationStorageOptionTest
 		 */
-		InflowStorageOptions options = new InflowStorageOptions();
+		HeadlessInflowOptions options = new HeadlessInflowOptions();
 		options.setComputationStorageOptions(Arrays.asList(InflowComputationStorageOption.values()));
 
 		for (InflowComputationStorageOption option : InflowComputationStorageOption.values())
@@ -58,7 +58,7 @@ public class InflowStorageOptionsTest
 	public void testDoubleSetCompOptions()
 	{
 		//setComputationStorageOptions should clear out the original values not add to them
-		InflowStorageOptions options = new InflowStorageOptions();
+		HeadlessInflowOptions options = new HeadlessInflowOptions();
 		options.setComputationStorageOptions(Arrays.asList(InflowComputationStorageOption.EVAP_AS_FLOW));
 		options.setComputationStorageOptions(Arrays.asList(InflowComputationStorageOption.PROJECT_RELEASES));
 

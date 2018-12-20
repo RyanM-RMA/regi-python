@@ -48,7 +48,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	private final long _msTimeOffsetIntoInterval = 7 * 3600 * 1000;  //TODO  7am for now
 	private final String _intervalName = "1Day";
 	private final Map<LocationTemplate, InflowAdjustedTypeModel> _statusMaps = new HashMap<>();
-	private final InflowStorageOptions _options = new InflowStorageOptions();
+	private final HeadlessInflowOptions _options = new HeadlessInflowOptions();
 
 	public ScriptableInflowImpl(RegiDomain regiDomain, ManagerId managerId)
 	{

@@ -17,7 +17,7 @@ import usace.rowcps.data.inflow.InflowDataType;
  *
  * @author @author <a href="mailto:ryanm@rmanet.com">Ryan A. Miles (ryanm@rmanet.com)</a>
  */
-final class InflowStorageOptions
+final class HeadlessInflowOptions
 {
 
 	private final Set<InflowComputationStorageOption> _dataTypesToStore = new HashSet<>();
