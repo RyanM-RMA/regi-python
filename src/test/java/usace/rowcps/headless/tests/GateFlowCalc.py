@@ -1,4 +1,5 @@
 from java.util import Calendar
+from usace.rowcps.headless.tests import TestVariables
 
 names = registry.getNames(1.0)
 print "names", names
@@ -15,8 +16,4 @@ endCal.clear()
 endCal.set(Calendar.YEAR, 2015)
 endCal.set(Calendar.MONTH, 6)
 
-#gateCalc.computeFlowGroup("SWF", "LEWT2",  startCal.getTimeInMillis(), endCal.getTimeInMillis(), "Flow.LEWT2.ConduitGate_Total")
-
-gateCalc.computeAll("SWF", "LEWT2",  startCal.getTimeInMillis(), endCal.getTimeInMillis())
-
-
+gateCalc.computeAll(TestVariables.OFFICE_ID, TestVariables.GATE_LOCATION, startCal.getTimeInMillis(), endCal.getTimeInMillis())

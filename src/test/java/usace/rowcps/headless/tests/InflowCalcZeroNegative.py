@@ -1,11 +1,14 @@
 # the java Calendar class is used to create java Date objects
 from java.util import Calendar
+from java.util import TimeZone
+from usace.rowcps.headless.tests import TestVariables
 
-# this gets a scriptable Pool Percent object
+# this gets a ScriptableInflow instance.
 inflowCalc = registry.getCalculation(1.0, "Inflow")
 
 # configure the start calendar
-startCal = Calendar.getInstance()
+startCal = Calendar.getInstance(TimeZone.getTimeZone('US/Central'))
+
 startCal.clear()
 startCal.set(Calendar.YEAR, 2015)
 startCal.set(Calendar.MONTH, 4)
@@ -27,6 +30,6 @@ startCal.set(Calendar.MONTH, 4)
 #	freezeRain
 
 # This autoBalances ALAT2
-inflowCalc.autoAdjust("SWF", "ALAT2",  startCal.getTime(), False, False)
+inflowCalc.zeroNegatives(TestVariables.OFFICE_ID, TestVariables.INFLOW_LOCATION,  startCal.getTime())
 
 

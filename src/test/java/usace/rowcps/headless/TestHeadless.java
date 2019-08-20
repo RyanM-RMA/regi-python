@@ -7,7 +7,10 @@
 package usace.rowcps.headless;
 
 import java.util.TimeZone;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import usace.rowcps.cwms.Installer;
+import usace.rowcps.headless.tests.TestVariables;
 
 /**
  * This class is intended for use by developers to run headless after making changes. Run a single test at a time
@@ -21,31 +24,47 @@ public class TestHeadless
 {
 	private static final String JYTHON_FILE_ROOT = "src\\test\\java\\usace\\rowcps\\headless\\";
 	private static final String CREDENTIALS_FILE = "credentials.properties";
+	
+	//I'd like this to be the office, but we haven't connected yet.
+	//Could get it from the credentials probably.
+	private static final String SUB_FOLDER = "tests";
+	
+	@Test
+	public void testAssoc_DBExport() throws Exception
+	{
+		RegiCLI.runHeadlessTest(getArgsForFile("Assoc_DBExport.py"));
+	}
+	
+	@Test
+	public void testBasinPieExport() throws Exception
+	{
+		RegiCLI.runHeadlessTest(getArgsForFile("BasinPieExport.py"));
+	}
+	
+	@Test
+	public void testGateFlowCalcPy() throws Exception
+	{
+		RegiCLI.runHeadlessTest(getArgsForFile("GateFlowCalc.py"));
+	}
 
 	@Test
 	public void testGateSettingsPy() throws Exception
 	{
-		RegiCLI.runHeadlessTest(getArgsForFile("GateSettings2.py"));
+		RegiCLI.runHeadlessTest(getArgsForFile("GateSettings.py"));
 	}
-
+	
 	@Test
-	public void testStatusDemoPy() throws Exception
+	public void testInflowCalcAutoAdjustPy() throws Exception
 	{
-		RegiCLI.runHeadlessTest(getArgsForFile("StatusDemo.py"));
+		RegiCLI.runHeadlessTest(getArgsForFile("InflowCalcAutoAdjust.py"));
 	}
-
+	
 	@Test
-	public void testGateFlowCalc2Py() throws Exception
+	public void testInflowCalcBalanceAllPy() throws Exception
 	{
-		RegiCLI.runHeadlessTest(getArgsForFile("GateFlowCalc2.py"));
+		RegiCLI.runHeadlessTest(getArgsForFile("InflowCalcBalanceAll.py"));
 	}
-
-	@Test
-	public void testPoolPercentCalcPy() throws Exception
-	{
-		RegiCLI.runHeadlessTest(getArgsForFile("PoolPercentCalc.py"));
-	}
-
+	
 	@Test
 	public void testInflowCalcClonePy() throws Exception
 	{
@@ -53,10 +72,11 @@ public class TestHeadless
 	}
 
 	@Test
-	public void testInflowCalcZeroNegativePy() throws Exception
+	public void testInflowCalcComputeEvapAsFlowPy() throws Exception
 	{
-		RegiCLI.runHeadlessTest(getArgsForFile("InflowCalcZeroNegative.py"));
+		RegiCLI.runHeadlessTest(getArgsForFile("InflowCalcComputeEvapAsFlow.py"));
 	}
+	
 
 	@Test
 	public void testInflowCalcComputedInflowPy() throws Exception
@@ -65,18 +85,49 @@ public class TestHeadless
 	}
 
 	@Test
-	public void testInflowCalcComputeEvapAsFlowPy() throws Exception
+	public void testInflowCalcZeroNegativePy() throws Exception
 	{
-		RegiCLI.runHeadlessTest(getArgsForFile("InflowCalcComputeEvapAsFlow.py"));
+		RegiCLI.runHeadlessTest(getArgsForFile("InflowCalcZeroNegative.py"));
+	}
+	
+	@Test
+	public void testPoolPercentCalcPy() throws Exception
+	{
+		RegiCLI.runHeadlessTest(getArgsForFile("PoolPercentCalc.py"));
+	}
+
+	@Test
+	public void testSigstages_DBExportPy() throws Exception
+	{
+		RegiCLI.runHeadlessTest(getArgsForFile("Sigstages_DBExport.py"));
+	}
+
+	@Test
+	public void testSigstages_DBImportPy() throws Exception
+	{
+		RegiCLI.runHeadlessTest(getArgsForFile("Sigstages_DBImport.py"));
+	}
+
+	@Test
+	public void testSigstages_DownloadPy() throws Exception
+	{
+		RegiCLI.runHeadlessTest(getArgsForFile("Sigstages_Download.py"));
+	}
+
+	@Test
+	public void testStatusDemoPy() throws Exception
+	{
+		RegiCLI.runHeadlessTest(getArgsForFile("StatusDemo.py"));
 	}
 
 	private String[] getArgsForFile(String file)
 	{
-		return getArgsForFileAndTimeZone(file, TimeZone.getTimeZone("America/Chicago"));
+		return getArgsForFileAndTimeZone(SUB_FOLDER + "\\" + file, TimeZone.getTimeZone("America/Chicago"));
 	}
 
 	private String[] getArgsForFileAndTimeZone(String file, TimeZone tz)
 	{
+		TestVariables.init();
 		String[] args = new String[]
 		{
 			"-Drowcps.timezone=" + tz.getID(),
@@ -85,5 +136,13 @@ public class TestHeadless
 		};
 
 		return args;
+	}
+	
+	@BeforeClass
+	public static void beforeClass()
+	{
+		//Sets up DB info
+		Installer installer = new Installer();
+		installer.restored();
 	}
 }

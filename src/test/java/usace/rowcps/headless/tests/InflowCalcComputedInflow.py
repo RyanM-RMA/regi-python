@@ -2,6 +2,7 @@
 from java.util import Calendar
 from java.util import TimeZone
 from usace.rowcps.headless.calculator.inflow import InflowComputationStorageOption
+from usace.rowcps.headless.tests import TestVariables
 
 # this gets a ScriptableInflow instance.
 inflowCalc = registry.getCalculation(1.0, "Inflow")
@@ -40,4 +41,4 @@ endCal.set(Calendar.DAY_OF_MONTH, 4)
 inflowCalc.setComputationStorageOptions(InflowComputationStorageOption.EVAP_AS_FLOW, InflowComputationStorageOption.PROJECT_RELEASES)
 
 # This computes and saves inflow for EUFA in May 2018 given the computation options set above
-inflowCalc.computeInflow("SWT", "EUFA", startCal.getTime(), endCal.getTime())
+inflowCalc.computeInflow(TestVariables.OFFICE_ID, TestVariables.INFLOW_LOCATION, startCal.getTime(), endCal.getTime())

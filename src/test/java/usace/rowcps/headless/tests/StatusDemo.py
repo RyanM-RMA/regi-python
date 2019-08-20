@@ -1,8 +1,7 @@
 # the java Calendar class is used to create java Date objects
 from java.util import Calendar
 from java.util import TimeZone
-import sys
-import getopt
+from usace.rowcps.headless.tests import TestVariables
 
 def Usage():
     msg = """
@@ -20,13 +19,12 @@ def headless_examples():
     streamStatus = registry.getCalculation(1.0, "Status")
 
     # Configure the calendar
-    timeZone = streamStatus.getRegiTimeZone();    
+    timeZone = TimeZone.getTimeZone("America/Chicago")
     startCal = Calendar.getInstance(timeZone)
     startCal.clear()
-    startCal.set(Calendar.YEAR, 2016)
-    startCal.set(Calendar.MONTH, 0)
-    startCal.set(Calendar.DATE, 1)
-    startCal.set(Calendar.HOUR, 0)
+    startCal.set(Calendar.YEAR, 2018)
+    startCal.set(Calendar.MONTH, 6)
+    startCal.set(Calendar.DATE, 2)
     # Month 4 means May to java...
 
     # If the filepath does not end in .jpg then the image will be saved in png format.
@@ -36,19 +34,21 @@ def headless_examples():
     #   at single date,
     #   with a single chart template
     #   and write to specified file.
-    #print "Demonstrating a call to generateStreamStatusImage"
-    #streamFilepath = "J:\\temp\\headless\\StatusGraphics\\streamStatusStandard.jpg"
-    #streamStatus.generateStreamStatusImage("SWF", "RSRT2", "Flood Control Focus View", startCal.getTime(), 800, 600, streamFilepath)
+    filePath = TestVariables.HEADLESS_FILE_LOCATION + "StatusGraphics\\"
+    office = TestVariables.OFFICE_ID
+    streamLoc = TestVariables.STREAM_GAGE_LOCATION
+    projectLoc = TestVariables.INFLOW_LOCATION
+    releasesLoc = TestVariables.GATE_LOCATION
+    template = "RyanM Headless Testing"
+    time = startCal.getTime()
+    width = 800
+    height = 600
 
-    #print "Demonstrating a call  to generateReservoirStatusImage"
-    reservoirFilePath = "J:\\temp\\headless\\StatusGraphics\\reservoirStatus.jpg"
-    streamStatus.generateReservoirStatusImage("SWF", "GPVT2", "Flood Control Focus View", startCal.getTime(), 800, 600, reservoirFilePath)
-
-    #print "Demonstrating a call to generateReleasesStatusImage"
-    #releasesFilePath = "J:\\temp\\headless\\StatusGraphics\\releasesStatus.jpg"
-    #streamStatus.generateReleasesStatusImage("SWF", "WTYT2", "Flood Control Focus View", startCal.getTime(), 800, 600, releasesFilePath)
+    streamStatus.generateStreamStatusImage(office, streamLoc, template, time, width, height, filePath + "streamStatus.jpg")
+    streamStatus.generateReservoirStatusImage(office, projectLoc, template, time, width, height, filePath + "reservoirStatus.jpg")
+    streamStatus.generateReleasesStatusImage(office, releasesLoc, template, time, width, height, filePath + "releasesStatus.jpg")
     
-if __name__ == "__builtin__": 
+if __name__ == "__builtin__":
     Usage()
     headless_examples()
 

@@ -29,7 +29,6 @@ import hec.map.geoui.interp.TimeInfo;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.LayoutManager;
@@ -78,7 +77,6 @@ import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.basinpie.ui.BasinPieModel;
 import usace.rowcps.basinpie.ui.annotations.BasinPieAnnotationLayer;
 import usace.rowcps.basinpie.ui.annotations.HeadlessBasinPieAnnotationLayer;
-import usace.rowcps.computation.common.IEventThreadExceptionProcessor;
 import usace.rowcps.computation.services.CalcFlowGroupTimeSeriesService;
 import usace.rowcps.data.charttemplate.IChartTemplate;
 import usace.rowcps.data.maptemplate.graphicoptions.ReleasesGraphicOptionData;
@@ -128,17 +126,17 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         
         LocationTemplate locTemp = new LocationTemplate(officeId, locationId);
 
-        final TimeInfo utcTimeInfo = getUtcTimeInfo(current, regiDomain.getTimeZone());
+        TimeInfo utcTimeInfo = getUtcTimeInfo(current, regiDomain.getTimeZone());
 
-        final TimeInfoSource utcTimeInfoSource = () -> utcTimeInfo;
+        TimeInfoSource utcTimeInfoSource = () -> utcTimeInfo;
 
         checkForKnownNeededServices();
 
         MapTemplateLayer mtl = getMapTemplateLayer(templateName);
 
-        final ReservoirGraphicOptionData rgod = mtl.getGraphicsOptions();
+        ReservoirGraphicOptionData optionData = mtl.getGraphicsOptions();
 
-        final CountDownLatch cdl = new CountDownLatch(1);
+        CountDownLatch cdl = new CountDownLatch(1);
         PropertyChangeListener pcl = (PropertyChangeEvent evt) ->
         {
             if (GraphicConstants.DATA_FILLED_EVENT.equals(evt.getPropertyName()))
@@ -147,17 +145,17 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
             }
         };
 
-        rgod.addPropertyChangeListener(pcl);
+        optionData.addPropertyChangeListener(pcl);
 
         AtProjectManager atProjectManager = this.regiDomain.getAtProjectManager(managerId);
-        final IProject iProject = atProjectManager.getIProject(locTemp, CacheUsage.NORMAL);
+        IProject iProject = atProjectManager.getIProject(locTemp, CacheUsage.NORMAL);
 
-        final ReservoirPlotPanelData rppd = new ReservoirPlotPanelData(iProject, utcTimeInfoSource, managerId, rgod);
-        rppd.addPropertyChangeListener(pcl);
+        ReservoirPlotPanelData plotPanelData = new ReservoirPlotPanelData(iProject, utcTimeInfoSource, managerId, optionData);
+        plotPanelData.addPropertyChangeListener(pcl);
 
         ReservoirPlotPanel reservoirPlotPanel;
 
-        RunnableFuture<ReservoirPlotPanel> panelFuture = new FutureTask<>(() -> new ReservoirPlotPanel(iProject, managerId, utcTimeInfoSource, rgod, rppd));
+        RunnableFuture<ReservoirPlotPanel> panelFuture = new FutureTask<>(() -> new ReservoirPlotPanel(iProject, managerId, utcTimeInfoSource, plotPanelData));
         SwingUtilities.invokeLater(panelFuture);
         reservoirPlotPanel = panelFuture.get(1, TimeUnit.MINUTES);
 
@@ -168,7 +166,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
             LOGGER.log(Level.WARNING, "Timeout exceeded loading reservoir status graphic data.");
         }
 
-        rgod.removePropertyChangeListener(pcl);
+        optionData.removePropertyChangeListener(pcl);
 
         // This next sleep is important b/c the latch gets set after the SwingWorker doInBackground complete but before done()
         // are called.   We need the done() methods to execute before we proceed.
@@ -217,7 +215,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         }
 
         boolean hasProjectChild = hasGlobalService(ProjectChildLocationCacheService.class);
-        if (!hasCalcFlow)
+        if (!hasProjectChild)
         {
             String mesg = "A ProjectChildLocationCacheService was not found and is known to be needed by Regi Headless.  "
                           + "Without this service the headless Status Graphic generation may not generate the correct values.  "
@@ -277,7 +275,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         
         if(mapTemplateLayer == null)
         {
-            Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.SEVERE, "Unable to locate MapTemplateLayer with the name:{0}", templateName);
+            LOGGER.log(Level.SEVERE, "Unable to locate MapTemplateLayer with the name:{0}", templateName);
             return;
         }                       
         
@@ -318,9 +316,9 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 
 		CompletableFuture<Void> future = data.retrieveOutletGroups(new OptionalParams(metrics));
         data.updateDataScopeSynchronous(new OptionalParams(metrics));
-		Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.FINE, "(Headless)Data scope retrieval complete.");
+		LOGGER.log(Level.FINE, "(Headless)Data scope retrieval complete.");
 		future.get();
-		Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.FINE, "(Headless)Retrieval of outlet groups complete.");
+		LOGGER.log(Level.FINE, "(Headless)Retrieval of outlet groups complete.");
         
 		//This needs to occur *after* all of the futures have been completed.
 		data.fireDataUpdateEvent();
@@ -367,17 +365,17 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 				}
 				catch (IOException ex)
 				{
-					Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.SEVERE, "Unable to save to file " + filename, ex);
+					LOGGER.log(Level.SEVERE, "Unable to save to file " + filename, ex);
 				}
 			});
 		}
 		catch (InterruptedException ex)
 		{
-			Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.SEVERE, "Event thread was interrupted", ex);
+			LOGGER.log(Level.SEVERE, "Event thread was interrupted", ex);
 		}
 		catch (InvocationTargetException ex)
 		{
-			Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.SEVERE, "An uncaught exception occurred on the Event Thread for generateReleasesStatusImage.", ex);
+			LOGGER.log(Level.SEVERE, "An uncaught exception occurred on the Event Thread for generateReleasesStatusImage.", ex);
 		}
 	}
 
@@ -447,7 +445,6 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 
     public TimeInfo getUtcTimeInfo(Date current, TimeZone displayTimeZone)
     {
-        final int MILLIS_PER_HOUR = 1000 * 60 * 60;
         // The time controls internally use HecTimes with utc values and Regi formats them to the display timezone in the ui
         // components.
         // In headless the user is giving us a Date object and a timezone that date object is in.
@@ -480,18 +477,6 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         final List<IMapTemplate> mapTemplates = tm.retrieveMapTemplates(currentProject.getUserOfficeId(),
                                                                         CacheUsage.NORMAL);
         return mapTemplates;
-    }
-
-    private List<MapTemplateLayer> getMapTemplateLayers(
-            List<IMapTemplate> mapTemplates)
-    {
-        List<MapTemplateLayer> retval = new ArrayList<>();
-
-        for (IMapTemplate iMapTemplate : mapTemplates)
-        {
-            retval.add(new MapTemplateLayer(iMapTemplate, getManagerIdProvider()));
-        }
-        return retval;
     }
 
     private MapTemplateLayer getMapTemplateLayer(String templateName) throws DbIoException, DbConnectionException
@@ -712,12 +697,15 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         generateImages(officeId, locs, locationGroup, treeModel, dates, dimension, templates, filename, imageFormat);
     }
 
-    public void generateImages(final String officeId,
-                               List<LocationTemplate> referenceLocations, final LocationGroup locationGroup,
+    public void generateImages(String officeId,
+                               List<LocationTemplate> referenceLocations, 
+							   LocationGroup locationGroup,
                                BasinTreeModel treeModel,
-                               final Date[] dates, final Dimension d,
+                               Date[] dates,
+							   Dimension d,
                                List<IChartTemplate> templates,
-                               final String filePattern, String imageFormat) throws ExecutionException, DbConnectionException, InterruptedException
+                               String filePattern, String imageFormat)
+			throws ExecutionException, DbConnectionException, InterruptedException
     {
         SortedSet<Date> dateSet = new TreeSet<>();
         dateSet.addAll(Arrays.asList(dates));
@@ -728,7 +716,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         for (IChartTemplate chartTemplate : templates)
         {
             LOGGER.log(Level.INFO, "Generating images for template:{0}", chartTemplate.getId());
-            final BasinPieModel pieModel = buildAndInitializeBasinPieModel(locationGroup, chartTemplate, startDate, endDate, treeModel);
+            BasinPieModel pieModel = buildAndInitializeBasinPieModel(locationGroup, chartTemplate, startDate, endDate, treeModel);
 
             for (Date date : dateSet)
             {
@@ -790,13 +778,8 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         engine.addPattern("height", Integer.toString(height));
 
         String filename = engine.makeReplacements(filePattern);
-//		String filename = officeId + "_" + locationStr + "_" + chartTemplate + "_" + dateStr;
 //		Replace anything that isn't a-z or A-z or 0-9 or [:\/)(.-] with an underscore.
-        filename = filename.replaceAll("[^a-zA-Z0-9:\\\\\\/\\)\\(\\.\\- ]", "_");
-
-//		String file = dir + filename + "." + imageFormat;
-//		String file =  filename + "." + imageFormat;
-        return filename;
+        return filename.replaceAll("[^a-zA-Z0-9:\\\\\\/\\)\\(\\.\\- ]", "_");
     }
 
     public static String getDateString(Date date)
@@ -807,11 +790,11 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         return dateStr;
     }
 
-    public void drawImage(final BasinTreeModel treeModel,
-                          final LocationTemplate locRef,
-                          final BasinPieModel pieModel, final Dimension d,
-                          final Date date, final String file,
-                          final String imageFormat) throws InterruptedException, ExecutionException
+    public void drawImage(BasinTreeModel treeModel,
+                          LocationTemplate locRef,
+                          BasinPieModel pieModel, Dimension d,
+                          Date date, String file,
+                          String imageFormat) throws InterruptedException, ExecutionException
     {
 
         final CountDownLatch latch = new CountDownLatch(1);
@@ -825,7 +808,6 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
                    {
                        relavantLocations.size(), locRef
                 });
-//                _basinTreeSelectionData.setActiveLocations(relavantLocations);
                 pieModel.setActiveLocations(relavantLocations, true);
                 
                 return null;
@@ -859,13 +841,12 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
     }
 
     public BasinPieModel buildAndInitializeBasinPieModel(
-            LocationGroup locationGroup, final IChartTemplate chartTemplate,
+            LocationGroup locationGroup, IChartTemplate chartTemplate,
             Date startDate, Date endDate,
-            final BasinTreeModel treeModel) throws InterruptedException
+            BasinTreeModel treeModel) throws InterruptedException
     {
-        IEventThreadExceptionProcessor eventThreadExceptionProcessor = null;
-        final BasinPieModel pieModel = new BasinPieModel(managerId, locationGroup, chartTemplate, startDate, endDate);
-        final CountDownLatch initlatch = new CountDownLatch(1);
+        BasinPieModel pieModel = new BasinPieModel(managerId, locationGroup, chartTemplate, startDate, endDate);
+        CountDownLatch initlatch = new CountDownLatch(1);
         pieModel.addPropertyChangeListener((PropertyChangeEvent evt) ->
         {
             if ("PieDataChangedProperty".equals(evt.getPropertyName()))
@@ -891,7 +872,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         return pieModel;
     }
 
-    private void writeBasinImage(Dimension d, final BasinPieModel pieModel,
+    private void writeBasinImage(Dimension d, BasinPieModel pieModel,
                                  Date date, String file, String imageFormat) throws FileNotFoundException, IOException
     {
         LocationGroup locationGroup = pieModel.getLocationGroup();
@@ -932,7 +913,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
             }
             catch (InterruptedException | ExecutionException ex)
             {
-                Logger.getLogger(ScriptableStatusGraphicImpl.class.getName()).log(Level.INFO, "Well that didn't work...", ex);
+                LOGGER.log(Level.INFO, "Well that didn't work...", ex);
             }
         });
         
@@ -1050,7 +1031,6 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         {
             // This doesn't work.  
             Color color = new Color(0, 0, 0, 0);
-            Composite composite = g.getComposite();
             g.setColor(color);
             g.setComposite(AlphaComposite.Clear);
             g.fillRect(0, 0, d.width, d.height);
