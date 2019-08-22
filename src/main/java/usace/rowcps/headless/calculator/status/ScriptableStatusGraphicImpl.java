@@ -75,7 +75,6 @@ import rma.services.GlobalServiceLoaderDelegate;
 import usace.metrics.services.Metrics;
 import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.basinpie.ui.BasinPieModel;
-import usace.rowcps.basinpie.ui.annotations.BasinPieAnnotationLayer;
 import usace.rowcps.basinpie.ui.annotations.HeadlessBasinPieAnnotationLayer;
 import usace.rowcps.computation.services.CalcFlowGroupTimeSeriesService;
 import usace.rowcps.data.charttemplate.IChartTemplate;
@@ -886,7 +885,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         piePanel.setTimeZone(timezone);
 
         JLayer piePanelJLayerWrapper = new JLayer(piePanel);
-        BasinPieAnnotationLayer basinPieAnnotationLayer = new HeadlessBasinPieAnnotationLayer(getManagerIdProvider(), locationGroup, pieModel.getActiveLocations());
+        HeadlessBasinPieAnnotationLayer basinPieAnnotationLayer = new HeadlessBasinPieAnnotationLayer(getManagerIdProvider(), locationGroup, pieModel.getActiveLocations());
         basinPieAnnotationLayer.fillPanel(poolIds, date, chartTemplate);
         
         PinnableComponentGlassPane glassPane = PinnableComponentGlassPaneFactory.createNewGlassPane(basinPieAnnotationLayer, piePanel);
@@ -919,11 +918,14 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         
         PinnableComponentGlassPaneFactory.getGlassPane(basinPieAnnotationLayer).setVisible(true);
 
-
         LOGGER.fine("Filling panel with model.");
         piePanel.fillPanel(pieModel);
         LOGGER.log(Level.INFO, "Setting active date:{0}", date);
         piePanel.setActiveDate(date);
+
+		//This updates the data of bar charts.  This has to happen after we've loaded the data.  Otherwise it doesn't
+		//Load the bar chart correctly.
+		basinPieAnnotationLayer.updateBarChartGraphics();
 
         layoutAndSave(piePanelJLayerWrapper, d, file, imageFormat);
     }
