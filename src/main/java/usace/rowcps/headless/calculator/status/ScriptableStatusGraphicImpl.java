@@ -75,7 +75,6 @@ import rma.services.GlobalServiceLoaderDelegate;
 import usace.metrics.services.Metrics;
 import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.basinpie.ui.BasinPieModel;
-import usace.rowcps.basinpie.ui.annotations.HeadlessBasinPieAnnotationLayer;
 import usace.rowcps.computation.services.CalcFlowGroupTimeSeriesService;
 import usace.rowcps.data.charttemplate.IChartTemplate;
 import usace.rowcps.data.maptemplate.graphicoptions.ReleasesGraphicOptionData;
