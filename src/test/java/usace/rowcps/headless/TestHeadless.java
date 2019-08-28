@@ -42,6 +42,12 @@ public class TestHeadless
 	}
 	
 	@Test
+	public void testGateFlowPy() throws Exception
+	{
+		RegiCLI.runHeadlessTest(getArgsForFile("GateFlow.py"));
+	}
+	
+	@Test
 	public void testGateFlowCalcPy() throws Exception
 	{
 		RegiCLI.runHeadlessTest(getArgsForFile("GateFlowCalc.py"));
