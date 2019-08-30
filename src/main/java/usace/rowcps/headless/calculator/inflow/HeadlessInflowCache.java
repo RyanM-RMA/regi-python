@@ -36,9 +36,11 @@ public class HeadlessInflowCache extends InflowCache
 
 	private static final Logger LOGGER = Logger.getLogger(HeadlessInflowCache.class.getName());
 
-	public HeadlessInflowCache(HeadlessInflowCurrentDayControl currentDayControl, ManagerId managerId, AtProjectDescriptor projectDescriptor, TimeZone projectTimeZone, IntervalProvider intervalProvider)
+	public HeadlessInflowCache(HeadlessInflowCurrentDayControl currentDayControl, ManagerId managerId,
+								AtProjectDescriptor projectDescriptor, TimeZone projectTimeZone,
+								IntervalProvider intervalProvider, boolean retrieveAverageReleases)
 	{
-		super(currentDayControl, managerId, projectDescriptor, null, new InternalThreadBlockRetriever(), new HashSet<>(), projectTimeZone, intervalProvider);
+		super(currentDayControl, managerId, projectDescriptor, null, new InternalThreadBlockRetriever(), new HashSet<>(), projectTimeZone, intervalProvider, new HeadlessInflowDataAdapter(projectDescriptor, managerId, projectTimeZone, retrieveAverageReleases));
 	}
 
 	@Override
@@ -62,17 +64,17 @@ public class HeadlessInflowCache extends InflowCache
 		{
 			Integer seconds = Integer.getInteger("rowcps.latchseconds", 11 * 60);
 			callback.getLatch().await(seconds, TimeUnit.SECONDS);
-
-			NavigableSet<Date> dates = getDateRangeFromControl();
-			for (Date date : dates)
-			{
-				computedInflowForDate(date, hec.data.Units.ENGLISH_ID, getProjectTimeZone());
-				computeInflowMassDelta(date, hec.data.Units.ENGLISH_ID);
-			}
 		}
 		catch (InterruptedException ex)
 		{
 			throw new CacheInitializationException(ex);
+		}
+
+		NavigableSet<Date> dates = getDateRangeFromControl();
+		for (Date date : dates)
+		{
+			computedInflowForDate(date, hec.data.Units.ENGLISH_ID, getProjectTimeZone());
+			computeInflowMassDelta(date, hec.data.Units.ENGLISH_ID);
 		}
 	}
 

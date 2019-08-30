@@ -6,12 +6,9 @@ import hec.data.project.AtProjectDescriptor;
 import hec.db.DbConnectionException;
 import hec.db.DbException;
 import hec.db.DbIoException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TimeZone;
@@ -240,33 +237,41 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	}
 
 	private HeadlessInflowCache getInitializedDailyCache(LocationTemplate locRef, Date startDate, Date endDate, OptionalParams options)
-			throws DbConnectionException, DbIoException, InterruptedException, CacheInitializationException,
-				   DbException, DataSetException
+			throws DbConnectionException, DbIoException, InterruptedException, CacheInitializationException, DbException, DataSetException
+	{
+		return getInitializedDailyCache(locRef, startDate, endDate, options, true);
+	}
+	
+	private HeadlessInflowCache getInitializedDailyCache(LocationTemplate locRef, Date startDate, Date endDate, OptionalParams options, boolean retrieveAverageReleases)
+			throws DbConnectionException, DbIoException, InterruptedException, CacheInitializationException, DbException, DataSetException
 	{
 		AtProjectDescriptor projectDescriptor = getProjectDescriptor(locRef);
 		TimeZone projectTimeZone = getProjectTimeZone(projectDescriptor);
 		DailyHeadlessInflowCurrentDayControl dayControl = new DailyHeadlessInflowCurrentDayControl(getManagerId(), startDate, endDate, projectTimeZone, locRef);
 
-		HeadlessInflowCache cache = buildAndInitializeInflowCache(dayControl, projectDescriptor, projectTimeZone, startDate, options);
-
-		return cache;
+		return buildAndInitializeInflowCache(dayControl, projectDescriptor, projectTimeZone, startDate, options, retrieveAverageReleases);
 	}
 
 	private HeadlessInflowCache getInitializedMonthlyCache(LocationTemplate locRef, Date startDate, OptionalParams options)
-			throws DbConnectionException, DbIoException, InterruptedException, CacheInitializationException,
-				   DbException, DataSetException
+			throws DbConnectionException, DbIoException, InterruptedException, CacheInitializationException, DbException, DataSetException
+	{
+		return getInitializedMonthlyCache(locRef, startDate, options, true);
+	}
+	
+	private HeadlessInflowCache getInitializedMonthlyCache(LocationTemplate locRef, Date startDate, OptionalParams options, boolean retrieveAverageReleases)
+			throws DbConnectionException, DbIoException, InterruptedException, CacheInitializationException, DbException, DataSetException
 	{
 		AtProjectDescriptor projectDescriptor = getProjectDescriptor(locRef);
 		TimeZone projectTimeZone = getProjectTimeZone(projectDescriptor);
 		MonthlyHeadlessInflowCurrentDayControl dayControl = new MonthlyHeadlessInflowCurrentDayControl(getManagerId(), startDate, projectTimeZone, locRef);
 
-		return buildAndInitializeInflowCache(dayControl, projectDescriptor, projectTimeZone, startDate, options);
+		return buildAndInitializeInflowCache(dayControl, projectDescriptor, projectTimeZone, startDate, options, retrieveAverageReleases);
 	}
-
-	private HeadlessInflowCache buildAndInitializeInflowCache(HeadlessInflowCurrentDayControl currentDayControl, AtProjectDescriptor projectDescriptor, TimeZone projectTimeZone, Date startDate, OptionalParams options) throws CacheInitializationException
+	
+	private HeadlessInflowCache buildAndInitializeInflowCache(HeadlessInflowCurrentDayControl currentDayControl, AtProjectDescriptor projectDescriptor, TimeZone projectTimeZone, Date startDate, OptionalParams options, boolean retreiveAverageReleases) throws CacheInitializationException
 	{
 		HeadlessInflowCache inflowCache = new HeadlessInflowCache(currentDayControl, getManagerId(), projectDescriptor,
-				projectTimeZone, getIntervalProvider(projectTimeZone))
+				projectTimeZone, getIntervalProvider(projectTimeZone), retreiveAverageReleases)
 		{
 
 			@Override
@@ -318,7 +323,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 		try
 		{
 			LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
-			HeadlessInflowCache cache = getInitializedDailyCache(locRef, startDate, endDate, options);
+			HeadlessInflowCache cache = getInitializedDailyCache(locRef, startDate, endDate, options, false);
 
 			cache.clearModifiedState();
 			cache.setModifiedOnAllDataTypeValuesInTimeRange(InflowDataType.ProjectEvapAsFlow, true);
@@ -354,16 +359,8 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 
 			cache.clearModifiedState();
 			cache.setModifiedOnAllDataTypeValuesInTimeRange(InflowDataType.ComputedInflow, true);
-
-			if (_options.isComputedDataTypeStored(InflowDataType.ProjectEvapAsFlow))
-			{
-				cache.setModifiedOnAllDataTypeValuesInTimeRange(InflowDataType.ProjectEvapAsFlow, true);
-			}
-
-			if (_options.isComputedDataTypeStored(InflowDataType.AverageRelease))
-			{
-				cache.setModifiedOnAllDataTypeValuesInTimeRange(InflowDataType.AverageRelease, true);
-			}
+			cache.setModifiedOnAllDataTypeValuesInTimeRange(InflowDataType.ProjectEvapAsFlow, true);
+			cache.setModifiedOnAllDataTypeValuesInTimeRange(InflowDataType.AverageRelease, true);
 
 			cache.saveData(options);
 		}
@@ -380,17 +377,12 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	@Override
 	public void setComputationStorageOptions(InflowComputationStorageOption option, InflowComputationStorageOption ... options)
 	{
-		List<InflowComputationStorageOption> optionList = new ArrayList<>();
+		String msg = "setComputationStorageOptions function is no longer used.\n"
+				   + "The computeInflow function will automatically save the following data:\n"
+				   + "\tEvaporation as Flow\n"
+				   + "\tAverage Releases\n"
+				   + "\tDaily Computed Inflow\n";
 		
-		if (option != null)
-		{
-			optionList.add(option);
-		}
-		
-		if (options != null)
-		{
-			optionList.addAll(Arrays.asList(options));
-		}
-		_options.setComputationStorageOptions(optionList);
+		throw new UnsupportedOperationException(msg);
 	}
 }
