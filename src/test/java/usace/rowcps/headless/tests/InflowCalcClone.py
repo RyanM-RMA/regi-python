@@ -11,8 +11,8 @@ startCal = Calendar.getInstance(TimeZone.getTimeZone('US/Central'))
 
 
 startCal.clear()
-startCal.set(Calendar.YEAR, 2015)
-startCal.set(Calendar.MONTH, 4)
+startCal.set(Calendar.YEAR, 2018)
+startCal.set(Calendar.MONTH, 6)
 
 
 # inflowCalc contains 4 callable methods:
@@ -32,5 +32,3 @@ startCal.set(Calendar.MONTH, 4)
 
 # This autoBalances ALAT2
 inflowCalc.cloneInflows(TestVariables.OFFICE_ID, TestVariables.INFLOW_LOCATION,  startCal.getTime())
-
-

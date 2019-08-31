@@ -10,8 +10,8 @@ inflowCalc = registry.getCalculation(1.0, "Inflow")
 startCal = Calendar.getInstance(TimeZone.getTimeZone('US/Central'))
 
 startCal.clear()
-startCal.set(Calendar.YEAR, 2015)
-startCal.set(Calendar.MONTH, 4)
+startCal.set(Calendar.YEAR, 2018)
+startCal.set(Calendar.MONTH, 6)
 
 
 # inflowCalc contains 4 callable methods:
@@ -20,7 +20,7 @@ startCal.set(Calendar.MONTH, 4)
 # cloneInflows
 # zeroNegatives
 
-# Each method takes the followind arguments:
+# Each method takes the following arguments:
 #   officeId
 #   locationId
 #   startDate
@@ -31,5 +31,4 @@ startCal.set(Calendar.MONTH, 4)
 
 # This autoBalances ALAT2
 inflowCalc.zeroNegatives(TestVariables.OFFICE_ID, TestVariables.INFLOW_LOCATION,  startCal.getTime())
-
 

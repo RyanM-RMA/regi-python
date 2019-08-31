@@ -22,12 +22,12 @@ import usace.rowcps.headless.tests.TestVariables;
  */
 public class TestHeadless
 {
-	private static final String JYTHON_FILE_ROOT = "src\\test\\java\\usace\\rowcps\\headless\\";
-	private static final String CREDENTIALS_FILE = "credentials.properties";
+	static final String JYTHON_FILE_ROOT = "src\\test\\java\\usace\\rowcps\\headless\\";
+	static final String CREDENTIALS_FILE = "credentials.properties";
 	
 	//I'd like this to be the office, but we haven't connected yet.
 	//Could get it from the credentials probably.
-	private static final String SUB_FOLDER = "tests";
+	static final String SUB_FOLDER = "tests";
 	
 	@Test
 	public void testAssoc_DBExport() throws Exception
@@ -126,12 +126,12 @@ public class TestHeadless
 		RegiCLI.runHeadlessTest(getArgsForFile("StatusDemo.py"));
 	}
 
-	private String[] getArgsForFile(String file)
+	static String[] getArgsForFile(String file)
 	{
 		return getArgsForFileAndTimeZone(SUB_FOLDER + "\\" + file, TimeZone.getTimeZone("America/Chicago"));
 	}
 
-	private String[] getArgsForFileAndTimeZone(String file, TimeZone tz)
+	private static String[] getArgsForFileAndTimeZone(String file, TimeZone tz)
 	{
 		TestVariables.init();
 		String[] args = new String[]

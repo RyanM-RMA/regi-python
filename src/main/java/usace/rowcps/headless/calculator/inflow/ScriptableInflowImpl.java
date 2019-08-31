@@ -17,7 +17,6 @@ import java.util.logging.Logger;
 import usace.metrics.services.Metrics;
 import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.computation.common.IntervalProvider;
-import usace.rowcps.computation.inflow.AutoAdjustInflowsAction;
 import usace.rowcps.computation.inflow.BalanceAdjustedInflowsAction;
 import usace.rowcps.computation.inflow.CloneInflowsAction;
 import usace.rowcps.computation.inflow.InflowAdjustedTypeModel;
@@ -26,6 +25,7 @@ import usace.rowcps.computation.inflow.ZeroNegativeAdjustedInflowsAction;
 import usace.rowcps.data.CacheInitializationException;
 import usace.rowcps.data.inflow.InflowDataType;
 import usace.rowcps.headless.calculator.AbstractScriptableCalc;
+import usace.rowcps.headless.calculator.inflow.actions.HeadlessAutoAdjustInflowsAction;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
 import usace.rowcps.regi.model.CacheUsage;
 import usace.rowcps.regi.model.ManagerId;
@@ -82,7 +82,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 
 			LOGGER.info("performing AutoAdjustInflowsAction");
 
-			AutoAdjustInflowsAction aaia = new AutoAdjustInflowsAction(startDate, inflowCache, hec.data.Units.ENGLISH_ID, asm);
+			HeadlessAutoAdjustInflowsAction aaia = new HeadlessAutoAdjustInflowsAction(startDate, inflowCache, hec.data.Units.ENGLISH_ID, asm);
 			aaia.setFreezeRainDays(freezeRain);
 			aaia.setUseLimits(useLimits);
 

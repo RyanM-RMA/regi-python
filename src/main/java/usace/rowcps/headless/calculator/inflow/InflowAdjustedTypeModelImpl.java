@@ -13,7 +13,7 @@ import usace.rowcps.computation.inflow.InflowAdjustedTypeModel;
  */
 public class InflowAdjustedTypeModelImpl implements InflowAdjustedTypeModel
 {
-	 private Map<Date, InflowAdjustedType> adjustedInflowsStatus = new HashMap<Date, InflowAdjustedType>();
+	 private final Map<Date, InflowAdjustedType> adjustedInflowsStatus = new HashMap<>();
 
 	@Override
 	public InflowAdjustedType getAdjustedInflowStatus(Date date)

@@ -16,6 +16,7 @@ import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import usace.rowcps.computation.common.IntervalProvider;
 import usace.rowcps.computation.inflow.InflowCache;
@@ -135,6 +136,60 @@ public class HeadlessInflowCache extends InflowCache
 				container.setModified(modifiedState);
 			}
 		});
+	}
+
+	@Override
+	public void blockByThreshold(List<Date> datesInRange, double threshold)
+	{
+		LOGGER.log(Level.FINE, "blockByThreshold is purposefully left empty since it affects the protected status of rows.");
+	}
+	
+	@Override
+	public void setQualityForRainDays(Date date)
+	{
+		LOGGER.log(Level.FINE, "setQualityForRainDays is purposefully left empty since it affects the protected status of rows.");
+	}
+
+	@Override
+	protected void setQualityForCopyInflow(InflowDataContainer idcNew)
+	{
+		LOGGER.log(Level.FINE, "setQualityForCopyInflow is purposefully left empty since it affects the protected status of rows.");
+	}
+
+	@Override
+	public void setAdjustedValues(List<Date> datesInRange, double value)
+	{
+		for(Date dateKey : datesInRange)
+		{
+			InflowDataContainer idcAdjusted = getInflowDataContainer(dateKey, InflowDataType.AdjustedInflow);
+			//Check for protected values, headless shouldn't be changing protected stuff.
+			if(idcAdjusted != null && idcAdjusted.getValue() instanceof Double && !idcAdjusted.isProtected())
+			{
+				idcAdjusted.setValue(value);
+			}
+		}
+	}
+
+	@Override
+	public void setAdjustedValue(double val, int quality, Date dateKey)
+	{
+		InflowDataContainer idcNew = getInflowDataContainer(dateKey, InflowDataType.AdjustedInflow);
+
+		if (idcNew == null || !idcNew.isProtected())
+		{
+			super.setAdjustedValue(val, quality, dateKey);
+		}
+	}
+
+	@Override
+	protected boolean cloneComputedInflowIntoAdjusted(InflowDataContainer idcNew, Date rowDate, Double newDouble)
+	{
+		boolean output = false;
+		if (idcNew == null || !idcNew.isProtected())
+		{
+			output = super.cloneComputedInflowIntoAdjusted(idcNew, rowDate, newDouble);
+		}
+		return output;
 	}
 
 	private static class InternalThreadBlockRetriever extends AbstractThreadedBlockRetriever
