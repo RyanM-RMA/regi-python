@@ -21,6 +21,7 @@ import usace.rowcps.computation.inflow.BalanceAdjustedInflowsAction;
 import usace.rowcps.computation.inflow.CloneInflowsAction;
 import usace.rowcps.computation.inflow.InflowAdjustedTypeModel;
 import usace.rowcps.computation.inflow.InflowCache;
+import usace.rowcps.computation.inflow.InflowDataAdapter;
 import usace.rowcps.computation.inflow.ZeroNegativeAdjustedInflowsAction;
 import usace.rowcps.data.CacheInitializationException;
 import usace.rowcps.data.inflow.InflowDataType;
@@ -270,8 +271,18 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	
 	private HeadlessInflowCache buildAndInitializeInflowCache(HeadlessInflowCurrentDayControl currentDayControl, AtProjectDescriptor projectDescriptor, TimeZone projectTimeZone, Date startDate, OptionalParams options, boolean retrieveAverageReleases) throws CacheInitializationException
 	{
+		InflowDataAdapter adapter;
+		if (retrieveAverageReleases)
+		{
+			adapter = new InflowDataAdapter(projectDescriptor, getManagerId(), projectTimeZone);
+		}
+		else
+		{
+			adapter = new HeadlessInflowDataAdapter(projectDescriptor, getManagerId(), projectTimeZone);
+		}
+		
 		HeadlessInflowCache inflowCache = new HeadlessInflowCache(currentDayControl, getManagerId(), projectDescriptor,
-				projectTimeZone, getIntervalProvider(projectTimeZone), retrieveAverageReleases)
+				projectTimeZone, getIntervalProvider(projectTimeZone), adapter)
 		{
 
 			@Override

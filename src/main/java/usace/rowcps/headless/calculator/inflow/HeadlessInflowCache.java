@@ -20,6 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import usace.rowcps.computation.common.IntervalProvider;
 import usace.rowcps.computation.inflow.InflowCache;
+import usace.rowcps.computation.inflow.InflowDataAdapter;
 import usace.rowcps.data.CacheInitializationException;
 import usace.rowcps.data.inflow.InflowDataContainer;
 import usace.rowcps.data.inflow.InflowDataType;
@@ -39,9 +40,9 @@ public class HeadlessInflowCache extends InflowCache
 
 	public HeadlessInflowCache(HeadlessInflowCurrentDayControl currentDayControl, ManagerId managerId,
 								AtProjectDescriptor projectDescriptor, TimeZone projectTimeZone,
-								IntervalProvider intervalProvider, boolean retrieveAverageReleases)
+								IntervalProvider intervalProvider, InflowDataAdapter adapter)
 	{
-		super(currentDayControl, managerId, projectDescriptor, null, new InternalThreadBlockRetriever(), new HashSet<>(), projectTimeZone, intervalProvider, new HeadlessInflowDataAdapter(projectDescriptor, managerId, projectTimeZone, retrieveAverageReleases));
+		super(currentDayControl, managerId, projectDescriptor, null, new InternalThreadBlockRetriever(), new HashSet<>(), projectTimeZone, intervalProvider, adapter);
 	}
 
 	@Override
@@ -153,7 +154,13 @@ public class HeadlessInflowCache extends InflowCache
 	@Override
 	protected void setQualityForCopyInflow(InflowDataContainer idcNew)
 	{
-		LOGGER.log(Level.FINE, "setQualityForCopyInflow is purposefully left empty since it affects the protected status of rows.");
+		removeProtectionAndOverride(idcNew);
+	}
+	
+	private void removeProtectionAndOverride(InflowDataContainer idc)
+	{
+		idc.setProtected(false);
+		idc.setProtectedOverride(false);
 	}
 
 	@Override
@@ -163,9 +170,10 @@ public class HeadlessInflowCache extends InflowCache
 		{
 			InflowDataContainer idcAdjusted = getInflowDataContainer(dateKey, InflowDataType.AdjustedInflow);
 			//Check for protected values, headless shouldn't be changing protected stuff.
-			if(idcAdjusted != null && idcAdjusted.getValue() instanceof Double && !idcAdjusted.isProtected())
+			if(idcAdjusted != null && idcAdjusted.getValue() instanceof Double)
 			{
 				idcAdjusted.setValue(value);
+				removeProtectionAndOverride(idcAdjusted);
 			}
 		}
 	}
@@ -173,22 +181,17 @@ public class HeadlessInflowCache extends InflowCache
 	@Override
 	public void setAdjustedValue(double val, int quality, Date dateKey)
 	{
+		super.setAdjustedValue(val, quality, dateKey);
+		
 		InflowDataContainer idcNew = getInflowDataContainer(dateKey, InflowDataType.AdjustedInflow);
-
-		if (idcNew == null || !idcNew.isProtected())
-		{
-			super.setAdjustedValue(val, quality, dateKey);
-		}
+		removeProtectionAndOverride(idcNew);
 	}
 
 	@Override
 	protected boolean cloneComputedInflowIntoAdjusted(InflowDataContainer idcNew, Date rowDate, Double newDouble)
 	{
-		boolean output = false;
-		if (idcNew == null || !idcNew.isProtected())
-		{
-			output = super.cloneComputedInflowIntoAdjusted(idcNew, rowDate, newDouble);
-		}
+		boolean output = super.cloneComputedInflowIntoAdjusted(idcNew, rowDate, newDouble);
+		removeProtectionAndOverride(idcNew);
 		return output;
 	}
 

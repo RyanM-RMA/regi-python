@@ -12,6 +12,8 @@ import usace.rowcps.computation.inflow.InflowDataAdapter;
 import usace.rowcps.regi.model.ManagerId;
 import hec.data.project.AtProjectDescriptor;
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import usace.rowcps.computation.inflow.TsDataColumn;
 import usace.rowcps.data.flowgroup.FlowGroupTimeSeries;
 import usace.rowcps.regi.model.OptionalParams;
@@ -24,22 +26,16 @@ import usace.rowcps.regi.model.RegiDomain;
 public class HeadlessInflowDataAdapter extends InflowDataAdapter
 {
 
-	private final boolean _retrieveAverageReleases;
 	
-	public HeadlessInflowDataAdapter(AtProjectDescriptor projectDescriptor, ManagerId managerId, TimeZone projectTimeZone, boolean retrieveAverageReleases)
+	public HeadlessInflowDataAdapter(AtProjectDescriptor projectDescriptor, ManagerId managerId, TimeZone projectTimeZone)
 	{
 		super(projectDescriptor, managerId, projectTimeZone);
-		_retrieveAverageReleases = retrieveAverageReleases;
 	}
 
 	@Override
 	protected TsDataColumn retrieveAvgReleaseData(FlowGroupTimeSeries fgts, RegiDomain currentProject, Date startTime, Date endTime, TimeZone projectTimeZone, OptionalParams options) throws hec.db.DbConnectionException, hec.db.DbIoException, hec.data.DataSetIllegalArgumentException
 	{
-		if (_retrieveAverageReleases)
-		{
-			return super.retrieveAvgReleaseData(fgts, currentProject, startTime, endTime, projectTimeZone, options);
-		}
-
+		Logger.getLogger(HeadlessInflowDataAdapter.class.getName()).log(Level.FINE, "This is intended to be ignored under certain circumstances");
 		return new TsDataColumn();
 	}
 }
