@@ -268,10 +268,10 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 		return buildAndInitializeInflowCache(dayControl, projectDescriptor, projectTimeZone, startDate, options, retrieveAverageReleases);
 	}
 	
-	private HeadlessInflowCache buildAndInitializeInflowCache(HeadlessInflowCurrentDayControl currentDayControl, AtProjectDescriptor projectDescriptor, TimeZone projectTimeZone, Date startDate, OptionalParams options, boolean retreiveAverageReleases) throws CacheInitializationException
+	private HeadlessInflowCache buildAndInitializeInflowCache(HeadlessInflowCurrentDayControl currentDayControl, AtProjectDescriptor projectDescriptor, TimeZone projectTimeZone, Date startDate, OptionalParams options, boolean retrieveAverageReleases) throws CacheInitializationException
 	{
 		HeadlessInflowCache inflowCache = new HeadlessInflowCache(currentDayControl, getManagerId(), projectDescriptor,
-				projectTimeZone, getIntervalProvider(projectTimeZone), retreiveAverageReleases)
+				projectTimeZone, getIntervalProvider(projectTimeZone), retrieveAverageReleases)
 		{
 
 			@Override
