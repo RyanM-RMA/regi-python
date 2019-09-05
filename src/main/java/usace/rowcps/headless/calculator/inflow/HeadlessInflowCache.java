@@ -159,8 +159,11 @@ public class HeadlessInflowCache extends InflowCache
 	
 	private void removeProtectionAndOverride(InflowDataContainer idc)
 	{
-		idc.setProtected(false);
-		idc.setProtectedOverride(false);
+		if (idc != null)
+		{
+			idc.setProtected(false);
+			idc.setProtectedOverride(false);
+		}
 	}
 
 	@Override
