@@ -190,14 +190,6 @@ public class HeadlessInflowCache extends InflowCache
 		removeProtectionAndOverride(idcNew);
 	}
 
-	@Override
-	protected boolean cloneComputedInflowIntoAdjusted(InflowDataContainer idcNew, Date rowDate, Double newDouble)
-	{
-		boolean output = super.cloneComputedInflowIntoAdjusted(idcNew, rowDate, newDouble);
-		removeProtectionAndOverride(idcNew);
-		return output;
-	}
-
 	private static class InternalThreadBlockRetriever extends AbstractThreadedBlockRetriever
 	{
 
