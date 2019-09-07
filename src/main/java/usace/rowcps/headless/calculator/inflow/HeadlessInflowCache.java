@@ -151,45 +151,6 @@ public class HeadlessInflowCache extends InflowCache
 		LOGGER.log(Level.FINE, "setQualityForRainDays is purposefully left empty since it affects the protected status of rows.");
 	}
 
-	@Override
-	protected void setQualityForCopyInflow(InflowDataContainer idcNew)
-	{
-		removeProtectionAndOverride(idcNew);
-	}
-	
-	private void removeProtectionAndOverride(InflowDataContainer idc)
-	{
-		if (idc != null)
-		{
-			idc.setProtected(false);
-			idc.setProtectedOverride(false);
-		}
-	}
-
-	@Override
-	public void setAdjustedValues(List<Date> datesInRange, double value)
-	{
-		for(Date dateKey : datesInRange)
-		{
-			InflowDataContainer idcAdjusted = getInflowDataContainer(dateKey, InflowDataType.AdjustedInflow);
-			//Check for protected values, headless shouldn't be changing protected stuff.
-			if(idcAdjusted != null && idcAdjusted.getValue() instanceof Double)
-			{
-				idcAdjusted.setValue(value);
-				removeProtectionAndOverride(idcAdjusted);
-			}
-		}
-	}
-
-	@Override
-	public void setAdjustedValue(double val, int quality, Date dateKey)
-	{
-		super.setAdjustedValue(val, quality, dateKey);
-		
-		InflowDataContainer idcNew = getInflowDataContainer(dateKey, InflowDataType.AdjustedInflow);
-		removeProtectionAndOverride(idcNew);
-	}
-
 	private static class InternalThreadBlockRetriever extends AbstractThreadedBlockRetriever
 	{
 

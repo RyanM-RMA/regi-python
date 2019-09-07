@@ -27,6 +27,9 @@ import usace.rowcps.data.CacheInitializationException;
 import usace.rowcps.data.inflow.InflowDataType;
 import usace.rowcps.headless.calculator.AbstractScriptableCalc;
 import usace.rowcps.headless.calculator.inflow.actions.HeadlessAutoAdjustInflowsAction;
+import usace.rowcps.headless.calculator.inflow.actions.HeadlessBalanceAdjustedInflowsAction;
+import usace.rowcps.headless.calculator.inflow.actions.HeadlessCloneInflowsAction;
+import usace.rowcps.headless.calculator.inflow.actions.HeadlessZeroNegativeAdjustedInflowsAction;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
 import usace.rowcps.regi.model.CacheUsage;
 import usace.rowcps.regi.model.ManagerId;
@@ -129,7 +132,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 
 			LOGGER.info("performing CloneInflowsAction");
 			CloneInflowsAction cloneAction
-					= new CloneInflowsAction(startDate, inflowCache, hec.data.Units.ENGLISH_ID, asm);
+					= new HeadlessCloneInflowsAction(startDate, inflowCache, hec.data.Units.ENGLISH_ID, asm);
 			cloneAction.actionPerformed(null);
 			LOGGER.info("CloneInflowsAction completed. Saving cache data.");
 
@@ -167,7 +170,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 			startDate = inflowCache.getCeilingDateKey(startDate);
 
 			LOGGER.info("performing ZeroNegativeAdjustedInflowsAction");
-			ZeroNegativeAdjustedInflowsAction zeroAction = new ZeroNegativeAdjustedInflowsAction(startDate, inflowCache,
+			ZeroNegativeAdjustedInflowsAction zeroAction = new HeadlessZeroNegativeAdjustedInflowsAction(startDate, inflowCache,
 					hec.data.Units.ENGLISH_ID, asm);
 			zeroAction.actionPerformed(null);
 			LOGGER.info("ZeroNegativeAdjustedInflowsAction complete.  Saving cache data.");
@@ -205,7 +208,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 			InflowAdjustedTypeModel asm = getOrCreateStatusMap(locRef);
 
 			LOGGER.info("performing BalanceAdjustedInflowsAction");
-			BalanceAdjustedInflowsAction balanceAll = new BalanceAdjustedInflowsAction(startDate, inflowCache,
+			BalanceAdjustedInflowsAction balanceAll = new HeadlessBalanceAdjustedInflowsAction(startDate, inflowCache,
 					hec.data.Units.ENGLISH_ID, asm);
 			balanceAll.actionPerformed(null);
 			LOGGER.info("BalanceAdjustedInflowsAction complete.  Saving data.");

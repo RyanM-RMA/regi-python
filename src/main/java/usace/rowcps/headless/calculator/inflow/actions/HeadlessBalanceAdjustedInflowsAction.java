@@ -9,7 +9,7 @@ package usace.rowcps.headless.calculator.inflow.actions;
 
 import java.util.Date;
 import java.util.List;
-import usace.rowcps.computation.inflow.AutoAdjustInflowsAction;
+import usace.rowcps.computation.inflow.BalanceAdjustedInflowsAction;
 import usace.rowcps.computation.inflow.InflowAdjustedTypeModel;
 import usace.rowcps.computation.inflow.InflowCache;
 import usace.rowcps.data.inflow.InflowDataContainer;
@@ -18,12 +18,12 @@ import usace.rowcps.data.inflow.InflowDataContainer;
  *
  * @author @author <a href="mailto:ryanm@rmanet.com">Ryan A. Miles (ryanm@rmanet.com)</a>
  */
-public class HeadlessAutoAdjustInflowsAction extends AutoAdjustInflowsAction
+public class HeadlessBalanceAdjustedInflowsAction extends BalanceAdjustedInflowsAction
 {
 
-	public HeadlessAutoAdjustInflowsAction(Date date, InflowCache ic, int displayUnits, InflowAdjustedTypeModel adjustM)
+	public HeadlessBalanceAdjustedInflowsAction(Date date, InflowCache ic, int du, InflowAdjustedTypeModel asm)
 	{
-		super(date, ic, displayUnits, adjustM);
+		super(date, ic, du, asm);
 	}
 
 	@Override

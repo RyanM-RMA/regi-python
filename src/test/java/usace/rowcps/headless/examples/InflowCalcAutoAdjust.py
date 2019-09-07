@@ -12,8 +12,8 @@ startCal = GregorianCalendar(TimeZone.getTimeZone('US/Central'))
 
 
 startCal.clear()
-startCal.set(Calendar.YEAR, 2015)
-startCal.set(Calendar.MONTH, 4)
+startCal.set(Calendar.YEAR, 2018)
+startCal.set(Calendar.MONTH, 7)
 
 
 # inflowCalc contains 4 callable methods:

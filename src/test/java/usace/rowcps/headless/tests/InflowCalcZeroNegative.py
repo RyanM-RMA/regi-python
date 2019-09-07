@@ -11,7 +11,7 @@ startCal = Calendar.getInstance(TimeZone.getTimeZone('US/Central'))
 
 startCal.clear()
 startCal.set(Calendar.YEAR, 2018)
-startCal.set(Calendar.MONTH, 6)
+startCal.set(Calendar.MONTH, 7)
 
 
 # inflowCalc contains 4 callable methods:

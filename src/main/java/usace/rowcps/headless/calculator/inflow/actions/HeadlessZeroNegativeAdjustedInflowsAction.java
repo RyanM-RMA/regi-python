@@ -4,26 +4,25 @@
  * All Rights Reserved.  USACE PROPRIETARY/CONFIDENTIAL.
  * Source may not be released without written approval from HEC
  */
-
 package usace.rowcps.headless.calculator.inflow.actions;
 
 import java.util.Date;
 import java.util.List;
-import usace.rowcps.computation.inflow.AutoAdjustInflowsAction;
 import usace.rowcps.computation.inflow.InflowAdjustedTypeModel;
 import usace.rowcps.computation.inflow.InflowCache;
+import usace.rowcps.computation.inflow.ZeroNegativeAdjustedInflowsAction;
 import usace.rowcps.data.inflow.InflowDataContainer;
 
 /**
  *
  * @author @author <a href="mailto:ryanm@rmanet.com">Ryan A. Miles (ryanm@rmanet.com)</a>
  */
-public class HeadlessAutoAdjustInflowsAction extends AutoAdjustInflowsAction
+public class HeadlessZeroNegativeAdjustedInflowsAction extends ZeroNegativeAdjustedInflowsAction
 {
 
-	public HeadlessAutoAdjustInflowsAction(Date date, InflowCache ic, int displayUnits, InflowAdjustedTypeModel adjustM)
+	public HeadlessZeroNegativeAdjustedInflowsAction(Date date, InflowCache ic, int displayU, InflowAdjustedTypeModel adjustModel)
 	{
-		super(date, ic, displayUnits, adjustM);
+		super(date, ic, displayU, adjustModel);
 	}
 
 	@Override

@@ -4,12 +4,11 @@
  * All Rights Reserved.  USACE PROPRIETARY/CONFIDENTIAL.
  * Source may not be released without written approval from HEC
  */
-
 package usace.rowcps.headless.calculator.inflow.actions;
 
 import java.util.Date;
 import java.util.List;
-import usace.rowcps.computation.inflow.AutoAdjustInflowsAction;
+import usace.rowcps.computation.inflow.CloneInflowsAction;
 import usace.rowcps.computation.inflow.InflowAdjustedTypeModel;
 import usace.rowcps.computation.inflow.InflowCache;
 import usace.rowcps.data.inflow.InflowDataContainer;
@@ -18,12 +17,12 @@ import usace.rowcps.data.inflow.InflowDataContainer;
  *
  * @author @author <a href="mailto:ryanm@rmanet.com">Ryan A. Miles (ryanm@rmanet.com)</a>
  */
-public class HeadlessAutoAdjustInflowsAction extends AutoAdjustInflowsAction
+public class HeadlessCloneInflowsAction extends CloneInflowsAction
 {
 
-	public HeadlessAutoAdjustInflowsAction(Date date, InflowCache ic, int displayUnits, InflowAdjustedTypeModel adjustM)
+	public HeadlessCloneInflowsAction(Date date, InflowCache ic, int du, InflowAdjustedTypeModel asm)
 	{
-		super(date, ic, displayUnits, adjustM);
+		super(date, ic, du, asm);
 	}
 
 	@Override
@@ -31,10 +30,9 @@ public class HeadlessAutoAdjustInflowsAction extends AutoAdjustInflowsAction
 	{
 		for (InflowDataContainer idc : dataContainers)
 		{
-			idc.clearCachedQuality();
-			idc.setQualityToLinearInterpolation();
 			idc.setProtected(false);
 			idc.setProtectedOverride(false);
 		}
 	}
+
 }
