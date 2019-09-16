@@ -60,7 +60,6 @@ import rma.util.RMAConst;
 import usace.metrics.services.Metrics;
 import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.computation.TimeSeriesIds;
-import usace.rowcps.computation.common.IEventThreadExceptionProcessor;
 import usace.rowcps.computation.common.grouping.IControlledOutlet;
 import usace.rowcps.computation.common.grouping.IControlledOutletGroup;
 import usace.rowcps.computation.common.grouping.IControlledOutletGroupContainer;
@@ -223,7 +222,6 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		RegiDomain domain = getRegiDomain();
 		AtProjectManager atProjectManager = domain.getAtProjectManager(getManagerId());
 		AtProjectDescriptor projectDescriptor = atProjectManager.getProjectDescriptor(locRef, CacheUsage.NORMAL);
-		IEventThreadExceptionProcessor eventThreadExceptionProcessor = null;
 
 		// This seems like a really big hack.  Is this really needed?
 		final CountDownLatch latch = new CountDownLatch(2);
@@ -270,7 +268,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 		};
 		
 		HeadlessGateCache gateCache = new HeadlessGateCache(startDate, endDate, getManagerId(),
-				projectDescriptor, MAXROWSTORETRIEVE, currentDayControl, eventThreadExceptionProcessor,
+				projectDescriptor, MAXROWSTORETRIEVE, currentDayControl,
 				completionCallbackTarget, modifiedDatesForCachedSettings);
 
 		//GateCache gateCache = new GateCache(getManagerId(), projectDescriptor, 35, completionCallbackTarget, modifiedDatesForCachedSettings);

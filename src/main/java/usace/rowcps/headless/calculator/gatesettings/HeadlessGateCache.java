@@ -14,7 +14,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
-import usace.rowcps.computation.common.IEventThreadExceptionProcessor;
 import usace.rowcps.computation.common.grouping.IControlledOutlet;
 import usace.rowcps.computation.common.grouping.IControlledOutletGroup;
 import usace.rowcps.computation.gatesettings.CompoundOutletHolder;
@@ -37,9 +36,9 @@ public class HeadlessGateCache extends GateCache
 	private final Date _startDate;
 	private final Date _endDate;
 
-	public HeadlessGateCache(Date _startDate, Date _endDate, ManagerId managerId, AtProjectDescriptor projectDescriptor, int recordsToCacheInThread, ICurrentDayControl currentDayControl, IEventThreadExceptionProcessor eventThreadExceptionProcessor, IThreadedBlockRetriever completionCallbackTarget, Set<Date> modifiedGateSettingDates)
+	public HeadlessGateCache(Date _startDate, Date _endDate, ManagerId managerId, AtProjectDescriptor projectDescriptor, int recordsToCacheInThread, ICurrentDayControl currentDayControl, IThreadedBlockRetriever completionCallbackTarget, Set<Date> modifiedGateSettingDates)
 	{
-		super(managerId, projectDescriptor, recordsToCacheInThread, currentDayControl, eventThreadExceptionProcessor, completionCallbackTarget, modifiedGateSettingDates);
+		super(managerId, projectDescriptor, recordsToCacheInThread, currentDayControl, completionCallbackTarget, modifiedGateSettingDates);
 		this._startDate = _startDate;
 		this._endDate = _endDate;
 	}
