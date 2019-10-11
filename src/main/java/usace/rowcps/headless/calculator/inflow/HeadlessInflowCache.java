@@ -42,7 +42,7 @@ public class HeadlessInflowCache extends InflowCache
 								AtProjectDescriptor projectDescriptor, TimeZone projectTimeZone,
 								IntervalProvider intervalProvider, InflowDataAdapter adapter)
 	{
-		super(currentDayControl, managerId, projectDescriptor, null, new InternalThreadBlockRetriever(), new HashSet<>(), projectTimeZone, intervalProvider, adapter);
+		super(currentDayControl, managerId, projectDescriptor, new InternalThreadBlockRetriever(), new HashSet<>(), projectTimeZone, intervalProvider, adapter);
 	}
 
 	@Override
