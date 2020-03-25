@@ -27,7 +27,7 @@ then
 fi
 
 ../jre64/bin/java -cp ../lib/*:../lib/ext/*:../lib/regi/*:../lib/cwms/*:../lib/sys/*: \
--Doracle.url=$ORA_INST \
+-Doracle.url="jdbc:oracle:thin:@${ORA_INST}" \
 -Doracle.officeId=$OFFICE_ID \
 -Dhec.passwd=$PASS_FILE \
 -Djava.library.path=../lib64 \
