@@ -1,2 +1,2 @@
 #!/bin/bash
-./RunScript.sh -f ..//examples//StatusDemo.py
+./RunHeadlessJython.sh -f ..//examples//StatusDemo.py

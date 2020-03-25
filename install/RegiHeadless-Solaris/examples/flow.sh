@@ -1,2 +1,2 @@
 #!/bin/bash
-../jre64/bin/java -cp ../lib/*:../lib/ext/*:../lib/regi/*:../lib/cwms/*:../lib/sys/*: -Djava.library.path=../lib64 -DPLUGINS=../lib/ext -Doracle.metrics.clientid="CWMS REGI-Headless-v3.3" -Dcwms.db.impl.classpaths=../runtimeclassloader/cwmsDbApi/jooq -Djava.util.logging.config.file=../config/properties/logging.properties usace.rowcps.headless.RegiCLI -Drowcps.timezone=America/Chicago -p ..//examples//credentials.properties -f ..//examples//GateFlow.py
+./RunHeadlessJython.sh -f ..//examples//GateFlow.py

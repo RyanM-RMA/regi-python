@@ -1,3 +1,3 @@
 #!/bin/bash
-./RunScript.sh -f ..//examples//BasinPie.py
+./RunHeadlessJython.sh -f ..//examples//BasinPie.py
 

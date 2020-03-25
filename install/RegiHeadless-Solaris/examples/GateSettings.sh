@@ -1,2 +1,2 @@
 #!/bin/bash
-./RunScript.sh -f ..//examples//GateSettings.py
+./RunHeadlessJython.sh -f ..//examples//GateSettings.py

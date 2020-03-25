@@ -1,2 +1,2 @@
 #!/bin/bash
-./RunScript.sh -f ..//examples//InflowCalcAutoAdjust.py
+./RunHeadlessJython.sh -f ..//examples//InflowCalcAutoAdjust.py

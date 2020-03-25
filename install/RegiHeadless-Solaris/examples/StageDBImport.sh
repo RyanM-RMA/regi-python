@@ -1,2 +1,2 @@
 #!/bin/bash
-./RunScript.sh -f ..//examples//Sigstages_DBImport.py
+./RunHeadlessJython.sh -f ..//examples//Sigstages_DBImport.py

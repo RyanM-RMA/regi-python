@@ -1,2 +1,2 @@
 #!/bin/bash
-./RunScript.sh -f ..//examples//PoolPercent.py
+./RunHeadlessJython.sh -f ..//examples//PoolPercent.py

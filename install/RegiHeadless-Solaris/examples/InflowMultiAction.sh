@@ -1,2 +1,2 @@
 #!/bin/bash
-./RunScript.sh -f ..//examples//InflowCalcMultipleActions.py
+./RunHeadlessJython.sh -f ..//examples//InflowCalcMultipleActions.py

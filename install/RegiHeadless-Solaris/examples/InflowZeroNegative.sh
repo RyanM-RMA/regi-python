@@ -1,2 +1,2 @@
 #!/bin/bash
-./RunScript.sh -f ..//examples//InflowCalcZeroNegative.py
+./RunHeadlessJython.sh -f ..//examples//InflowCalcZeroNegative.py
