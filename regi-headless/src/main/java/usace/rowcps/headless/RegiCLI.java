@@ -1,13 +1,17 @@
 package usace.rowcps.headless;
 
-import usace.rowcps.headless.interfaces.ScriptEvaluator;
 import hec.db.DbConnectionException;
 import hec.db.DbIoException;
 import hec.db.DbPluginNotFoundException;
 import hec.db.InvalidDbConnectionException;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Scope;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,47 +19,30 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
-import usace.rowcps.metrics.RegiMetricsService;
+import usace.rowcps.headless.interfaces.ScriptEvaluator;
 import usace.rowcps.regi.factories.RowcpsExecutorService;
 import usace.rowcps.regi.model.ManagerId;
 import usace.rowcps.regi.model.RegiDomain;
-import usace.rowcps.regi.preferences.RegiPreferences;
 
-/**
- *
- * @author ryan
- */
 public class RegiCLI
 {
 
 	private static final Logger LOGGER = Logger.getLogger(RegiCLI.class.getName());
 
-	static
-	{
-		RegiMetricsService.init(RegiPreferences.getClientNode().node("Metrics"), "REGI Headless");
-	}
-
 	public static void main(String[] args)
 	{
-		CLIOptions opt = new CLIOptions(System.getProperties());
-		CmdLineParser parser = new CmdLineParser(opt);
-
-		try
+		Span rootSpan = GlobalOpenTelemetry.getTracer("regi-headless")
+			.spanBuilder("runHeadless")
+			.startSpan();
+		try(Scope scope = rootSpan.makeCurrent())
 		{
-			runHeadless(parser, args, opt);
+			runHeadlessTest(args);
 		}
-		catch (DbConnectionException | DbPluginNotFoundException | InvalidDbConnectionException ex)
+		catch (DbConnectionException | DbPluginNotFoundException | IOException | RuntimeException ex)
 		{
+			rootSpan.recordException(ex);
+			rootSpan.setStatus(StatusCode.ERROR);
 			LOGGER.log(Level.SEVERE, "Headless error connecting to database.", ex);
-			System.exit(-1);
-			return;
-		}
-		catch (CmdLineException | RuntimeException e)
-		{
-			LOGGER.log(Level.SEVERE, "Error running headless", e);
-			System.err.println("java -jar myprogram.jar [options...] arguments...");
-			parser.printUsage(System.err);
 			System.exit(-1);
 			return;
 		}
@@ -67,37 +54,29 @@ public class RegiCLI
 	/**
 	 * Used by TestHeadless unit test class to run headless without calling System.exit(0)
 	 * 
-	 * @param args
+	 * @param unused
 	 * @throws DbConnectionException
 	 * @throws InvalidDbConnectionException
 	 * @throws CmdLineException
 	 * @throws DbPluginNotFoundException 
 	 */
-	static void runHeadlessTest(String[] args) throws DbConnectionException, InvalidDbConnectionException, CmdLineException, DbPluginNotFoundException
-	{
-		CLIOptions opt = new CLIOptions(System.getProperties());
-		CmdLineParser parser = new CmdLineParser(opt);
-		runHeadless(parser, args, opt);
-	}
-
-	private static void runHeadless(CmdLineParser parser, String[] args, CLIOptions opt) throws DbConnectionException, InvalidDbConnectionException, CmdLineException, DbPluginNotFoundException
-	{
-		parser.parseArgument(args);
-		System.setProperties(opt.getProperties());
+	static void runHeadlessTest(String[] unused)
+        throws DbConnectionException, DbPluginNotFoundException,
+        IOException {
 		
 		HeadlessRegiDomainFactory factory = new HeadlessRegiDomainFactory();
-		ManagerId managerId = factory.getManagerId(opt);
-		RegiDomain regiDomain = factory.createDomain(opt, managerId);
+		RegiDomain regiDomain = factory.createDomain();
 		
 		if (regiDomain != null)
 		{
 			ScriptEvaluator pe = new PythonEvaluator();
 			Map<String, Object> vars = new HashMap<>();
-			
+
+			ManagerId managerId = factory.getManagerId();
 			RegiCalcRegistry reg = new RegiCalcRegistry(regiDomain, managerId);
 			vars.put("registry", reg);
 			
-			File scriptFile = opt.getScriptFile();
+			File scriptFile = new File(System.getenv("SCRIPT"));
 			
 			try
 			{

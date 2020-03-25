@@ -1,6 +1,6 @@
 rootProject.name = 'regi-headless-parent'
 
 include "regi-headless"
-include "regi-headless-installer-common"
-include "regi-headless-installer-windows"
-include "regi-headless-installer-solaris"
+//include "regi-headless-installer-common"
+//include "regi-headless-installer-windows"
+//include "regi-headless-installer-solaris"

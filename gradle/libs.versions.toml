@@ -1,14 +1,15 @@
 [versions]
 
 # HEC Dependencies
-service-annotations = "1.2.2"
+service-annotations = "2.1.0"
 win-java-heclib = "7-IE-win-x64"
 solaris-java-heclib = "7-IE-Solaris64"
-hec-core = "6.1-SNAPSHOT" # required for PasswordFileEditor
+hec-monolith = "7.0.4" # required for PasswordFileEditor
+hec-server-suite = "8.4.5"
 
 # REGI Dependencies
-regi-tools = "3.4.3"
-regi = "3.4.4"
+regi-tools = "9.1.1"
+regi = "3.5.0-alpha001"
 
 # Third Party
 jython-standalone = "2.7.2"
@@ -26,9 +27,14 @@ junit = "5.9.3"
 [libraries]
 # HEC Dependencies
 service-annotations = { module = "mil.army.usace.hec:service-annotations", version.ref = "service-annotations" }
-hec-core = { module="mil.army.usace.hec:hec-core", version.ref = "hec-core" }
+hec-monolith = { module="mil.army.usace.hec:hec-monolith", version.ref = "hec-monolith" }
 win-java-heclib = {module="mil.army.usace.hec:javaHeclib", version.ref = "win-java-heclib"}
 solaris-java-heclib = {module="mil.army.usace.hec:javaHeclib", version.ref = "solaris-java-heclib"}
+serversuite = { module = "mil.army.usace.hec:hec-server-suite", version.ref = "hec-server-suite" }
+serversuite-cda = { module = "mil.army.usace.hec:cda-server-suite", version.ref = "hec-server-suite" }
+serversuite-jdbc = { module = "mil.army.usace.hec:jdbc-server-suite", version.ref = "hec-server-suite" }
+hec-db-cda = { module = "mil.army.usace.hec:hec-db-cda", version = "14.1.0" }
+hec-cwms-ratings-cda = { module = "mil.army.usace.hec:hec-cwms-ratings-io-cda", version = "4.2.2"}
 
 # REGI Dependencies
 regi-basinpie-ui = {module = "mil.army.wmist.regi:basin-pie-ui", version.ref = "regi"}
@@ -48,6 +54,7 @@ regi-tools-regi-cache-ui = {module = "mil.army.wmist.regi-tools:regi-cache-ui", 
 # Third Party
 jython-standalone = {module = "org.python:jython-standalone", version.ref = "jython-standalone"}
 args4j = {module = "args4j:args4j", version.ref = "args4j"}
+otel = {module = "io.opentelemetry:opentelemetry-api", version="1.58.0"}
 
 # Natives
 windows_jre = { module = "com.oracle:oracle-jre", version.ref = "windows-jre" }
@@ -76,12 +83,13 @@ regi-tools = [
     "regi-tools-regi-data"
 ]
 hec = [
-    "hec-core"
+    "hec-monolith"
 ]
 sys = [
     "args4j",
     "jython-standalone"
 ]
+serversuite = ["serversuite", "serversuite-cda", "serversuite-jdbc", "hec-db-cda"]
 
 junit-api = ["junit-jupiter-api", "junit-jupiter-params", "junit4"]
 junit-engine = ["junit-jupiter-engine", "junit-vintage-engine"]

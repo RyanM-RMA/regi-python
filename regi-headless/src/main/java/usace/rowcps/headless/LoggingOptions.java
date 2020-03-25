@@ -9,7 +9,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import usace.rowcps.headless.metrics.RegiHeadlessMetricsServiceProvider;
 import usace.rowcps.metrics.RegiMetricsService;
-import wcds.dbi.DbiProperties;
 
 /**
  *
@@ -42,7 +41,6 @@ public class LoggingOptions
      */
     public static void setDbMessageLevel(int messageLevel)
     {
-        DbiProperties.setMessageLevel(messageLevel);
         LOGGER.log(Level.FINE, "Setting Db Message Level to: {0}", messageLevel);
     }
 

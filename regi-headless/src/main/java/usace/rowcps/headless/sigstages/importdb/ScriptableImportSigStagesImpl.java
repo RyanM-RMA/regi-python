@@ -10,8 +10,6 @@ import hec.db.DbConnectionException;
 import hec.db.DbIoException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
@@ -19,8 +17,8 @@ import java.util.logging.Logger;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
 import usace.rowcps.regi.level.importer.CSVLocationLevelImportUtil;
 import usace.rowcps.regi.model.AtLocationLevelManager;
-import usace.rowcps.regi.model.RegiDomain;
 import usace.rowcps.regi.model.ManagerId;
+import usace.rowcps.regi.model.RegiDomain;
 
 /**
  *
@@ -28,12 +26,8 @@ import usace.rowcps.regi.model.ManagerId;
  */
 public class ScriptableImportSigStagesImpl implements ScriptableImportSigstages, ScriptableCalc
 {
-    private RegiDomain _regiDomain;
-    private ManagerId _managerId;
-    
-    public static final String DELIMETER = System.getProperty("sigstages.delim", ";");
-    public static final String CSVDELIMETER = System.getProperty("sigstages.csv.delim", "\n");
-    public static final String CSVSEPARATOR = System.getProperty("sigstages.csv.separator", ",");
+    private final RegiDomain _regiDomain;
+    private final ManagerId _managerId;
     
     public ScriptableImportSigStagesImpl(RegiDomain regiDomain, ManagerId managerId)
     {
@@ -46,48 +40,28 @@ public class ScriptableImportSigStagesImpl implements ScriptableImportSigstages,
     {
         boolean retval = true;
         AtLocationLevelManager atLocLevelMgr = _regiDomain.getAtLocationLevelManager(_managerId);
-        Connection c = null;
-        try {
-            Path p = Paths.get(file);
-            c = atLocLevelMgr.getPooledConnection();
-            CSVLocationLevelImportUtil importUtil = new CSVLocationLevelImportUtil();
-            importUtil.setPath(p);
-            importUtil.readFile(true);
-            List<ILocationLevel> locationLevels = importUtil.getLocationLevelList();
-            for(int locationLevelIndex = 0; locationLevelIndex < locationLevels.size(); locationLevelIndex++)
-            {
-                ILocationLevel level = locationLevels.get(locationLevelIndex);
-                try {
-                    level.setDate(effectiveDate);
-                    atLocLevelMgr.addLocationLevel(level);
-                } catch (DbConnectionException | DbIoException ex) {
-                    Logger.getLogger(ScriptableImportSigStagesImpl.class.getName()).log(Level.SEVERE, null, ex);
-                    retval = false;
-                    break;
-                }
-            }
-            
-            if(retval)
-            {
-                try {
-                    atLocLevelMgr.commitData();
-                } catch (DbConnectionException | DbIoException ex) {
-                    Logger.getLogger(ScriptableImportSigStagesImpl.class.getName()).log(Level.SEVERE, null, ex);
-                    retval = false;
-                }
-            }
-        } catch (DbConnectionException ex) {
-            Logger.getLogger(ScriptableImportSigStagesImpl.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        finally
-        {
-            try
-            {
-                if(c != null && !c.isClosed()) c.close();
-            }
-            catch (SQLException ex)
-            {
+        Path p = Paths.get(file);
+        CSVLocationLevelImportUtil importUtil = new CSVLocationLevelImportUtil();
+        importUtil.setPath(p);
+        importUtil.readFile(true);
+        List<ILocationLevel> locationLevels = importUtil.getLocationLevelList();
+        for (ILocationLevel level : locationLevels) {
+            try {
+                level.setDate(effectiveDate);
+                atLocLevelMgr.addLocationLevel(level);
+            } catch (DbConnectionException | DbIoException ex) {
                 Logger.getLogger(ScriptableImportSigStagesImpl.class.getName()).log(Level.SEVERE, null, ex);
+                retval = false;
+                break;
+            }
+        }
+
+        if (retval) {
+            try {
+                atLocLevelMgr.commitData();
+            } catch (DbConnectionException | DbIoException ex) {
+                Logger.getLogger(ScriptableImportSigStagesImpl.class.getName()).log(Level.SEVERE, null, ex);
+                retval = false;
             }
         }
         return retval;
