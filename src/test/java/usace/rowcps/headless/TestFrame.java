@@ -40,6 +40,7 @@ public class TestFrame extends JFrame
 		{"Clone",			"InflowCalcClone.py"},
 		{"Balance All",		"InflowCalcBalanceAll.py"},
 		{"Zero Negatives",	"InflowCalcZeroNegative.py"},
+		{"15614",	"PoolPercent_15614.py"},
 	};
 	
 	public TestFrame() throws HeadlessException
