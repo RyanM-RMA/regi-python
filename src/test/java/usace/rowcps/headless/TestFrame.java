@@ -36,19 +36,6 @@ public class TestFrame extends JFrame
 	private final ExecutorService _executor = Executors.newSingleThreadExecutor();
 	private final List<JButton> _buttons = new ArrayList<>();
 	
-	/**
-	 * Formatted as:
-	 * [n][0] = Button Name
-	 * [n][1] = Python file
-	 */
-	private final String[][] _pythonTestFilesAndDisplayNames = new String[][]{
-		{"Auto Adjust",		"InflowCalcAutoAdjust.py"},
-		{"Clone",			"InflowCalcClone.py"},
-		{"Balance All",		"InflowCalcBalanceAll.py"},
-		{"Zero Negatives",	"InflowCalcZeroNegative.py"},
-		{"15614",	"PoolPercent_15614.py"},
-	};
-	
 	public TestFrame() throws HeadlessException
 	{
 		buildComponents();
