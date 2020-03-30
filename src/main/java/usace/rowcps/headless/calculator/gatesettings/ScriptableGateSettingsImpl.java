@@ -58,7 +58,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import rma.util.RMAConst;
 import usace.metrics.services.Metrics;
-import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.computation.TimeSeriesIds;
 import usace.rowcps.computation.common.grouping.IControlledOutlet;
 import usace.rowcps.computation.common.grouping.IControlledOutletGroup;
@@ -84,6 +83,7 @@ import usace.rowcps.headless.calculator.AbstractScriptableCalc;
 import usace.rowcps.headless.calculator.inflow.AbstractThreadedBlockRetriever;
 import static usace.rowcps.headless.calculator.status.ScriptableStatusGraphicImpl.LATCH_SECONDS;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
+import usace.rowcps.metrics.RegiMetricsService;
 import usace.rowcps.regi.event.IThreadedBlockRetriever;
 import usace.rowcps.regi.executor.DefaultThreadIdProvider;
 import usace.rowcps.regi.executor.ThreadIdProvider;
@@ -112,7 +112,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 
 	@Override
 	public void createGateSettings(String officeId, String locationStr, Date startDate, Date end) throws Exception {
-		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "createGateSettings");
+		Metrics metrics = RegiMetricsService.createMetrics(this.getClass().getSimpleName(), "createGateSettings");
 		OptionalParams options = new OptionalParams(metrics);
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
 		HeadlessGateCache gc = getCache(locRef, startDate, end, options);
@@ -134,7 +134,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	public void createGateSettingsOutlet(String officeId, String locationStr, Date startDate, Date end, String outletId) throws
 			DbConnectionException, DbIoException, CacheInitializationException, DbException, DataSetException,
 			DataSetIllegalArgumentException, HecMathException, Exception {
-		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "createGateSettingsOutlet");
+		Metrics metrics = RegiMetricsService.createMetrics(this.getClass().getSimpleName(), "createGateSettingsOutlet");
 		OptionalParams options = new OptionalParams(metrics);
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
 		HeadlessGateCache gc = getCache(locRef, startDate, end, options);
@@ -172,7 +172,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 			throws
 			DbConnectionException, DbIoException, CacheInitializationException, DbException, DataSetException,
 			DataSetIllegalArgumentException, HecMathException, Exception {
-		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "createGateSettingsOutletFromTs");
+		Metrics metrics = RegiMetricsService.createMetrics(this.getClass().getSimpleName(), "createGateSettingsOutletFromTs");
 		OptionalParams options = new OptionalParams(metrics);
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
 		HeadlessGateCache gc = getCache(locRef, startDate, end, options);
@@ -199,7 +199,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 
 	@Override
 	public void createGateSettingsGroup(String officeId, String locationStr, Date startDate, Date end, String groupId) throws Exception {
-		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "createGateSettingsGroup");
+		Metrics metrics = RegiMetricsService.createMetrics(this.getClass().getSimpleName(), "createGateSettingsGroup");
 		OptionalParams options = new OptionalParams(metrics);
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
 		HeadlessGateCache gc = getCache(locRef, startDate, end, options);

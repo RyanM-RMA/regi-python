@@ -5,13 +5,9 @@
  */
 package usace.rowcps.headless;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import usace.metrics.services.MetricsInitializationException;
-import usace.metrics.services.MetricsServiceProvider;
+import usace.rowcps.metrics.RegiMetricsService;
 import usace.rowcps.regi.factories.RegiDomainFactory;
 import usace.rowcps.regi.preferences.RegiPreferences;
 import wcds.dbi.DbiProperties;
@@ -23,6 +19,7 @@ import wcds.dbi.DbiProperties;
 public class LoggingOptions
 {
 
+	private static final Logger LOGGER = Logger.getLogger(LoggingOptions.class.getName());
     private static boolean _metricsInitialized = false;
 
     /**
@@ -40,7 +37,7 @@ public class LoggingOptions
     public static void setDbMessageLevel(int messageLevel)
     {
         DbiProperties.MESSAGE_LEVEL = messageLevel;
-        Logger.getLogger(LoggingOptions.class.getName()).log(Level.FINE, "Setting Db Message Level to: {0}", messageLevel);
+        LOGGER.log(Level.FINE, "Setting Db Message Level to: {0}", messageLevel);
     }
 
     /*
@@ -56,11 +53,12 @@ public class LoggingOptions
     {
         initMetrics();
 
-        MetricsServiceProvider.setMetricsEnabled(enabled);
+        RegiMetricsService.getMetricsConfig().setMetricsEnabled(enabled);
 
         if (enabled)
         {
-            Logger.getLogger(LoggingOptions.class.getName()).log(Level.INFO, "Metrics enabled, files can be found at {0}", MetricsServiceProvider.getFileLocation());
+            LOGGER.log(Level.INFO, "Metrics enabled, files can be found at {0}",
+					RegiMetricsService.getMetricsConfig().getPreferredFileLocation());
         }
     }
 
@@ -68,18 +66,8 @@ public class LoggingOptions
     {
         if (!_metricsInitialized)
         {
-            Date now = new Date();
-            DateFormat format = new SimpleDateFormat("yyyy-MM-dd kkmm-ss");
-
-            try
-            {
-				MetricsServiceProvider.init(RegiPreferences.getClientNode().node("Metrics"), format.format(now), RegiDomainFactory.getRegiBaseDir());
-                _metricsInitialized = true;
-            }
-            catch (MetricsInitializationException ex)
-            {
-                //It's been initialized, let's not try again.
-            }
+			RegiMetricsService.init(RegiPreferences.getClientNode().node("Metrics"), RegiDomainFactory.getRegiBaseDir());
+			_metricsInitialized = true;
         }
     }
 }

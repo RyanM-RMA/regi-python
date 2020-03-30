@@ -15,7 +15,6 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import usace.metrics.services.Metrics;
-import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.computation.common.IntervalProvider;
 import usace.rowcps.computation.inflow.BalanceAdjustedInflowsAction;
 import usace.rowcps.computation.inflow.CloneInflowsAction;
@@ -31,6 +30,7 @@ import usace.rowcps.headless.calculator.inflow.actions.HeadlessBalanceAdjustedIn
 import usace.rowcps.headless.calculator.inflow.actions.HeadlessCloneInflowsAction;
 import usace.rowcps.headless.calculator.inflow.actions.HeadlessZeroNegativeAdjustedInflowsAction;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
+import usace.rowcps.metrics.RegiMetricsService;
 import usace.rowcps.regi.model.CacheUsage;
 import usace.rowcps.regi.model.ManagerId;
 import usace.rowcps.regi.model.OptionalParams;
@@ -65,7 +65,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	@Override
 	public void autoAdjust(String officeId, String locationStr, Date startDate, boolean useLimits, boolean freezeRain)
 	{
-		Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName(), "autoAdjust");
+		Metrics metrics = RegiMetricsService.createMetrics(getClass().getSimpleName(), "autoAdjust");
 		OptionalParams options = new OptionalParams(metrics);
 
 		LOGGER.info("Running ScriptableInflow.autoAdjust");
@@ -113,7 +113,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	@Override
 	public void cloneInflows(String officeId, String locationStr, Date startDate)
 	{
-		Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName(), "cloneInflows");
+		Metrics metrics = RegiMetricsService.createMetrics(getClass().getSimpleName(), "cloneInflows");
 		OptionalParams options = new OptionalParams(metrics);
 
 		LOGGER.info("Running ScriptableInflow.cloneInflows");
@@ -152,7 +152,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	@Override
 	public void zeroNegatives(String officeId, String locationStr, Date startDate)
 	{
-		Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName(), "zeroNegatives");
+		Metrics metrics = RegiMetricsService.createMetrics(getClass().getSimpleName(), "zeroNegatives");
 		OptionalParams options = new OptionalParams(metrics);
 
 		LOGGER.info("Running ScriptableInflow.zeroNegatives");
@@ -190,7 +190,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	@Override
 	public void balanceAll(String officeId, String locationStr, Date startDate)
 	{
-		Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName(), "balanceAll");
+		Metrics metrics = RegiMetricsService.createMetrics(getClass().getSimpleName(), "balanceAll");
 		OptionalParams options = new OptionalParams(metrics);
 
 		LOGGER.info("Running ScriptableInflow.balanceAll");
@@ -325,7 +325,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	@Override
 	public void computeEvapAsFlow(String officeId, String locationStr, Date startDate, Date endDate)
 	{
-		Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName(), "computeEvapAsFlow");
+		Metrics metrics = RegiMetricsService.createMetrics(getClass().getSimpleName(), "computeEvapAsFlow");
 		OptionalParams options = new OptionalParams(metrics);
 
 		LOGGER.info("Running ScriptableInflow.computeEvapAsFlow");
@@ -357,7 +357,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 	@Override
 	public void computeInflow(String officeId, String locationStr, Date startDate, Date endDate)
 	{
-		Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName(), "computeInflow");
+		Metrics metrics = RegiMetricsService.createMetrics(getClass().getSimpleName(), "computeInflow");
 		OptionalParams options = new OptionalParams(metrics);
 
 		LOGGER.info("Running ScriptableInflow.computeInflow");

@@ -23,9 +23,9 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import usace.metrics.services.Metrics;
-import usace.metrics.services.MetricsServiceProvider;
 import usace.metrics.services.Timer;
 import usace.rowcps.computation.basinconnectivity.BasinConnectivityModel;
+import usace.rowcps.metrics.RegiMetricsService;
 import usace.rowcps.regi.basin.IBasinConnectivityLocation;
 import usace.rowcps.regi.basin.IBasinConnectivityModel;
 import usace.rowcps.regi.interfaces.model.ManagerIdProvider;
@@ -118,7 +118,7 @@ public class LocationGroupFactory
             return null;
         }
         
-        Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName(), "getLocationGroup");
+        Metrics metrics = RegiMetricsService.createMetrics(getClass().getSimpleName(), "getLocationGroup");
         OptionalParams funcParams = new OptionalParams(metrics);
         try(Timer.Context ctx = metrics.createTimer().start())
         {
@@ -218,7 +218,7 @@ public class LocationGroupFactory
     {
         AtBasinManager atBasinManager = _regiDomain.getAtBasinManager(_managerIdProvider.getManagerId());
         AtProjectManager atProjectManager = _regiDomain.getAtProjectManager(_managerIdProvider.getManagerId());
-        Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName(), "getProejcts");
+        Metrics metrics = RegiMetricsService.createMetrics(getClass().getSimpleName(), "getProejcts");
         OptionalParams funcParams = new OptionalParams(metrics);
         try
         {

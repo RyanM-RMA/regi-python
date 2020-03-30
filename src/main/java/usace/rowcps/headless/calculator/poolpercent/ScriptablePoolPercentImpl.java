@@ -12,11 +12,11 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import usace.metrics.services.Metrics;
-import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.headless.calculator.AbstractScriptableCalc;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
 import usace.rowcps.computation.pool.DbCommitPoolCalc;
 import usace.rowcps.data.pool.IPool;
+import usace.rowcps.metrics.RegiMetricsService;
 import usace.rowcps.regi.model.AtLocationLevelManager;
 import usace.rowcps.regi.model.CacheUsage;
 import usace.rowcps.regi.model.ManagerId;
@@ -41,7 +41,7 @@ public class ScriptablePoolPercentImpl extends AbstractScriptableCalc implements
 	{
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
 
-		Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "calculatePoolPercents");
+		Metrics metrics = RegiMetricsService.createMetrics(this.getClass().getSimpleName(), "calculatePoolPercents");
 		OptionalParams options = new OptionalParams(metrics);
 
 		LOGGER.log(Level.INFO, "Calculating Pool Percents for {0} from: {1} to: {2}", new Object[]{locRef, startDate, endDate});

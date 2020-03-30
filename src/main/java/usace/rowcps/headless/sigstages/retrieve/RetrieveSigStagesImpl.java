@@ -34,7 +34,6 @@ import java.util.regex.Pattern;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import usace.metrics.services.Metrics;
-import usace.metrics.services.MetricsServiceProvider;
 import usace.metrics.services.Timer;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
 import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Action;
@@ -46,6 +45,7 @@ import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Moderate;
 import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Sigstage;
 import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Sigstages;
 import usace.rowcps.headless.sigstages.retrieve.xmlmodel.Site;
+import usace.rowcps.metrics.RegiMetricsService;
 import usace.rowcps.regi.model.ManagerId;
 import usace.rowcps.regi.model.RegiDomain;
 
@@ -137,7 +137,7 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
     
     public void locationsToCSV(Path file, SigstageLocation... locations)
     {
-        Metrics metrics = MetricsServiceProvider.createMetrics("locationsToCSV");
+        Metrics metrics = RegiMetricsService.createMetrics("locationsToCSV");
         try(Timer.Context context = metrics.createTimer().start())
         {
             
@@ -259,7 +259,7 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
     
     public void fetchSitesThreaded(int milliDelay, SigstageLocation... locationNames)
     {
-        Metrics metrics = MetricsServiceProvider.createMetrics("fetchSitesThreaded");
+        Metrics metrics = RegiMetricsService.createMetrics("fetchSitesThreaded");
         try(Timer.Context context = metrics.createTimer().start())
         {
             final CountDownLatch cdl = new CountDownLatch(1);
@@ -279,7 +279,7 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
                     @Override
                     public void run()
                     {
-                        Metrics metrics = MetricsServiceProvider.createMetrics("fetchSitesThreadedRunnable");
+                        Metrics metrics = RegiMetricsService.createMetrics("fetchSitesThreadedRunnable");
                         try(Timer.Context timerContext = metrics.createTimer().start())
                         {
                             String fullURL = DOWNLOADURL.replace("GAGENAME", l.getNWS());
@@ -335,7 +335,7 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
     
     public Site fetchSite(String fullURL) throws Exception
     {
-        Metrics metrics = MetricsServiceProvider.createMetrics("fetchSite");
+        Metrics metrics = RegiMetricsService.createMetrics("fetchSite");
         try(Timer.Context context = metrics.createTimer().start())
         {
             if(_jaxbContext == null)
@@ -354,7 +354,7 @@ public class RetrieveSigStagesImpl implements RetrieveSigstages, ScriptableCalc
 
     public SigstageLocation[] readLocationFile(Path source) throws FileNotFoundException, IOException
     {
-        Metrics metrics = MetricsServiceProvider.createMetrics("readLocationFile");
+        Metrics metrics = RegiMetricsService.createMetrics("readLocationFile");
         try(Timer.Context context = metrics.createTimer().start())
         {
             List<SigstageLocation> locations = new ArrayList<>();

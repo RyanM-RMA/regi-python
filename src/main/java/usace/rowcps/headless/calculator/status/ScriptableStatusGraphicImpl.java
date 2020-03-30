@@ -73,7 +73,7 @@ import javax.swing.SwingWorker;
 import rma.services.GlobalServiceLoader;
 import rma.services.GlobalServiceLoaderDelegate;
 import usace.metrics.services.Metrics;
-import usace.metrics.services.MetricsServiceProvider;
+import usace.rowcps.metrics.RegiMetricsService;
 import usace.rowcps.basinpie.ui.BasinPieModel;
 import usace.rowcps.computation.services.CalcFlowGroupTimeSeriesService;
 import usace.rowcps.data.charttemplate.IChartTemplate;
@@ -308,7 +308,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
                                             final int width, final int height,
                                             String filename) throws DbConnectionException, DbIoException, IOException, InterruptedException, TimeoutException, ExecutionException
     {
-        Metrics metrics = MetricsServiceProvider.createMetrics(getClass().getSimpleName());
+        Metrics metrics = RegiMetricsService.createMetrics(getClass().getSimpleName());
 
         MyReleasesGraphicData data = buildReleasesGraphicData(officeId, locationId, current, metrics);
 

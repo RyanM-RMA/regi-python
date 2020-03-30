@@ -12,13 +12,13 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import usace.metrics.services.Metrics;
-import usace.metrics.services.MetricsServiceProvider;
 import usace.rowcps.computation.ITimeSeriesComputationResult;
 import usace.rowcps.computation.TimeSeriesComputationError;
 import usace.rowcps.data.flowgroup.FlowGroupTimeSeries;
 import usace.rowcps.data.flowgroup.IFlowGroup;
 import usace.rowcps.headless.calculator.AbstractScriptableCalc;
 import usace.rowcps.headless.interfaces.ScriptableCalc;
+import usace.rowcps.metrics.RegiMetricsService;
 import usace.rowcps.regi.model.CacheUsage;
 import usace.rowcps.regi.model.ManagerId;
 import usace.rowcps.regi.model.OptionalParams;
@@ -49,7 +49,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
             
             try
             {
-                Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "computeAll");
+                Metrics metrics = RegiMetricsService.createMetrics(this.getClass().getSimpleName(), "computeAll");
                 OptionalParams options = new OptionalParams(metrics);
                 
                 AtProjectDescriptor projDesc = new AtProjectDescriptor();
@@ -107,7 +107,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 		
             try
             {
-                Metrics metrics = MetricsServiceProvider.createMetrics(this.getClass().getSimpleName(), "computeAll");
+                Metrics metrics = RegiMetricsService.createMetrics(this.getClass().getSimpleName(), "computeAll");
                 OptionalParams options = new OptionalParams(metrics);
                 
                 AtProjectDescriptor projDesc = new AtProjectDescriptor();
