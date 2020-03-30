@@ -9,12 +9,18 @@ package usace.rowcps.headless;
 import java.awt.GridLayout;
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
+import java.io.IOException;
+import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.List;
 import java.util.ArrayList;
+import static java.util.stream.Collectors.toList;
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -54,19 +60,42 @@ public class TestFrame extends JFrame
 		TestFrame frame = new TestFrame();
 		frame.pack();
 		frame.setDefaultCloseOperation(EXIT_ON_CLOSE);
+		frame.setMinimumSize(frame.getPreferredSize());
 		frame.setVisible(true);
 	}
 
 	private void buildComponents()
 	{
-		setLayout(new GridLayout(0, 2, 2, 2));
+		setLayout(new GridLayout(0, 3, 2, 2));
+		
+		String[] files = readFilesInTestFolder();
 
-		for (String[] testData : _pythonTestFilesAndDisplayNames)
+		for (String testData : files)
 		{
-			JButton btn = new JButton(new ButtonAction(testData[0], testData[1]));
+			JButton btn = new JButton(new ButtonAction(testData, testData));
 			_buttons.add(btn);
 			add(btn);
 		}
+	}
+	
+	private String[] readFilesInTestFolder()
+	{
+		Path path = Paths.get(TestHeadless.getJythonTestFolder());
+		List<String> paths = new ArrayList<>();
+		try
+		{
+			paths.addAll(Files.walk(path, FileVisitOption.FOLLOW_LINKS)
+					.map(Path::getFileName)
+					.map(Path::toString)
+					.filter(file -> file.endsWith("py"))
+					.collect(toList()));
+		}
+		catch (IOException | RuntimeException ex)
+		{
+			
+		}
+		
+		return paths.toArray(new String[0]);
 	}
 	
 	private void performHeadless(String file)

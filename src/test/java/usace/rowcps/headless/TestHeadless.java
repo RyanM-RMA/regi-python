@@ -130,6 +130,11 @@ public class TestHeadless
 	{
 		return getArgsForFileAndTimeZone(SUB_FOLDER + "\\" + file, TimeZone.getTimeZone("America/Chicago"));
 	}
+	
+	static String getJythonTestFolder()
+	{
+		return JYTHON_FILE_ROOT + SUB_FOLDER;
+	}
 
 	private static String[] getArgsForFileAndTimeZone(String file, TimeZone tz)
 	{
