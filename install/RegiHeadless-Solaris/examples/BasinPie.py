@@ -34,7 +34,7 @@ def headless_examples():
     startCal.set(Calendar.YEAR, 2016)
     startCal.set(Calendar.MONTH, 4)
     startCal.set(Calendar.DATE, 5)
-    startCal.set(Calendar.HOUR, 0)
+    startCal.set(Calendar.HOUR_OF_DAY, 0)
     # Month 4 means May to java...
 
     # If the filepath does not end in .jpg then the image will be saved in png format.
