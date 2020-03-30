@@ -1,5 +1,6 @@
 # the java Calendar class is used to create java Date objects
 from java.util import Calendar
+from java.util import TimeZone
 import os, sys
 import getopt
 sys.path.insert(0, os.path.abspath(".."))
@@ -29,8 +30,10 @@ def headless_examples():
     ######################################################################################
 
     # Configure the calendar for the date and time of the Basin Pie graphic
+    timeZone = TimeZone.getTimeZone("US/Central")
     startCal = Calendar.getInstance()
     startCal.clear()
+    startCal.setTimeZone(timeZone)
     startCal.set(Calendar.YEAR, 2016)
     startCal.set(Calendar.MONTH, 4)
     startCal.set(Calendar.DATE, 5)
