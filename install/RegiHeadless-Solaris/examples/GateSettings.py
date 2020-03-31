@@ -1,5 +1,6 @@
 # the java Calendar class is used to create java Date objects
 from java.util import Calendar
+from java.util import TimeZone
 from usace.rowcps.headless import LoggingOptions
 
 # Description of: LoggingOptions.setDbMessageLevel(int level)
@@ -37,14 +38,16 @@ LoggingOptions.setDbMessageLevel(2)
 # this gets a scriptable Gate Settings object
 gateSettings = registry.getCalculation(1.0, "Gate Settings")
 
+# Time zone must be set because the Solaris time zone is UTC
+timeZone = TimeZone.getTimeZone("US/Central")
 # configure the start calendar
-startCal = Calendar.getInstance()
+startCal = Calendar.getInstance(timeZone)
 startCal.clear()
 startCal.set(Calendar.YEAR, 2015)
 startCal.set(Calendar.MONTH, 4)
 
 # configure the end calendar
-endCal = Calendar.getInstance()
+endCal = Calendar.getInstance(timeZone)
 endCal.clear()
 endCal.set(Calendar.YEAR, 2015)
 endCal.set(Calendar.MONTH, 6)

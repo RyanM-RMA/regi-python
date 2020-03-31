@@ -19,10 +19,10 @@ def headless_examples():
     # This gets a scriptable Stream Status object.
     streamStatus = registry.getCalculation(1.0, "Status")
 
+    # Time zone must be set because the Solaris time zone is UTC
+    timeZone = TimeZone.getTimeZone("US/Central")
     # Configure the calendar
-    # timeZone = TimeZone.getTimeZone("America/Chicago")
-    # startCal = Calendar.getInstance(timeZone)
-    startCal = Calendar.getInstance()
+    startCal = Calendar.getInstance(timeZone)
     startCal.clear()
     startCal.set(Calendar.YEAR, 2016)
     startCal.set(Calendar.MONTH, 3)

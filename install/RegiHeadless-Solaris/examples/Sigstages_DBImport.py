@@ -1,4 +1,5 @@
 from java.util import Calendar
+from java.util import TimeZone
 
 # this retrieves a Sig States caluclation object
 sigstates = registry.getCalculation(1.0, "Import Sig States")
@@ -17,9 +18,11 @@ sigstates = registry.getCalculation(1.0, "Import Sig States")
 # the Sigstages_Download script
 inpath = "sigstages.csv"
 
+# Time zone must be set because the Solaris time zone is UTC
+timeZone = TimeZone.getTimeZone("US/Central")
 # the sig states caluclation requires an effective date
 # here we create a java Calendar object that will be used to create that date
-cal = Calendar.getInstance()
+cal = Calendar.getInstance(timeZone)
 cal.clear()
 cal.set(Calendar.YEAR, 1899)
 cal.set(Calendar.MONTH, Calendar.JANUARY)

@@ -31,9 +31,8 @@ def headless_examples():
 
     # Configure the calendar for the date and time of the Basin Pie graphic
     timeZone = TimeZone.getTimeZone("US/Central")
-    startCal = Calendar.getInstance()
+    startCal = Calendar.getInstance(timeZone)
     startCal.clear()
-    startCal.setTimeZone(timeZone)
     startCal.set(Calendar.YEAR, 2016)
     startCal.set(Calendar.MONTH, 4)
     startCal.set(Calendar.DATE, 5)
