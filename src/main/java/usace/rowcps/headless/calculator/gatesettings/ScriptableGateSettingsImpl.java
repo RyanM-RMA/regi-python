@@ -100,7 +100,6 @@ import usace.rowcps.regi.model.OptionalParams;
 import usace.rowcps.regi.model.RegiDomain;
 import usace.rowcps.regi.status.AtProjectManager;
 import usace.rowcps.regi.util.GateSettingsUtil;
-//import usace.rowcps.regi.util.RowcpsFutureDescriptor;
 
 public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implements ScriptableCalc, ScriptableGateSettings {
 
@@ -111,43 +110,61 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	}
 
 	@Override
-	public void createGateSettings(String officeId, String locationStr, Date startDate, Date end) throws Exception {
+	public void createGateSettings(String officeId, String locationStr, Date startDate, Date end) throws Exception
+	{
 		Metrics metrics = RegiMetricsService.createMetrics(this.getClass().getSimpleName(), "createGateSettings");
 		OptionalParams options = new OptionalParams(metrics);
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
 		HeadlessGateCache gc = getCache(locRef, startDate, end, options);
 
+		String from = _simpleDateFormat.format(startDate);
+		String to = _simpleDateFormat.format(end);
+		LOGGER.log(Level.INFO, "Creating gate settings for all outlets at location using time series associations for " +
+						"Office: {0} Location: {1} from: {2} to: {3}",
+				new Object[]{officeId, locationStr, from, to});
 		IControlledOutletGroupContainer outletGroupContainer = gc.getOutletGroupContainer();
-		if (outletGroupContainer != null) {
+		if(outletGroupContainer != null)
+		{
 			List<IControlledOutletGroup> outletGroups = outletGroupContainer.getOutletGroups();
-			if (outletGroups != null) {
-				for (IControlledOutletGroup outletGroup : outletGroups) {
+			if(outletGroups != null && !outletGroups.isEmpty())
+			{
+				for(IControlledOutletGroup outletGroup : outletGroups)
+				{
 					createGateSettingsGroup(gc, locRef, startDate, end, outletGroup, options);
 				}
 			}
+			else
+			{
+				LOGGER.log(Level.WARNING, "Gate settings not created. No outlet groups found for location: {0}", locationStr);
+			}
 		}
-
 		gc.saveData(options);
 	}
 
 	@Override
-	public void createGateSettingsOutlet(String officeId, String locationStr, Date startDate, Date end, String outletId) throws
-			DbConnectionException, DbIoException, CacheInitializationException, DbException, DataSetException,
-			DataSetIllegalArgumentException, HecMathException, Exception {
+	public void createGateSettingsOutlet(String officeId, String locationStr, Date startDate, Date end, String outletId) throws Exception
+	{
 		Metrics metrics = RegiMetricsService.createMetrics(this.getClass().getSimpleName(), "createGateSettingsOutlet");
 		OptionalParams options = new OptionalParams(metrics);
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
 		HeadlessGateCache gc = getCache(locRef, startDate, end, options);
 
 		IControlledOutlet iControlledOutlet = getIControlledOutlet(gc, outletId);
-		if (iControlledOutlet != null) {
-
+		String from = _simpleDateFormat.format(startDate);
+		String to = _simpleDateFormat.format(end);
+		LOGGER.log(Level.INFO, "Creating gate settings using time series associations for " +
+						"Office: {0} Location: {1} Outlet: {2} from: {3} to: {4}",
+				new Object[]{officeId, locationStr, outletId, from, to});
+		if(iControlledOutlet != null)
+		{
 			ITimeSeriesAssociation association = getInputAssociation(locRef);
 			Map<String, IOutlet> outletsBySubMap = getOutletsBySubMap(locRef, options);
 			Map<String, TimeSeriesIds> tsIdsBySubMap = initTsIdsBySubLocation(outletsBySubMap.values(), association);
 			LocationGroupSet lgs = getLocationGroupSet(locRef);
-			if (lgs != null) {
-				for (Map.Entry<String, IOutlet> entry : outletsBySubMap.entrySet()) {
+			if(lgs != null)
+			{
+				for(Map.Entry<String, IOutlet> entry : outletsBySubMap.entrySet())
+				{
 					String key = entry.getKey();
 					IOutlet value = entry.getValue();
 					LocationGroupRef locationGroupRef = value.getRatingGroupRef();
@@ -159,27 +176,36 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 					updateParameters(tsIds, controlParameters);
 				}
 			}
-
 			createGateSettingsOutlet(gc, locRef, startDate, end, iControlledOutlet, tsIdsBySubMap, options);
 		}
-
+		else
+		{
+			LOGGER.log(Level.WARNING, "Gate settings not created. Outlet does not exist: {0}", outletId);
+		}
 		gc.saveData(options);
-
 	}
 
 	@Override
 	public void createGateSettingsOutletFromTs(String officeId, String locationStr, Date startDate, Date end, String outletId, String tsId)
-			throws
-			DbConnectionException, DbIoException, CacheInitializationException, DbException, DataSetException,
-			DataSetIllegalArgumentException, HecMathException, Exception {
+			throws Exception
+	{
 		Metrics metrics = RegiMetricsService.createMetrics(this.getClass().getSimpleName(), "createGateSettingsOutletFromTs");
 		OptionalParams options = new OptionalParams(metrics);
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
 		HeadlessGateCache gc = getCache(locRef, startDate, end, options);
-
+		String from = _simpleDateFormat.format(startDate);
+		String to = _simpleDateFormat.format(end);
+		LOGGER.log(Level.INFO, "Creating gate settings using time series for " +
+						"Office: {0} Location: {1} Outlet: {2} from: {3} to: {4} using time series {5}",
+				new Object[]{officeId, locationStr, outletId, from, to, tsId});
 		IControlledOutlet iControlledOutlet = getIControlledOutlet(gc, outletId);
-		if (iControlledOutlet != null) {
+		if(iControlledOutlet != null)
+		{
 			createGateSettingsOutlet(gc, locRef, startDate, end, iControlledOutlet, tsId, options);
+		}
+		else
+		{
+			LOGGER.log(Level.WARNING, "Gate settings not created. Outlet does not exist: {0}", outletId);
 		}
 
 		gc.saveData(options);
@@ -198,24 +224,35 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	}
 
 	@Override
-	public void createGateSettingsGroup(String officeId, String locationStr, Date startDate, Date end, String groupId) throws Exception {
+	public void createGateSettingsGroup(String officeId, String locationStr, Date startDate, Date end, String groupId) throws Exception
+	{
 		Metrics metrics = RegiMetricsService.createMetrics(this.getClass().getSimpleName(), "createGateSettingsGroup");
 		OptionalParams options = new OptionalParams(metrics);
 		LocationTemplate locRef = new LocationTemplate(officeId, locationStr);
 		HeadlessGateCache gc = getCache(locRef, startDate, end, options);
 
 		IControlledOutletGroupContainer ogc = gc.getOutletGroupContainer();
-		if (ogc != null) {
+		String from = _simpleDateFormat.format(startDate);
+		String to = _simpleDateFormat.format(end);
+		LOGGER.log(Level.INFO, "Creating gate settings for outlet group using time series associations for " +
+						"Office: {0} Location: {1} Outlet Group: {2} from: {3} to: {4}",
+				new Object[]{officeId, locationStr, groupId, from, to});
+		if(ogc != null)
+		{
 			IControlledOutletGroup outletGroup = ogc.getOutletGroup(groupId);
-			if (outletGroup != null) {
+			if(outletGroup != null)
+			{
 				createGateSettingsGroup(gc, locRef, startDate, end, outletGroup, options);
+			}
+			else
+			{
+				LOGGER.log(Level.WARNING, "Gate settings not created. Outlet Group does not exist: {0}", groupId);
 			}
 		}
 
 		gc.saveData(options);
 	}
 
-//	GateCache GateCache = getCache(locRef, startDate);
 	public HeadlessGateCache getCache(LocationTemplate locRef, final Date startDate, final Date endDate, OptionalParams options) throws DbConnectionException, DbIoException,
 			CacheInitializationException {
 

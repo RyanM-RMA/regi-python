@@ -5,6 +5,7 @@
  */
 package usace.rowcps.headless.calculator;
 
+import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 import usace.rowcps.regi.interfaces.model.ManagerIdProvider;
 import usace.rowcps.regi.model.ManagerId;
@@ -18,15 +19,18 @@ import usace.rowcps.regi.model.SimpleManagerIdProvider;
 public abstract class AbstractScriptableCalc
 {
 
+
 	public final RegiDomain regiDomain;
 	public final ManagerId managerId;
 	public final ManagerIdProvider manIdProvider;
+	protected final SimpleDateFormat _simpleDateFormat = new SimpleDateFormat("ddMMMyyyy kk:mm zzz");
 
 	public AbstractScriptableCalc(RegiDomain regiDomain, ManagerId manId)
 	{
 		this.regiDomain = regiDomain;
 		managerId = manId;
 		manIdProvider = new SimpleManagerIdProvider(managerId);
+		_simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
 
 	/**
