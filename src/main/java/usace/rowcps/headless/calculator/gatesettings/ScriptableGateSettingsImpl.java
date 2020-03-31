@@ -326,7 +326,7 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 			completedWithoutTimeout = latch.await(seconds, TimeUnit.SECONDS);        					
 		} catch (InterruptedException ex) {
 			Thread.currentThread().interrupt();
-			Logger.getLogger(ScriptableGateSettingsImpl.class.getName()).log(Level.SEVERE, null, ex);
+			LOGGER.log(Level.SEVERE, "Unable to wait for countdown latch on gate cache initialization. process was interrupted", ex);
 		}
 
 		if (completedWithoutTimeout) {
@@ -597,74 +597,84 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 	}
 
 	public void createGateSettingsOutlet(HeadlessGateCache gc, LocationTemplate locRef, Date startDate, Date end,
-			IControlledOutlet iControlledOutlet, String tsIdStr, OptionalParams options) throws DataSetException, DbException, HecMathException {
+										 IControlledOutlet iControlledOutlet, String tsIdStr, OptionalParams options)
+			throws DataSetException, DbException, HecMathException
+	{
 		AtTimeSeriesManager tsManager = getRegiDomain().getAtTimeSeriesManager(getManagerId());
 
-		LOGGER.log(Level.INFO, "Comparing Gate settings at:{0} to timeseries:{1}", new Object[]{
-			iControlledOutlet.getOutletName(), tsIdStr
-		});
+		LOGGER.log(Level.INFO, "Comparing Gate settings at:{0} to timeseries:{1}", new Object[]
+				{
+						iControlledOutlet.getOutletName(), tsIdStr
+				});
 
-		if (tsIdStr != null) {
+		if(tsIdStr != null)
+		{
 			DescriptionTx dtx = new DescriptionTx(locRef.getOfficeId(), tsIdStr);
 			DataSetTx dataSetTx = getDataSetTx(dtx, startDate, end, tsManager, options);
 
 			LOGGER.log(Level.INFO, "finding changes");
 			NavigableSet<Long> changeTimes = findChanges(dataSetTx);
-			if (changeTimes != null && !changeTimes.isEmpty()) {
+			if(changeTimes != null && !changeTimes.isEmpty())
+			{
 
 				NavigableSet<Date> closedDates = new TreeSet<>();
 				NavigableMap<Date, Double> tsMap = dataSetTx.getDateValueNavigableMap();
 				NavigableMap<Date, GateOpeningEntry> cacheEntries = findEntriesForOutlet(iControlledOutlet, gc, startDate, end, closedDates);
 				// What if dateEntryMap is null or empty?
-// 
+				//
 				TreeSet<Date> datesOfModifications = new TreeSet<>();
 				// Coming from the back lets us ignore the gate-entries we are adding.
 				// Also we only care about the changes in the timeseries.
-				for (Long changeTime : changeTimes)
+				for(Long changeTime : changeTimes)
 				{
-					if (changeTime != null) {
+					if(changeTime != null)
+					{
 						Date tsDate = new Date(changeTime);
 						Double tsValue = tsMap.get(tsDate);
 
 						boolean hasDiff = hasDifferenceAtDate(gc, cacheEntries, tsValue, tsDate, closedDates);
-						
-						if (hasDiff)
+
+						if(hasDiff)
 						{
 							Map.Entry<Date, GateOpeningEntry> floorEntry = getValidFloorEntry(cacheEntries, tsDate);
-							try
+							// difference detected
+							// immediately make the change and apply it
+
+							GateSettingsBlock gateSettingBlock = gc.getGateSetting(tsDate);
+							if(gateSettingBlock == null)
 							{
-								// difference detected
-								// immediately make the change and apply it
-
-								GateSettingsBlock gateSettingBlock = gc.getGateSetting(tsDate);
-								if (gateSettingBlock == null) {
-									LOGGER.log(Level.INFO, "buildGateSettingsBlock");
-									Date cacheFloorDate = closedDates.floor(tsDate);
-									if (floorEntry != null)
+								LOGGER.log(Level.INFO, "buildGateSettingsBlock");
+								Date cacheFloorDate = closedDates.floor(tsDate);
+								if(floorEntry != null)
+								{
+									Date floorEntryDate = floorEntry.getKey();
+									if(cacheFloorDate == null || floorEntryDate.after(cacheFloorDate))
 									{
-										Date floorEntryDate = floorEntry.getKey();
-										if (cacheFloorDate == null || floorEntryDate.after(cacheFloorDate))
-										{
-											cacheFloorDate = floorEntryDate;
-										}
+										cacheFloorDate = floorEntryDate;
 									}
-									
-									gateSettingBlock = buildGateSettingsBlock(gc, cacheFloorDate, tsDate);
-
-									gateSettingBlock.setModified(true);
-
-									String dischargeCode = DischargeComputationRecord.DischargeComputationCode.EstimatedByUser.dbEquivalent();
-									gateSettingBlock.setDischargeComputationCode(dischargeCode);
-									gateSettingBlock.setReleaseReasonCode("O");
-									gateSettingBlock.setChangeNotes("Regi Headless ");
-
-									gc.putGateSetting(tsDate, gateSettingBlock);
 								}
 
-								boolean modifyRetval = gc.modifyGateOpeningBlock(tsDate, iControlledOutlet, tsValue);
+								gateSettingBlock = buildGateSettingsBlock(gc, cacheFloorDate, tsDate);
+
+								gateSettingBlock.setModified(true);
+
+								String dischargeCode = DischargeComputationRecord.DischargeComputationCode.EstimatedByUser.dbEquivalent();
+								gateSettingBlock.setDischargeComputationCode(dischargeCode);
+								gateSettingBlock.setReleaseReasonCode("O");
+								gateSettingBlock.setChangeNotes("Regi Headless ");
+
+								gc.putGateSetting(tsDate, gateSettingBlock);
+							}
+
+							try
+							{
+								gc.modifyGateOpeningBlock(tsDate, iControlledOutlet, tsValue);
 								datesOfModifications.add(tsDate);
-							} catch (GateMergeException ex) {
-								Logger.getLogger(ScriptableGateSettingsImpl.class.getName()).log(Level.WARNING, null, ex);
+							}
+							catch(GateMergeException ex)
+							{
+								LOGGER.log(Level.WARNING, "Error merging gate changes for date: "
+										+ _simpleDateFormat.format(tsDate) + " value: " + tsValue, ex);
 							}
 						}
 
@@ -673,7 +683,9 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 
 				String message = getMessage(datesOfModifications, iControlledOutlet.getOutletName());
 				LOGGER.log(Level.INFO, message);
-			} else {
+			}
+			else
+			{
 				LOGGER.log(Level.INFO, "no changes found");
 			}
 		}
@@ -751,7 +763,8 @@ public class ScriptableGateSettingsImpl extends AbstractScriptableCalc implement
 				gsb.setDischargeComputationCode(prevGateSetting.getDischargeComputationCode());
 				gsb.setReleaseReasonCode(prevGateSetting.getReleaseReasonCode());
 			} catch (CloneNotSupportedException ex) {
-				Logger.getLogger(ScriptableGateSettingsImpl.class.getName()).log(Level.SEVERE, null, ex);
+				LOGGER.log(Level.SEVERE, "Unable to clone previous gate setting, Clone operating not supported by class: "
+						+ prevGateSetting.getClass().getName(), ex);
 			}
 		}
 
