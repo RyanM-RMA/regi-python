@@ -162,7 +162,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
 	}
 
 	private void possiblyWarnAboutMilliseconds(Date startDate, Date endDate) {
-		Calendar cal = Calendar.getInstance();
+		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		cal.clear();
 		cal.setTime(startDate);
 		boolean startHasSecOrMillis = cal.get(Calendar.MILLISECOND) != 0 || cal.get(Calendar.SECOND) != 0;
