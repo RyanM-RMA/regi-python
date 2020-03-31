@@ -7,9 +7,8 @@ package usace.rowcps.headless;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import usace.rowcps.headless.metrics.RegiHeadlessMetricsServiceProvider;
 import usace.rowcps.metrics.RegiMetricsService;
-import usace.rowcps.regi.factories.RegiDomainFactory;
-import usace.rowcps.regi.preferences.RegiPreferences;
 import wcds.dbi.DbiProperties;
 
 /**
@@ -20,7 +19,11 @@ public class LoggingOptions
 {
 
 	private static final Logger LOGGER = Logger.getLogger(LoggingOptions.class.getName());
-    private static boolean _metricsInitialized = false;
+	
+	private LoggingOptions()
+	{
+		throw new AssertionError("Instantiation of a utility class is not allowed.");
+	}
 
     /**
      * Sets the DbiProperties message level so we're reporting additional DB
@@ -51,23 +54,12 @@ public class LoggingOptions
      */
     public static void setMetricsEnabled(boolean enabled)
     {
-        initMetrics();
-
-        RegiMetricsService.getMetricsConfig().setMetricsEnabled(enabled);
+        RegiHeadlessMetricsServiceProvider.setMetricsEnabled(enabled);
 
         if (enabled)
         {
             LOGGER.log(Level.INFO, "Metrics enabled, files can be found at {0}",
 					RegiMetricsService.getMetricsConfig().getPreferredFileLocation());
-        }
-    }
-
-    private static void initMetrics()
-    {
-        if (!_metricsInitialized)
-        {
-			RegiMetricsService.init(RegiPreferences.getClientNode().node("Metrics"), RegiDomainFactory.getRegiBaseDir());
-			_metricsInitialized = true;
         }
     }
 }

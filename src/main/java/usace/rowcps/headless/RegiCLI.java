@@ -16,9 +16,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
+import usace.rowcps.metrics.RegiMetricsService;
 import usace.rowcps.regi.factories.RowcpsExecutorService;
 import usace.rowcps.regi.model.ManagerId;
 import usace.rowcps.regi.model.RegiDomain;
+import usace.rowcps.regi.preferences.RegiPreferences;
 
 /**
  *
@@ -28,6 +30,11 @@ public class RegiCLI
 {
 
 	private static final Logger LOGGER = Logger.getLogger(RegiCLI.class.getName());
+
+	static
+	{
+		RegiMetricsService.init(RegiPreferences.getClientNode().node("Metrics"), "REGI Headless");
+	}
 
 	public static void main(String[] args)
 	{
