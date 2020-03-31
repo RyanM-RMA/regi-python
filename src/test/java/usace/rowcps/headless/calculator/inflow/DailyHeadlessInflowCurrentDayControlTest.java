@@ -6,21 +6,24 @@
  */
 package usace.rowcps.headless.calculator.inflow;
 
+import java.util.Calendar;
+import java.util.Date;
+import java.util.NavigableSet;
+import java.util.TimeZone;
+import java.util.logging.Logger;
+
+import org.junit.Test;
+
 import hec.data.DataSetException;
 import hec.data.location.LocationTemplate;
 import hec.data.tx.DataSetTxIllegalArgumentException;
 import hec.db.DbConnectionException;
 import hec.db.DbException;
 import hec.db.DbIoException;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.NavigableSet;
-import java.util.TimeZone;
-import java.util.logging.Logger;
-import static org.junit.Assert.*;
-import org.junit.Test;
 import usace.rowcps.regi.executor.ManagerIdType;
 import usace.rowcps.regi.model.ManagerId;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  *
@@ -71,7 +74,8 @@ public class DailyHeadlessInflowCurrentDayControlTest
 	@Test
 	public void testBaseCaseStartDate() throws Exception
 	{
-		Calendar temp = Calendar.getInstance();
+		TimeZone timeZone = TimeZone.getTimeZone("US/Central");
+		Calendar temp = Calendar.getInstance(timeZone);
 		Date endDate = getEndDate(temp);
 		testStartDateIsMaintained(temp, endDate);
 	}
@@ -79,7 +83,8 @@ public class DailyHeadlessInflowCurrentDayControlTest
 	@Test
 	public void testBaseCaseEndDate() throws Exception
 	{
-		Calendar temp = Calendar.getInstance();
+		TimeZone timeZone = TimeZone.getTimeZone("US/Central");
+		Calendar temp = Calendar.getInstance(timeZone);
 		Date endDate = getEndDate(temp);
 		testEndDate(temp, endDate);
 	}
@@ -87,7 +92,8 @@ public class DailyHeadlessInflowCurrentDayControlTest
 	@Test
 	public void testElevDateAfterEndDate() throws Exception
 	{
-		Calendar temp = Calendar.getInstance();
+		TimeZone timeZone = TimeZone.getTimeZone("US/Central");
+		Calendar temp = Calendar.getInstance(timeZone);
 		getEndDate(temp);
 		temp.add(Calendar.DAY_OF_MONTH, 2);
 		Date afterEndDate = temp.getTime();
@@ -97,7 +103,8 @@ public class DailyHeadlessInflowCurrentDayControlTest
 	@Test
 	public void testElevDateBeforeEndDate() throws Exception
 	{
-		Calendar temp = Calendar.getInstance();
+		TimeZone timeZone = TimeZone.getTimeZone("US/Central");
+		Calendar temp = Calendar.getInstance(timeZone);
 		getEndDate(temp);
 		temp.add(Calendar.DAY_OF_MONTH, -1);
 		Date beforeEndDate = temp.getTime();
@@ -107,7 +114,8 @@ public class DailyHeadlessInflowCurrentDayControlTest
 	@Test
 	public void testEndDateCrossingMonthBarrier() throws Exception
 	{
-		Calendar temp = Calendar.getInstance();
+		TimeZone timeZone = TimeZone.getTimeZone("US/Central");
+		Calendar temp = Calendar.getInstance(timeZone);
 		Date endDate = getEndDateApr(temp);
 		Date startDate = getStartDate(temp);
 		testEndDateRespectsElevDate(startDate, endDate, endDate, temp);
@@ -116,7 +124,8 @@ public class DailyHeadlessInflowCurrentDayControlTest
 	@Test
 	public void testStartDateCrossingMonthBarrier() throws Exception
 	{
-		Calendar temp = Calendar.getInstance();
+		TimeZone timeZone = TimeZone.getTimeZone("US/Central");
+		Calendar temp = Calendar.getInstance(timeZone);
 		Date endDate = getEndDateApr(temp);
 		Date startDate = getStartDate(temp);
 		testStartDateIsMaintained(startDate, endDate, endDate, temp);
@@ -125,7 +134,8 @@ public class DailyHeadlessInflowCurrentDayControlTest
 	@Test
 	public void testStartDateMiddleOfMonthCrossingMonthBarrier() throws Exception
 	{
-		Calendar temp = Calendar.getInstance();
+		TimeZone timeZone = TimeZone.getTimeZone("US/Central");
+		Calendar temp = Calendar.getInstance(timeZone);
 		Date endDate = getEndDateApr(temp);
 		getStartDate(temp);
 		temp.add(Calendar.DAY_OF_MONTH, -15);

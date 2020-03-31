@@ -1,4 +1,5 @@
 from java.util import Calendar
+from java.util import TimeZone
 from usace.rowcps.headless import LoggingOptions
 
 def compute_All_Flowgroups(officeID, location, startCal, endCal):
@@ -59,9 +60,11 @@ names = registry.getNames(1.0)
 # this retrieves a Gate Flow calculation object
 gateCalc = registry.getCalculation(1.0, "Gate Flow")
 
+# Time zone must be set because the Solaris time zone is UTC
+timeZone = TimeZone.getTimeZone("US/Central")
 # the gate flow calculations requires a start and end time.
 # here we create a java Calendar object that will be used to create the start Date
-startCal = Calendar.getInstance()
+startCal = Calendar.getInstance(timeZone)
 startCal.clear()
 #startCal.add(Calendar.DAY_OF_MONTH, -6)
 #startCal.set(Calendar.HOUR, 0)
@@ -72,7 +75,7 @@ startCal.set(Calendar.YEAR, 2018)
 startCal.set(Calendar.MONTH, 5)
 
 # create a java Calendar object that will be used to create the end Date
-endCal = Calendar.getInstance()
+endCal = Calendar.getInstance(timeZone)
 endCal.clear()
 #endCal.add(Calendar.DAY_OF_MONTH, 5)
 #endCal.set(Calendar.HOUR, 0)

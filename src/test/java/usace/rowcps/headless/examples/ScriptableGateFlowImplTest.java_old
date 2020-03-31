@@ -20,8 +20,9 @@ public class ScriptableGateFlowImplTest extends UiRegiDomainTest
 	public void testSomeMethod()
 	{
 		ScriptableGateFlowCalc cal = new ScriptableGateFlowImpl(getRegiDomain(), getManagerId());
-
-		Calendar startCal = Calendar.getInstance();
+		//Time zone must be set because the Solaris time zone is UTC
+		TimeZone timeZone = TimeZone.getTimeZone("US/Central");
+		Calendar startCal = Calendar.getInstance(timeZone);
 		startCal.clear();
 		startCal.set(2015, 3, 2, 12, 6);
 
@@ -30,7 +31,7 @@ public class ScriptableGateFlowImplTest extends UiRegiDomainTest
 
 
 
-		Calendar endCal = Calendar.getInstance();
+		Calendar endCal = Calendar.getInstance(timeZone);
 		endCal.clear();
 		endCal.set(Calendar.YEAR, 2015);
 		endCal.set(Calendar.MONTH, 6);

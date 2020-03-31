@@ -1,14 +1,13 @@
 # the java Calendar class is used to create java Date objects
 from java.util import Calendar
 from java.util import TimeZone
-from java.util import GregorianCalendar
 
 # this gets a scriptable Pool Percent object
 inflowCalc = registry.getCalculation(1.0, "Inflow")
 
 # configure the start calendar
 
-startCal = GregorianCalendar(TimeZone.getTimeZone('US/Central'))
+startCal = Calendar.getInstance(TimeZone.getTimeZone('US/Central'))
 
 
 startCal.clear()

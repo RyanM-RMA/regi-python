@@ -19,7 +19,7 @@ def headless_examples():
     streamStatus = registry.getCalculation(1.0, "Status")
 
     # Configure the calendar
-    timeZone = TimeZone.getTimeZone("America/Chicago")
+    timeZone = TimeZone.getTimeZone("US/Central")
     startCal = Calendar.getInstance(timeZone)
     startCal.clear()
     startCal.set(Calendar.YEAR, 2018)

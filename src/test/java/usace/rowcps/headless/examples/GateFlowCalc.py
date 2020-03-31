@@ -6,7 +6,6 @@ from hec.data.location import LocationTemplate
 from java.lang import System
 from java.util import Calendar
 from java.util import Collections
-from java.util import GregorianCalendar
 from java.util import List
 from java.util import TimeZone
 import os.path
@@ -71,7 +70,9 @@ if conduitGateFlowGroup is None:
 #    Assert.fail("Couldnt find conduit gate flow group")
 	print "Couldnt find conduit gate flow group"
 else:
-	startCal = Calendar.getInstance()
+	# Time zone must be set because the Solaris time zone is UTC
+	timeZone = TimeZone.getTimeZone("US/Central")
+	startCal = Calendar.getInstance(timeZone)
 	startCal.clear()
 	startCal.set(Calendar.YEAR, 2015)
 	startCal.set(Calendar.MONTH, 1)
@@ -88,7 +89,7 @@ else:
 	flowGroupCalc = FlowGroupCalc()
 	outputTimeSeriesList = Collections.singletonList(newFlowGroupTimeSeries)
 
-	endCal = Calendar.getInstance()
+	endCal = Calendar.getInstance(timeZone)
 	endCal.clear()
 	endCal.set(Calendar.YEAR, 2013)
 	endCal.set(Calendar.MONTH, 1)
