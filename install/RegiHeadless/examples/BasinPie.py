@@ -2,9 +2,10 @@
 from java.util import Calendar
 from java.util import TimeZone
 import os, sys
-import getopt
+from usace.rowcps.headless import LoggingOptions
+
 sys.path.insert(0, os.path.abspath(".."))
-#from examples import printInfo
+
 
 def Usage():
     msg = """
@@ -17,8 +18,27 @@ def Usage():
     """
     print msg
 
+
 def headless_examples():
-    #printInfo.printAll()
+    
+    # Description of: LoggingOptions.setDbMessageLevel(int level)
+    #
+    # Adds Time Series logging messages in the OracleTimeSeriesDaoImpl.  Recommended
+    # level is 2, as this provides basic information about the time series
+    # retrieval/storage.
+    #
+    # Message Level | Description
+    # --------------|-------------------------------------------------------------------------------------------------------------------------------|
+    # <=0           | Default value, does not do anything.  Lower values do not change behavior.                                                    |
+    # 1             | Logs message when no data is found.  Logs message when data is found, how much was retrieved or stored, and how long it took. |
+    # 2             | Adds message with name of time series, and the units to retrieve/store.                                                       |
+    # 3             | Adds message with the current time.                                                                                           |
+    # 4             | Adds message with first 10 dates and values from each time series.                                                            |
+    # >4            | Same as 4, but shows all values retrieved from each time series.  Higher values do not change behavior.                       |
+    # --------------|-------------------------------------------------------------------------------------------------------------------------------|
+    
+    LoggingOptions.setDbMessageLevel(2)
+    
     # This gets a scriptable Basin Pie object.
     basinPie = registry.getCalculation(1.0, "Status")
     
@@ -34,35 +54,17 @@ def headless_examples():
     timeZone = TimeZone.getTimeZone("US/Central")
 
     # Configure the calendar for the date and time of the Basin Pie graphic
+    # Defaults to top of current hour
     startCal = Calendar.getInstance(timeZone)
-    startCal.clear()
-    startCal.set(Calendar.YEAR, 2016)
-    startCal.set(Calendar.MONTH, 4)
-    startCal.set(Calendar.DATE, 5)
-    startCal.set(Calendar.HOUR_OF_DAY, 0)
-    # Month 4 means May to java...
-
-    # If the filepath does not end in .jpg then the image will be saved in png format.
-    filepath = "J:\\temp\\headless\\basin.jpg"
-    #filepath = "C:\\Users\\rmaresults\\Desktop\\headless\\20180307\\basin.png"
-
-    # Generate a single image,
-    #   at a single location within a basin,
-    #   at single date,
-    #   with a single chart template
-    #   and write to specified file.
-    #print "Demonstrating a call to generateBasinPieImageForBasin"
-    #generateBasinPieImageForBasin("SWF", "RRLT2", "Trinity_R_Basin",
-    #                      startCal.getTime(), 700, 807,
-    #                      "Design Capacity",
-    #                      filepath)
-
-    # Generate multiple images
-    # First built the dates
-    dates = []
-    for i in range(0, 3):
-        dates.append(startCal.getTime())
-        startCal.add(Calendar.DATE, 1)
+    startCal.set(Calendar.MINUTE, 0)
+    startCal.set(Calendar.SECOND, 0)
+    startCal.set(Calendar.MILLISECOND, 0)
+    
+    # Calendar can be adjusted using the following functions:
+    #   startCal.set(Calendar.DATE, 1)          # Sets the date of the calendar.
+    #   startCal.set(Calendar.HOUR_OF_DAY, 1)   # Sets the hour of the day to 0100 (1-24)
+    #   startCal.set(Calendar.YEAR, 2020)       # Sets the year
+    #   startCal.set(Calendar.MONTH, 4)         # Sets the month (month 4 means May to Java)
 
     # When generating multiple image files the filepath may contain replacement keywords.
     # If these keywords are found in the filepath they are replaced with named piece of data.
@@ -87,11 +89,11 @@ def headless_examples():
     #   for each of the chart templates
     #   replace %% patterns in the specified filepath template
     #   and write each image to its generated filepath
-#    print "Demonstrating a call to generateBasinPieImages"
-#    generateBasinPieImages("SWF", ["LOLT2"], "Trinity_R_Basin",
-#                          dates, 700, 807,
-#                          ["Design Capacity"],
-#                          filepath)
+    # print "Demonstrating a call to generateBasinPieImages"
+    # generateBasinPieImages("SWF", ["LOLT2"], "Trinity_R_Basin",
+    #                       dates, 700, 807,
+    #                       ["Design Capacity"],
+    #                       filepath)
 
     # Generate an image
     #   for the locations found in a basin
@@ -140,6 +142,7 @@ def generateBasinPieImageForBasin(office_id, location_id, basin_id,
                           chart_template_id,
                           filepath)
 
+
 def generateBasinPieImagesForBasin(office_id, location_ids, basin_id,
                           dates, width, height,
                           chart_template_ids,
@@ -161,6 +164,7 @@ def generateBasinPieImagesForBasin(office_id, location_ids, basin_id,
                           dates, width, height,
                           chart_template_ids,
                           filepath)
+
 
 def generateBasinPieImageForGroup(office_id, location_id, group_id,
                           date, width, height,
@@ -184,6 +188,7 @@ def generateBasinPieImageForGroup(office_id, location_id, group_id,
                           chart_template_id,
                           filepath)
 
+
 def generateBasinPieImagesForGroup(office_id, location_ids, group_id,
                           dates, width, height,
                           chart_template_ids,
@@ -206,6 +211,7 @@ def generateBasinPieImagesForGroup(office_id, location_ids, group_id,
                           chart_template_ids,
                           filepath)
 
+
 def generateAllBasinPieImagesForBasin(office_id, basin_id,
                           dates, width, height,
                           chart_template_ids,
@@ -215,6 +221,7 @@ def generateAllBasinPieImagesForBasin(office_id, basin_id,
                           dates, width, height,
                           chart_template_ids,
                           filepath)
+
 
 def generateAllBasinPieImagesForGroup(office_id, group_id,
                           dates, width, height,
@@ -226,66 +233,11 @@ def generateAllBasinPieImagesForGroup(office_id, group_id,
                           chart_template_ids,
                           filepath)
 
-# basinPie.generateBasinPieImage("SWF", "RSRT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\basin.jpg")
-
-# basinPie.generateBasinPieImage("SWF", "Basin-Trinity_R_Basin", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\Basin-Trinity_R_Basin.png")
-# basinPie.generateBasinPieImage("SWF", "W_Fork_Triniy_R", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\W_Fork_Triniy_R.png")
-# basinPie.generateBasinPieImage("SWF", "Mountain_Ck", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\Mountain_Ck.png")
-# basinPie.generateBasinPieImage("SWF", "GPAT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\GPAT2.png")
-# basinPie.generateBasinPieImage("SWF", "GPET2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\GPET2.png")
-# basinPie.generateBasinPieImage("SWF", "JPLT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\JPLT2.png")
-# basinPie.generateBasinPieImage("SWF", "GPRT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\GPRT2.png")
-# basinPie.generateBasinPieImage("SWF", "TGXT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\TGXT2.png")
-# basinPie.generateBasinPieImage("SWF", "FWOT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\FWOT2.png")
-# basinPie.generateBasinPieImage("SWF", "Clear_Fk_Trinity", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\Clear_Fk_Trinity.png")
-# basinPie.generateBasinPieImage("SWF", "FWHT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\FWHT2.png")
-# basinPie.generateBasinPieImage("SWF", "CFBT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\CFBT2.png")
-# basinPie.generateBasinPieImage("SWF", "BNBT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\BNBT2.png")
-# basinPie.generateBasinPieImage("SWF", "ADOT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\ADOT2.png")
-# basinPie.generateBasinPieImage("SWF", "WEAT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\WEAT2.png")
-# basinPie.generateBasinPieImage("SWF", "LWFT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\LWFT2.png")
-# basinPie.generateBasinPieImage("SWF", "WFTT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\WFTT2.png")
-# basinPie.generateBasinPieImage("SWF", "FLWT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\FLWT2.png")
-# basinPie.generateBasinPieImage("SWF", "EAMT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\EAMT2.png")
-# basinPie.generateBasinPieImage("SWF", "BOYT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\BOYT2.png")
-# basinPie.generateBasinPieImage("SWF", "Big_Sandy_Cr", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\Big_Sandy_Cr.png")
-# basinPie.generateBasinPieImage("SWF", "BRPT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\BRPT2.png")
-# basinPie.generateBasinPieImage("SWF", "BCAT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\BCAT2.png")
-# basinPie.generateBasinPieImage("SWF", "BPRT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\BPRT2.png")
-# basinPie.generateBasinPieImage("SWF", "Elm_Fk", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\Elm_Fk.png")
-# basinPie.generateBasinPieImage("SWF", "CART2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\CART2.png")
-# basinPie.generateBasinPieImage("SWF", "Denton_Crk", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\Denton_Crk.png")
-# basinPie.generateBasinPieImage("SWF", "DCGT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\DCGT2.png")
-# basinPie.generateBasinPieImage("SWF", "GPVT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\GPVT2.png")
-# basinPie.generateBasinPieImage("SWF", "EFLT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\EFLT2.png")
-# basinPie.generateBasinPieImage("SWF", "LEWT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\LEWT2.png")
-# basinPie.generateBasinPieImage("SWF", "RRLT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\RRLT2.png")
-# basinPie.generateBasinPieImage("SWF", "DALT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\DALT2.png")
-# basinPie.generateBasinPieImage("SWF", "TRDT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\TRDT2.png")
-# basinPie.generateBasinPieImage("SWF", "E_Fork", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\E_Fork.png")
-# basinPie.generateBasinPieImage("SWF", "CNLT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\CNLT2.png")
-# basinPie.generateBasinPieImage("SWF", "FNYT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\FNYT2.png")
-# basinPie.generateBasinPieImage("SWF", "FRHT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\FRHT2.png")
-# basinPie.generateBasinPieImage("SWF", "LVNT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\LVNT2.png")
-# basinPie.generateBasinPieImage("SWF", "RSRT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\RSRT2.png")
-# basinPie.generateBasinPieImage("SWF", "TDDT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\TDDT2.png")
-# basinPie.generateBasinPieImage("SWF", "Richland_Ck", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\Richland_Ck.png")
-# basinPie.generateBasinPieImage("SWF", "TRNT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\TRNT2.png")
-# basinPie.generateBasinPieImage("SWF", "Chambers_Ck", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\Chambers_Ck.png")
-# basinPie.generateBasinPieImage("SWF", "BRDT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\BRDT2.png")
-# basinPie.generateBasinPieImage("SWF", "BDWT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\BDWT2.png")
-# basinPie.generateBasinPieImage("SWF", "DWST2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\DWST2.png")
-# basinPie.generateBasinPieImage("SWF", "DAWT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\DAWT2.png")
-# basinPie.generateBasinPieImage("SWF", "LOLT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\LOLT2.png")
-
-# basinPie.generateBasinPieImage("SWF", "LOLT2", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\test_%office%_LOLT2.png")
-
-# basinPie.generateBasinPieImage("SWF", ["LOLT2","DAWT2"], "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\")
-# basinPie.generateBasinPieImagesForBasin("SWF", "Trinity_R_Basin", startCal.getTime(), 800, 600, "Conservation Pool (static)", "J:\\temp\\headless\\")
 
 if __name__ == "__builtin__":
     Usage()
     headless_examples()
+
 
 if __name__ == "__main__":
     Usage()

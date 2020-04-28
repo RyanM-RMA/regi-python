@@ -2,16 +2,19 @@
 from java.util import Calendar
 from java.util import TimeZone
 from usace.rowcps.headless import LoggingOptions
+import traceback
+
 
 def zero_Negatives(officeID, location, startCal):
     # Takes in locations defined by user in group and turns all negative values to 0 for the selected inflow. If a location fails or has an error, the script will continue. check the console log
     # for any further information.
     try:
         inflowCalc.zeroNegatives(officeID, location,  startCal.getTime())
-    except Exception as e:
+    except:
         print "Error Computing Zero Negatives at {0} {1}".format(officeID, location)
-        print e
+        traceback.print_exc()
         print ""
+
 # Description of: LoggingOptions.setDbMessageLevel(int level)
 #
 # Adds Time Series logging messages in the OracleTimeSeriesDaoImpl.  Recommended
@@ -20,7 +23,7 @@ def zero_Negatives(officeID, location, startCal):
 #
 # Message Level | Description
 # --------------|-------------------------------------------------------------------------------------------------------------------------------|
-# <=0           | Default value, does not do anything.  Lower values do not change behavior.                                                  |
+# <=0           | Default value, does not do anything.  Lower values do not change behavior.                                                    |
 # 1             | Logs message when no data is found.  Logs message when data is found, how much was retrieved or stored, and how long it took. |
 # 2             | Adds message with name of time series, and the units to retrieve/store.                                                       |
 # 3             | Adds message with the current time.                                                                                           |
@@ -28,8 +31,8 @@ def zero_Negatives(officeID, location, startCal):
 # >4            | Same as 4, but shows all values retrieved from each time series.  Higher values do not change behavior.                       |
 # --------------|-------------------------------------------------------------------------------------------------------------------------------|
 
-LoggingOptions.setDbMessageLevel(2)
 
+LoggingOptions.setDbMessageLevel(2)
 
 # Description of: LoggingOptions.setMetricsEnabled(boolean value)
 #
@@ -47,15 +50,20 @@ LoggingOptions.setDbMessageLevel(2)
 # this gets a scriptable Pool Percent object
 inflowCalc = registry.getCalculation(1.0, "Inflow")
 
+# Defaults to day one of the current month at 0000
 # configure the start calendar
-
 startCal = Calendar.getInstance(TimeZone.getTimeZone('US/Central'))
+startCal.set(Calendar.DATE, 1)
+startCal.set(Calendar.HOUR_OF_DAY, 0)
+startCal.set(Calendar.MINUTE, 0)
+startCal.set(Calendar.SECOND, 0)
+startCal.set(Calendar.MILLISECOND, 0)
 
-
-startCal.clear()
-startCal.set(Calendar.YEAR, 2015)
-startCal.set(Calendar.MONTH, 1)
-
+# Calendar can be adjusted using the following functions:
+#   startCal.set(Calendar.DATE, 1)          # Sets the date of the calendar.
+#   startCal.set(Calendar.HOUR_OF_DAY, 1)   # Sets the hour of the day to 0100 (1-24)
+#   startCal.set(Calendar.YEAR, 2020)       # Sets the year
+#   startCal.set(Calendar.MONTH, 4)         # Sets the month (month 4 means May to Java)
 
 # inflowCalc contains 4 callable methods:
 # autoAdjust
@@ -69,24 +77,20 @@ startCal.set(Calendar.MONTH, 1)
 #   startDate
 
 # autoAdjust also takes booleans:
-#	useLimits
-#	freezeRain
+#   useLimits
+#   freezeRain
 
-# This zeroes any negatives for ACTT2 and ALAT2. Several locations are commented out and can be commented back in any order. Additional stations can be added
-# to the end provided they follow the same format.
+# This zeroes any negatives for ACTT2 and ALAT2. Several locations are commented out and can be commented back in any
+# order. Additional stations can be added to the end provided they follow the same format.
 
 officeID = "SWF"
 locationList = ["ACTT2",
                 "ALAT2",
-#                 "BLNT2",
-#                 "BNBT2",
-#                 "CLDL1",
-#                 "DAWT2",
-                "ACTT2",
                 "TXKT2",
                 ]
 for location in locationList:
     print "Now Running", location
+    # Performs MonUtl function for the entire month
     zero_Negatives(officeID, location, startCal)
 
 

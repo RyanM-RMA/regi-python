@@ -20,7 +20,7 @@ inpath = "sigstages.csv"
 
 # Time zone must be set because the Solaris time zone is UTC
 timeZone = TimeZone.getTimeZone("US/Central")
-# the sig states caluclation requires an effective date
+# the sig states calculation requires an effective date
 # here we create a java Calendar object that will be used to create that date
 cal = Calendar.getInstance(timeZone)
 cal.clear()

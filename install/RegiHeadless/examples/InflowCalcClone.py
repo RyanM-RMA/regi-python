@@ -20,7 +20,7 @@ def clone_Inflows(officeID, location, startCal):
 #
 # Message Level | Description
 # --------------|-------------------------------------------------------------------------------------------------------------------------------|
-# <=0           | Default value, does not do anything.  Lower values do not change behavior.                                                  |
+# <=0           | Default value, does not do anything.  Lower values do not change behavior.                                                    |
 # 1             | Logs message when no data is found.  Logs message when data is found, how much was retrieved or stored, and how long it took. |
 # 2             | Adds message with name of time series, and the units to retrieve/store.                                                       |
 # 3             | Adds message with the current time.                                                                                           |
@@ -47,14 +47,20 @@ LoggingOptions.setDbMessageLevel(2)
 # this gets a scriptable Pool Percent object
 inflowCalc = registry.getCalculation(1.0, "Inflow")
 
+# Defaults to day one of the current month at 0000
 # configure the start calendar
-
 startCal = Calendar.getInstance(TimeZone.getTimeZone('US/Central'))
+startCal.set(Calendar.DATE, 1)
+startCal.set(Calendar.HOUR_OF_DAY, 0)
+startCal.set(Calendar.MINUTE, 0)
+startCal.set(Calendar.SECOND, 0)
+startCal.set(Calendar.MILLISECOND, 0)
 
-
-startCal.clear()
-startCal.set(Calendar.YEAR, 2015)
-startCal.set(Calendar.MONTH, 3)
+# Calendar can be adjusted using the following functions:
+#   startCal.set(Calendar.DATE, 1)          # Sets the date of the calendar.
+#   startCal.set(Calendar.HOUR_OF_DAY, 1)   # Sets the hour of the day to 0100 (1-24)
+#   startCal.set(Calendar.YEAR, 2020)       # Sets the year
+#   startCal.set(Calendar.MONTH, 4)         # Sets the month (month 4 means May to Java)
 
 
 # inflowCalc contains 4 callable methods:
