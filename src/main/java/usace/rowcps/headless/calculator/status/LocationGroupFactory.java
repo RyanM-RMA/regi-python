@@ -63,8 +63,9 @@ public class LocationGroupFactory
      */
     public LocationGroup retrieveProjectGroup(String projectGroupId)
     {
+		OptionalParams params = OptionalParams.createForMetrics(getClass().getSimpleName(), "retrieveProjectGroup");
         LocationGroup retval = null;
-        Set<LocationGroup> projectGroups = getProjectGroups();
+        Set<LocationGroup> projectGroups = getProjectGroups(params);
         for(LocationGroup locGroup : projectGroups)
         {
             if(locGroup.getName().equalsIgnoreCase(projectGroupId))
@@ -77,14 +78,15 @@ public class LocationGroupFactory
         return retval;
     }
     
-    private Set<LocationGroup> retrieveProjectGroups()
+    private Set<LocationGroup> retrieveProjectGroups(OptionalParams params)
     {
+		OptionalParams funcParams = OptionalParams.forMetrics(params, "retrieveProjectGroups");
         AtBasinManager atBasinManager = _regiDomain.getAtBasinManager(_managerIdProvider.getManagerId());
         Set<LocationGroup> projectGroups = new HashSet<>();
 
         try
         {
-            projectGroups.addAll(atBasinManager.getBasinCatalog());
+            projectGroups.addAll(atBasinManager.getBasinCatalog(funcParams));
         }
         catch(DbConnectionException | DbIoException ex)
         {
@@ -94,15 +96,16 @@ public class LocationGroupFactory
         return projectGroups;
     }
     
-    private Set<LocationGroup> getProjectGroups()
+    private Set<LocationGroup> getProjectGroups(OptionalParams params)
     {
+		OptionalParams funcParams = OptionalParams.forMetrics(params, "getProjectGroups");
         if(_projectGroups != null && _projectGroups.size() > 0)
         {
             return _projectGroups;
         }
         else
         {
-            _projectGroups = retrieveProjectGroups();
+            _projectGroups = retrieveProjectGroups(funcParams);
         }
         
         return _projectGroups;
