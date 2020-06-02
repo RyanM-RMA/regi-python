@@ -140,13 +140,13 @@ public class HeadlessInflowCache extends InflowCache
 	}
 
 	@Override
-	public void blockByThreshold(List<Date> datesInRange, double threshold)
+	protected void blockByThreshold(List<Date> datesInRange, double threshold)
 	{
 		LOGGER.log(Level.FINE, "blockByThreshold is purposefully left empty since it affects the protected status of rows.");
 	}
 	
 	@Override
-	public void setQualityForRainDays(Date date)
+	protected void setQualityForRainDays(Date date)
 	{
 		LOGGER.log(Level.FINE, "setQualityForRainDays is purposefully left empty since it affects the protected status of rows.");
 	}
