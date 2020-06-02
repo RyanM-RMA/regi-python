@@ -187,7 +187,7 @@ public class LocationGroupFactory
         AtBasinManager atBasinManager = _regiDomain.getAtBasinManager(_managerIdProvider.getManagerId());
         try
         {
-            List<IBasin> allBasins = atBasinManager.retrieveAllBasins(CacheUsage.NORMAL);
+            List<IBasin> allBasins = atBasinManager.retrieveAllBasins(CacheUsage.NORMAL, OptionalParams.createForMetrics(getClass().getSimpleName(), "retrieveIBasin", basinId));
             for(IBasin iBasin : allBasins)
             {
                 if(iBasin.getBasinId().equalsIgnoreCase(basinId))
