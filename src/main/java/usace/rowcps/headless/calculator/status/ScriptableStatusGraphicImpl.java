@@ -564,7 +564,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         LocationGroupFactory locationGroupFactory = new LocationGroupFactory(getManagerIdProvider());        
         LocationGroup locationGroup = locationGroupFactory.retrieveLocationGroupForBasin(basinId);
         
-        OperationSupportBasinTreeModel basinTreeModel = new OperationSupportBasinTreeModel(null);
+        OperationSupportBasinTreeModel basinTreeModel = new OperationSupportBasinTreeModel();
         IBasinConnectivityModel basinConnModel = locationGroupFactory.getBasinConnectivityModel();
         basinTreeModel.fillBasinTree(locationGroup, basinConnModel);        
         
@@ -641,7 +641,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         LocationGroupFactory locationGroupFactory = new LocationGroupFactory(getManagerIdProvider());
         LocationGroup locationGroup = locationGroupFactory.retrieveLocationGroupForBasin(basinId);
         
-        OperationSupportBasinTreeModel basinTreeModel = new OperationSupportBasinTreeModel(null);
+        OperationSupportBasinTreeModel basinTreeModel = new OperationSupportBasinTreeModel();
         IBasinConnectivityModel basinConnModel = locationGroupFactory.getBasinConnectivityModel();
         basinTreeModel.fillBasinTree(locationGroup, basinConnModel);
         
