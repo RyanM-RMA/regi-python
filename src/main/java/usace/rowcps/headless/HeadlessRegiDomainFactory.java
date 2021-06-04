@@ -9,6 +9,9 @@ import hec.db.DbConnectionException;
 import hec.db.DbPluginNotFoundException;
 import hec.db.InvalidDbConnectionException;
 import hec.io.Identifier;
+import hec.lang.LoginException;
+import hec.serversuite.ServerSuiteUtil;
+import hec.serversuite.data.DirectOracleAuthenticationSource;
 import java.io.File;
 import java.util.List;
 import java.util.logging.Level;
@@ -112,15 +115,22 @@ public class HeadlessRegiDomainFactory
 			String tzId = options.getRowcpsTimezone();
 			String officeId = options.getOracleOfficeId();
 
+			DirectOracleAuthenticationSource directOracleAuthenticationSource = new DirectOracleAuthenticationSource("", dbUrl, officeId);
 			connectionManager.setTimeZoneId(tzId);
-			connectionManager.setDbUrl(dbUrl);
 			connectionManager.setUsername(username);
-			connectionManager.setPass(password);
 			connectionManager.setUserOfficeId(officeId);
 			connectionManager.saveData();
 			
 			TimeZoneDisplayService tsDS = ServiceLookup.getTimeZoneDisplayService();
 			tsDS.setTimeZone(connectionManager.getTimeZone());
+			try
+			{
+				ServerSuiteUtil.login("REGI Headless", directOracleAuthenticationSource, password);
+			}
+			catch(LoginException ex)
+			{
+				throw new DbConnectionException(ex);
+			}
 
 			regiDomain.connect();
 			List<Manager> managerList = regiDomain.getManagerList();

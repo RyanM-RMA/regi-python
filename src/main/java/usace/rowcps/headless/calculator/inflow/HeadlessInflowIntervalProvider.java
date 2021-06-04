@@ -12,7 +12,6 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import usace.rowcps.computation.common.IntervalProvider;
-import usace.rowcps.data.LocalOffset;
 
 /**
  *
@@ -67,10 +66,4 @@ public class HeadlessInflowIntervalProvider implements IntervalProvider
 		return (int) (_msTimeOffsetIntoInterval / 1000L);
 	}
 
-	@Override
-	public int getUtcIntervalOffsetSeconds()
-	{
-		LocalOffset localOffset = new LocalOffset(_projectTimeZone, getInterval());
-		return localOffset.getUtcOffsetInSeconds();
-	}
 }

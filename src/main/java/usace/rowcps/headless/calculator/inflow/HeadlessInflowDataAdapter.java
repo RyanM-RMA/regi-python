@@ -33,7 +33,7 @@ public class HeadlessInflowDataAdapter extends InflowDataAdapter
 	}
 
 	@Override
-	protected TsDataColumn retrieveAvgReleaseData(FlowGroupTimeSeries fgts, RegiDomain currentProject, Date startTime, Date endTime, Date lastElevDate, TimeZone projectTimeZone, OptionalParams options)
+	protected TsDataColumn retrieveAvgReleaseData(FlowGroupTimeSeries fgts, Date startTime, Date endTime, Date lastElevDate, TimeZone projectTimeZone, OptionalParams options)
 			throws hec.db.DbConnectionException, hec.db.DbIoException, hec.data.DataSetIllegalArgumentException
 	{
 		Logger.getLogger(HeadlessInflowDataAdapter.class.getName()).log(Level.FINE, "This is intended to be ignored under certain circumstances");
