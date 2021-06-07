@@ -125,7 +125,7 @@ public class HeadlessRegiDomainFactory
 			tsDS.setTimeZone(connectionManager.getTimeZone());
 			try
 			{
-				ServerSuiteUtil.login("REGI Headless", directOracleAuthenticationSource, password);
+				ServerSuiteUtil.login("REGI Headless", directOracleAuthenticationSource, username, password);
 			}
 			catch(LoginException ex)
 			{
