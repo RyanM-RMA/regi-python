@@ -132,7 +132,7 @@ public class HeadlessRegiDomainFactory
 				throw new DbConnectionException(ex);
 			}
 
-			regiDomain.connect();
+			regiDomain.connect(ServerSuiteUtil.getServerSuite());
 			List<Manager> managerList = regiDomain.getManagerList();
 
 			regiDomain.saveProject();
