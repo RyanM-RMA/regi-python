@@ -24,6 +24,7 @@ import usace.rowcps.computation.inflow.InflowDataAdapter;
 import usace.rowcps.computation.inflow.ZeroNegativeAdjustedInflowsAction;
 import usace.rowcps.data.CacheInitializationException;
 import usace.rowcps.data.inflow.InflowDataType;
+import usace.rowcps.data.tabs.dailyops.GlobalDailyOpsOptionsBuilder;
 import usace.rowcps.headless.calculator.AbstractScriptableCalc;
 import usace.rowcps.headless.calculator.inflow.actions.HeadlessAutoAdjustInflowsAction;
 import usace.rowcps.headless.calculator.inflow.actions.HeadlessBalanceAdjustedInflowsAction;
@@ -277,7 +278,7 @@ public class ScriptableInflowImpl extends AbstractScriptableCalc implements Scri
 		InflowDataAdapter adapter;
 		if (retrieveAverageReleases)
 		{
-			adapter = new InflowDataAdapter(projectDescriptor, getManagerId(), projectTimeZone);
+			adapter = new InflowDataAdapter(projectDescriptor, getManagerId(), projectTimeZone, GlobalDailyOpsOptionsBuilder.buildDefaultOptions(projectDescriptor.getOfficeId()));
 		}
 		else
 		{

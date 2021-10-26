@@ -16,8 +16,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import usace.rowcps.computation.inflow.TsDataColumn;
 import usace.rowcps.data.flowgroup.FlowGroupTimeSeries;
+import usace.rowcps.data.tabs.dailyops.GlobalDailyOpsOptionsBuilder;
 import usace.rowcps.regi.model.OptionalParams;
-import usace.rowcps.regi.model.RegiDomain;
 
 /**
  *
@@ -29,7 +29,7 @@ public class HeadlessInflowDataAdapter extends InflowDataAdapter
 	
 	public HeadlessInflowDataAdapter(AtProjectDescriptor projectDescriptor, ManagerId managerId, TimeZone projectTimeZone)
 	{
-		super(projectDescriptor, managerId, projectTimeZone);
+		super(projectDescriptor, managerId, projectTimeZone, GlobalDailyOpsOptionsBuilder.buildDefaultOptions(projectDescriptor.getOfficeId()));
 	}
 
 	@Override
