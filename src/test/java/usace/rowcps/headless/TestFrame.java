@@ -32,7 +32,7 @@ import javax.swing.SwingUtilities;
  */
 public class TestFrame extends JFrame
 {
-
+	private static final Logger LOGGER = Logger.getLogger(TestFrame.class.getName());
 	private final ExecutorService _executor = Executors.newSingleThreadExecutor();
 	private final List<JButton> _buttons = new ArrayList<>();
 	
@@ -79,7 +79,7 @@ public class TestFrame extends JFrame
 		}
 		catch (IOException | RuntimeException ex)
 		{
-			
+
 		}
 		
 		return paths.toArray(new String[0]);
@@ -95,13 +95,27 @@ public class TestFrame extends JFrame
 			try
 			{
 				RegiCLI.runHeadlessTest(args);
+				//Reset logging options
+				LoggingOptions.disableFlowGroupCompLogging();
+				LoggingOptions.setMetricsEnabled(false);
+				LoggingOptions.setDbMessageLevel(0);
 			}
-			catch (Exception ex)
+			catch (Throwable ex)
 			{
-				Logger.getLogger(TestFrame.class.getName()).log(Level.SEVERE, "Exception occurred", ex);
+				logThrowable(ex);
 			}
+
 			SwingUtilities.invokeLater(this::enableButtons);
 		});
+	}
+
+	private void logThrowable(Throwable ex)
+	{
+		if (ex.getCause() != null)
+		{
+			logThrowable(ex.getCause());
+		}
+		LOGGER.log(Level.SEVERE, "Exception occurred", ex);
 	}
 	
 	private void disableButtons()

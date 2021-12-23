@@ -136,7 +136,7 @@ public class ScriptableGateFlowImpl extends AbstractScriptableCalc implements Sc
                 
             } catch (DbIoException | DbConnectionException ex)
             {
-                logger.log(Level.SEVERE, null, ex);
+                logger.log(Level.SEVERE, "Unable to compute flow group " + groupId + " for " + locationId, ex);
             }
             
 	}

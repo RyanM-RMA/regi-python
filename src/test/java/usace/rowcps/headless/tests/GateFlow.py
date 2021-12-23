@@ -37,7 +37,8 @@ def compute_Single_Flowgroup(officeID, location, startCal, endCal, flowGroup):
 # >4            | Same as 4, but shows all values retrieved from each time series.  Higher values do not change behavior.                       |
 # --------------|-------------------------------------------------------------------------------------------------------------------------------|
 
-LoggingOptions.setDbMessageLevel(2)
+LoggingOptions.setDbMessageLevel(0)
+LoggingOptions.enableAbridgedFlowGroupCompLogging()
 
 
 # Description of: LoggingOptions.setMetricsEnabled(boolean value)
