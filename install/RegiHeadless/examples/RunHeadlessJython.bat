@@ -2,7 +2,6 @@
 ..\jre64\bin\java.exe ^
 -Djava.library.path=..\lib\amd64 -DPLUGINS=..\lib\ext ^
 -Doracle.metrics.clientid="CWMS REGI-Headless-v4.0" ^
--Dcwms.db.impl.classpaths=..\runtimeclassloader\cwmsDbApi\jooq ^
 -Djava.util.logging.config.file=../config/properties/logging.properties ^
 -cp ..\lib\*;..\lib\ext\*;..\lib\regi\*;..\lib\cwms\*;..\lib\sys\*; usace.rowcps.headless.RegiCLI ^
 -Drowcps.timezone=America/Chicago ^
