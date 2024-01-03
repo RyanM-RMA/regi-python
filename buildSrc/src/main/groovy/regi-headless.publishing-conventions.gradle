@@ -11,7 +11,7 @@ publishing {
             }
             def baseUrl = "https://www.hec.usace.army.mil/nexus/repository"
             afterEvaluate {
-                url = version.toString().endsWith("SNAPSHOT") ? "$baseUrl/cwms-snapshots/" : "$baseUrl/cwms-releases/"
+                url = version.toString().endsWith("SNAPSHOT") ? "$baseUrl/maven-snapshots/" : "$baseUrl/maven-releases/"
             }
         }
     }
