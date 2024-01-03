@@ -87,20 +87,20 @@ object Build : BuildType({
             // Just to be safe, clean first.
             tasks = "clean"
             gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
-            jdkHome = "%env.JDK_17_0_x64%"
+            jdkHome = "%env.ORACLE_JDK_18_x64%"
         }
         gradle {
             tasks = "build"
             name = "build"
             gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
-            jdkHome = "%env.JDK_17_0_x64%"
+            jdkHome = "%env.ORACLE_JDK_18_x64%"
         }
 /*        gradle {
             name = "Analysis"
             tasks = "sonarqube"
             buildFile = "build.gradle"
             gradleParams = "-Dsonar.login=%system.SONAR_TOKEN% -Dsonar.host.url=%system.SONAR_URL%"
-            jdkHome = "%env.JDK_17_0_x64%"
+            jdkHome = "%env.ORACLE_JDK_18_x64%"
         }*/
     }
 
@@ -146,19 +146,19 @@ object Deploy : BuildType({
             // Just to be safe, clean first.
             tasks = "clean"
             gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
-            jdkHome = "%env.JDK_17_0_x64%"
+            jdkHome = "%env.ORACLE_JDK_18_x64%"
         }
         gradle {
             tasks = "build"
             name = "build for publish"
             gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
-            jdkHome = "%env.JDK_17_0_x64%"
+            jdkHome = "%env.ORACLE_JDK_18_x64%"
         }
         gradle {
             tasks = "publish"
             name = "Deploy artifacts to Nexus"
             gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
-            jdkHome = "%env.JDK_17_0_x64%"
+            jdkHome = "%env.ORACLE_JDK_18_x64%"
         }
     }
 
