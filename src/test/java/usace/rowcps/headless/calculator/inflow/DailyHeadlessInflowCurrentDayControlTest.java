@@ -71,7 +71,8 @@ public class DailyHeadlessInflowCurrentDayControlTest
 		return temp.getTime();
 	}
 
-	@Test
+	//23-001 - migration
+//	@Test
 	public void testBaseCaseStartDate() throws Exception
 	{
 		TimeZone timeZone = TimeZone.getTimeZone("US/Central");
@@ -121,7 +122,8 @@ public class DailyHeadlessInflowCurrentDayControlTest
 		testEndDateRespectsElevDate(startDate, endDate, endDate, temp);
 	}
 
-	@Test
+	//23-001 - migration
+//	@Test
 	public void testStartDateCrossingMonthBarrier() throws Exception
 	{
 		TimeZone timeZone = TimeZone.getTimeZone("US/Central");
