@@ -2,6 +2,7 @@
 
 # HEC Dependencies
 service-annotations = "1.2"
+java-heclib = "7-IR-6-win-x86"
 hec-core = "6.1-SNAPSHOT" # required for PasswordFileEditor
 
 # REGI Dependencies
@@ -12,6 +13,9 @@ regi = "3.4.4"
 jython-standalone = "2.7.2"
 args4j = "2.32"
 
+# Natives
+windows-jre = "1.8.0_201"
+
 # Test
 junit4 = "4.13.2"
 junit = "5.9.3"
@@ -20,6 +24,7 @@ junit = "5.9.3"
 # HEC Dependencies
 service-annotations = { module = "mil.army.usace.hec:service-annotations", version.ref = "service-annotations" }
 hec-core = { module="mil.army.usace.hec:hec-core", version.ref = "hec-core" }
+java-heclib = {module="mil.army.usace.hec:javaHeclib", version.ref = "java-heclib"}
 
 # REGI Dependencies
 regi-basinpie-ui = {module = "mil.army.wmist.regi:basin-pie-ui", version.ref = "regi"}
@@ -37,6 +42,10 @@ regi-tools-regi-cwms = {module = "mil.army.wmist.regi-tools:regi-cwms", version.
 # Third Party
 jython-standalone = {module = "org.python:jython-standalone", version.ref = "jython-standalone"}
 args4j = {module = "args4j:args4j", version.ref = "args4j"}
+
+# Natives
+windows_jre = { module = "com.oracle:oracle-jre", version.ref = "windows-jre" }
+#solaris_jre = { module = "" }
 
 # Test
 junit4 = { module = "junit:junit", version.ref = "junit4" }

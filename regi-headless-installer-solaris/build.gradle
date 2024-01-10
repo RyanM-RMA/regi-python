@@ -1,0 +1,14 @@
+plugins {
+    id "regi-headless.deps-conventions"
+    id "regi-headless.installer-conventions"
+    id "regi-headless.publishing-conventions"
+}
+
+configurations {
+    jrex8664
+    nativesx8664
+}
+
+dependencies {
+    implementation(project(":regi-headless-installer-common"))
+}

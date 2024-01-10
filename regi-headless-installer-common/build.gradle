@@ -1,0 +1,8 @@
+plugins {
+    id "java"
+    id "regi-headless.deps-conventions"
+}
+
+dependencies {
+    implementation(project(":regi-headless"))
+}

@@ -1,9 +1,6 @@
 plugins {
     id "com.palantir.git-version" version "3.0.0"
     id "org.sonarqube" version "4.0.0.2929"
-    id 'regi-headless.deps-conventions'
-    id 'regi-headless.java-conventions'
-    id 'regi-headless.publishing-conventions'
 }
 
 def versionLabel(gitInfo) {
@@ -16,21 +13,4 @@ def versionLabel(gitInfo) {
 allprojects {
     group = 'mil.army.wmist.regi.headless'
     version = versionLabel(versionDetails())
-}
-
-dependencies {
-    implementation(libs.jython.standalone)
-    implementation(libs.args4j)
-    implementation(libs.hec.core)
-    implementation(libs.bundles.regi) {artifact {extension = "jar"}}
-    implementation(libs.bundles.regi.tools) {artifact {extension = "jar"}}
-
-    testImplementation(libs.bundles.junit.api)
-    testRuntimeOnly(libs.bundles.junit.engine)
-}
-
-jar {
-    manifest {
-        attributes('Implementation-Version': project.version)
-    }
 }

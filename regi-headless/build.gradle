@@ -1,0 +1,20 @@
+plugins {
+    id 'regi-headless.deps-conventions'
+    id 'regi-headless.java-conventions'
+}
+
+dependencies {
+    implementation(libs.jython.standalone)
+    implementation(libs.args4j)
+    implementation(libs.bundles.regi) {artifact {extension = "jar"}}
+    implementation(libs.bundles.regi.tools) {artifact {extension = "jar"}}
+
+    testImplementation(libs.bundles.junit.api)
+    testRuntimeOnly(libs.bundles.junit.engine)
+}
+
+jar {
+    manifest {
+        attributes('Implementation-Version': project.version)
+    }
+}
