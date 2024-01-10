@@ -3,11 +3,17 @@ plugins {
     id 'regi-headless.java-conventions'
 }
 
+configurations {
+    cwms
+    sys
+    regi
+}
+
 dependencies {
-    implementation(libs.jython.standalone)
-    implementation(libs.args4j)
-    implementation(libs.bundles.regi) {artifact {extension = "jar"}}
-    implementation(libs.bundles.regi.tools) {artifact {extension = "jar"}}
+    sys(libs.jython.standalone)
+    sys(libs.args4j)
+    regi(libs.bundles.regi) {artifact {extension = "jar"}}
+    regi(libs.bundles.regi.tools) {artifact {extension = "jar"}}
 
     testImplementation(libs.bundles.junit.api)
     testRuntimeOnly(libs.bundles.junit.engine)
