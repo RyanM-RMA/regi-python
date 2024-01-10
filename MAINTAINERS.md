@@ -1,4 +1,4 @@
 # Maintainers
 
-Maintainer: Peter Morris <peter@rmanet.com>
+Maintainer: Peter Morris <psmorris@rmanet.com>
 Maintainer: Ryan Miles <ryanm@rmanet.com>
