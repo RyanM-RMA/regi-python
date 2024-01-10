@@ -2,6 +2,7 @@
 
 # HEC Dependencies
 service-annotations = "1.2"
+hec-core = "6.1-SNAPSHOT" # required for PasswordFileEditor
 
 # REGI Dependencies
 regi-tools = "3.4.1"
@@ -18,26 +19,19 @@ junit = "5.9.3"
 [libraries]
 # HEC Dependencies
 service-annotations = { module = "mil.army.usace.hec:service-annotations", version.ref = "service-annotations" }
+hec-core = { module="mil.army.usace.hec:hec-core", version.ref = "hec-core" }
 
 # REGI Dependencies
 regi-basinpie-ui = {module = "mil.army.wmist.regi:basin-pie-ui", version.ref = "regi"}
 regi-computation = {module = "mil.army.wmist.regi:computation", version.ref = "regi"}
-regi-dailyops-ui = {module = "mil.army.wmist.regi:daily-ops-ui", version.ref = "regi"}
 regi-decisionsupport-ui = {module = "mil.army.wmist.regi:decision-support-ui", version.ref = "regi"}
 regi-mappanel-ui = {module = "mil.army.wmist.regi:map-panel-ui", version.ref = "regi"}
-regi-pet = {module = "mil.army.wmist.regi:pool-evac-tool", version.ref = "regi"}
-regi-geoui-datasource = {module = "mil.army.wmist.regi:regi-geo-ui", version.ref = "regi"}
 regi-ui = {module = "mil.army.wmist.regi:regi-ui", version.ref = "regi"}
 
 # Regi-tools Dependencies
-regi-tools-rating-editor = {module = "mil.army.wmist.regi-tools:rating-editor", version.ref = "regi-tools"}
-regi-tools-rating-model = {module = "mil.army.wmist.regi-tools:rating-model", version.ref = "regi-tools"}
-regi-tools-rating-io = {module = "mil.army.wmist.regi-tools:rating-io", version.ref = "regi-tools"}
-regi-tools-level-editor = {module = "mil.army.wmist.regi-tools:level-editor", version.ref = "regi-tools"}
 regi-tools-regi-core = {module = "mil.army.wmist.regi-tools:regi-core", version.ref = "regi-tools"}
 regi-tools-regi-data = {module = "mil.army.wmist.regi-tools:regi-data", version.ref = "regi-tools"}
 regi-tools-regi-dao = {module = "mil.army.wmist.regi-tools:regi-dao", version.ref = "regi-tools"}
-regi-tools-regi-cacheui = {module = "mil.army.wmist.regi-tools:regi-cache-ui", version.ref = "regi-tools"}
 regi-tools-regi-cwms = {module = "mil.army.wmist.regi-tools:regi-cwms", version.ref = "regi-tools"}
 
 # Third Party
@@ -52,9 +46,18 @@ junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", vers
 junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit" }
 
 [bundles]
-regi = ["regi-basinpie-ui", "regi-computation", "regi-dailyops-ui", "regi-decisionsupport-ui", "regi-geoui-datasource",
-    "regi-mappanel-ui", "regi-pet", "regi-ui"]
-regi-tools = ["regi-tools-rating-editor", "regi-tools-level-editor", "regi-tools-rating-io", "regi-tools-rating-model",
-    "regi-tools-regi-cacheui", "regi-tools-regi-core", "regi-tools-regi-cwms", "regi-tools-regi-dao", "regi-tools-regi-data"]
+regi = [
+    "regi-basinpie-ui",
+    "regi-computation",
+    "regi-decisionsupport-ui",
+    "regi-mappanel-ui",
+    "regi-ui"
+]
+regi-tools = [
+    "regi-tools-regi-core",
+    "regi-tools-regi-cwms",
+    "regi-tools-regi-dao",
+    "regi-tools-regi-data"
+]
 junit-api = ["junit-jupiter-api", "junit-jupiter-params", "junit4"]
 junit-engine = ["junit-jupiter-engine", "junit-vintage-engine"]

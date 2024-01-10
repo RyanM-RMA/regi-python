@@ -21,6 +21,7 @@ allprojects {
 dependencies {
     implementation(libs.jython.standalone)
     implementation(libs.args4j)
+    implementation(libs.hec.core)
     implementation(libs.bundles.regi) {artifact {extension = "jar"}}
     implementation(libs.bundles.regi.tools) {artifact {extension = "jar"}}
 
