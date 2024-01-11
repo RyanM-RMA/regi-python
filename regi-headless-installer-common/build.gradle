@@ -1,8 +1,77 @@
 plugins {
     id "java"
     id "regi-headless.deps-conventions"
+    id "regi-headless.installer-conventions"
 }
 
 dependencies {
     implementation(project(":regi-headless"))
+}
+
+def isSys(artifact) {
+    return libs.bundles.sys.get().stream().map(d -> d.getModule()).anyMatch(module -> artifact.getModuleVersion().id.getModule() == module)
+}
+
+def static isRegi(displayName) {
+    return displayName.startsWith('mil.army.wmist') || displayName.startsWith("project")
+}
+
+def getInstallFolder() {
+    return "$rootProject.buildDir/install"
+}
+
+def getLibFolder() {
+    return installFolder + "/lib"
+}
+
+tasks.register('copyCwmsDependencies', Sync) {
+    duplicatesStrategy = DuplicatesStrategy.WARN
+    from configurations.runtimeClasspath
+    into libFolder + "/cwms"
+    include '**/*.jar'
+
+    configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { ResolvedArtifact artifact ->
+        if (isSys(artifact) || isRegi(artifact.id.componentIdentifier.displayName)) {
+            exclude "**/${artifact.file.name}"
+        }
+    }
+}
+
+tasks.register('copySysDependencies', Sync) {
+    duplicatesStrategy = DuplicatesStrategy.WARN
+    from configurations.runtimeClasspath
+    into libFolder + "/sys"
+    include '**/*.jar'
+
+    configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { ResolvedArtifact artifact ->
+        if (!isSys(artifact)) {
+            exclude "**/${artifact.file.name}"
+        }
+    }
+}
+
+tasks.register('copyRegiDependencies', Sync) {
+    duplicatesStrategy = DuplicatesStrategy.WARN
+    from configurations.runtimeClasspath
+    into libFolder + "/regi"
+    include '**/*.jar'
+
+    configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { ResolvedArtifact artifact ->
+        if (!isRegi(artifact.id.componentIdentifier.displayName)) {
+            exclude "**/${artifact.file.name}"
+        }
+    }
+}
+
+tasks.register('copyConfig', Sync) {
+    duplicatesStrategy = DuplicatesStrategy.WARN
+    from "config"
+    into installFolder + "/config/properties"
+}
+
+tasks.register('copyDependencies') {
+    dependsOn copyCwmsDependencies
+    dependsOn copySysDependencies
+    dependsOn copyRegiDependencies
+    dependsOn copyConfig
 }

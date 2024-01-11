@@ -1,5 +1,3 @@
-import java.util.stream.Collectors
-
 plugins {
     id "regi-headless.deps-conventions"
     id "regi-headless.installer-conventions"
@@ -21,29 +19,6 @@ dependencies {
     }
 }
 
-def getAllDependencies() {
-    return allArtifacts.stream().map( { dep -> dep.getFile() } ).collect(Collectors.toCollection({new LinkedHashSet()}))
-}
-
-def getThirdPartyDependencies() {
-    def thirdPartyArtifacts = allArtifacts.clone()
-    def thirdPartyArtifactsIterator = thirdPartyArtifacts.iterator()
-    for(def dep : thirdPartyArtifactsIterator) {
-        def group = dep.moduleVersion.id.group
-        if(group.startsWith("mil.army.usace.hec") || group.startsWith("mil.army.wmist.regi") || group.startsWith("com.rmanet")) {
-            thirdPartyArtifactsIterator.remove()
-        }
-    }
-    return thirdPartyArtifacts.stream().map( { dep -> dep.getFile() } ).collect(Collectors.toCollection({new LinkedHashSet()}))
-}
-
-def getFirstPartyDependencies() {
-    def headless = project(":regi-headless")
-    return allDependencies - thirdPartyDependencies - headless.tasks.jar.archiveFile.get().getAsFile()
-}
-
-def copyJRETo(CopySpec intoDir) {
-    configurations.jre64.asFileTree.each {
-        intoDir.from(zipTree(it))
-    }
+tasks.register("buildInstaller") {
+    dependsOn(project(':regi-headless-installer-common').tasks.copyDependencies)
 }

@@ -60,13 +60,20 @@ regi = [
     "regi-computation",
     "regi-decisionsupport-ui",
     "regi-mappanel-ui",
-    "regi-ui"
-]
+    "regi-ui"]
 regi-tools = [
     "regi-tools-regi-core",
     "regi-tools-regi-cwms",
     "regi-tools-regi-dao",
     "regi-tools-regi-data"
 ]
+cwms = [
+    "hec-core"
+]
+sys = [
+    "args4j",
+    "jython-standalone"
+]
+
 junit-api = ["junit-jupiter-api", "junit-jupiter-params", "junit4"]
 junit-engine = ["junit-jupiter-engine", "junit-vintage-engine"]
