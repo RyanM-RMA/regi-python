@@ -36,7 +36,7 @@ version = "2023.05"
 
 object RegiHeadlesRepo : GitVcsRoot( {
     name = "RegiHeadlessRepo"
-    url = "https://bitbucket.hecdev.net/scm/sc/regi-headless.git"
+    url = "https://bitbucket.hecdev.net/scm/wmes/regi-headless.git"
     branch = "refs/heads/main"
     branchSpec = """+:*
 -:refs/pull-requests/*
