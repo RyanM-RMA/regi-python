@@ -2,7 +2,7 @@
 
 # HEC Dependencies
 service-annotations = "1.2"
-java-heclib = "7-IR-6-win-x86"
+java-heclib = "7-IR-6-win-x86_64"
 hec-core = "6.1-SNAPSHOT" # required for PasswordFileEditor
 
 # REGI Dependencies

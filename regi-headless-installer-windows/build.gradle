@@ -23,15 +23,37 @@ def getInstallFolder() {
     return "$rootProject.buildDir/install"
 }
 
-tasks.register("copyPython", Sync) {
+def getLibFolder() {
+    return installFolder + "/lib"
+}
+
+tasks.register("copyPython", Copy) {
     duplicatesStrategy = DuplicatesStrategy.WARN
     from "RegiHeadless"
     into installFolder
 }
 
+tasks.register("copyHeclib", Copy) {
+    configurations.native64.copyRecursive().asFileTree.each {file ->
+        it.from(zipTree(file))
+    }
+    into libFolder + "/amd64"
+    include "**/*.dll"
+}
+
+tasks.register("copyJre", Copy) {
+    configurations.jre64.copyRecursive().asFileTree.each {file ->
+        it.from(zipTree(file))
+    }
+    into installFolder + "/jre64"
+    include "**/*.*"
+}
+
 tasks.register('zipInstaller', Zip){
     dependsOn(tasks.copyPython)
     dependsOn(project(':regi-headless-installer-common').tasks.copyDependencies)
+    dependsOn(tasks.copyHeclib)
+    dependsOn(tasks.copyJre)
 
     from installFolder
     def headless = project(":regi-headless")
@@ -51,7 +73,5 @@ tasks.register('zipInstaller', Zip){
 }
 
 tasks.register("buildWindowsInstaller") {
-    dependsOn(tasks.copyPython)
-    dependsOn(project(':regi-headless-installer-common').tasks.copyDependencies)
     dependsOn(zipInstaller)
 }
