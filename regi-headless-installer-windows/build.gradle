@@ -19,6 +19,39 @@ dependencies {
     }
 }
 
-tasks.register("buildInstaller") {
+def getInstallFolder() {
+    return "$rootProject.buildDir/install"
+}
+
+tasks.register("copyPython", Sync) {
+    duplicatesStrategy = DuplicatesStrategy.WARN
+    from "RegiHeadless"
+    into installFolder
+}
+
+tasks.register('zipInstaller', Zip){
+    dependsOn(tasks.copyPython)
     dependsOn(project(':regi-headless-installer-common').tasks.copyDependencies)
+
+    from installFolder
+    def headless = project(":regi-headless")
+    def baseName = 'REGIHeadless'
+    def version = headless.version// + headless.getBuildID()
+    destinationDirectory = file("$buildDir")
+    archiveBaseName = baseName
+    archiveVersion = version
+    archiveExtension = 'zip'
+
+    def buildSpecificSubdir = baseName + '-' + version
+    includeEmptyDirs false
+
+    eachFile { fileDetails ->
+        fileDetails.setRelativePath(fileDetails.getRelativePath().prepend(buildSpecificSubdir))
+    }
+}
+
+tasks.register("buildWindowsInstaller") {
+    dependsOn(tasks.copyPython)
+    dependsOn(project(':regi-headless-installer-common').tasks.copyDependencies)
+    dependsOn(zipInstaller)
 }
