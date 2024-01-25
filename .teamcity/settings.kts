@@ -57,9 +57,8 @@ project {
 
     sequential {
         buildType(Build)
-        buildType(Deploy)
-
-
+        buildType(DeployWindows)
+        buildType(DeploySolaris)
     }.buildTypes().forEach { buildType(it) }
     vcsRoot(RegiHeadlesRepo)
 
@@ -91,7 +90,7 @@ object Build : BuildType({
         }
         gradle {
             tasks = "build"
-            name = "build"
+            name = "Build"
             gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
             jdkHome = "%env.ORACLE_JDK_18_x64%"
         }
@@ -126,12 +125,14 @@ object Build : BuildType({
         }
     }
 
-
+    requirements {
+        contains("teamcity.agent.jvm.os.name", "Linux")
+    }
 })
 
 
-object Deploy : BuildType({
-    name = "Deploy to Nexus"
+object DeployWindows : BuildType({
+    name = "Deploy Windows to Nexus"
 
     artifactRules = """
  
@@ -150,14 +151,20 @@ object Deploy : BuildType({
         }
         gradle {
             tasks = "build"
-            name = "build for publish"
+            name = "Build for Windows publish"
+            gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
+            jdkHome = "%env.ORACLE_JDK_18_x64%"
+        }
+        gradle {
+            tasks = "buildWindowsInstaller"
+            name = "Build Windows artifacts"
             gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
             jdkHome = "%env.ORACLE_JDK_18_x64%"
         }
         gradle {
             tasks = "publish"
             name = "Deploy artifacts to Nexus"
-            gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
+            gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD% --info"
             jdkHome = "%env.ORACLE_JDK_18_x64%"
         }
     }
@@ -176,8 +183,63 @@ object Deploy : BuildType({
     }
 
     requirements {
+        contains("teamcity.agent.jvm.os.name", "Windows")
+    }
+})
+
+object DeploySolaris : BuildType({
+    name = "Deploy Solaris to Nexus"
+
+    artifactRules = """
+ 
+    """.trimIndent()
+
+    vcs {
+        root(RegiHeadlesRepo)
     }
 
+    steps {
+        gradle {
+            // Just to be safe, clean first.
+            tasks = "clean"
+            gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
+            jdkHome = "%env.ORACLE_JDK_18_x64%"
+        }
+        gradle {
+            tasks = "build"
+            name = "Build for Solaris publish"
+            gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
+            jdkHome = "%env.ORACLE_JDK_18_x64%"
+        }
+        gradle {
+            tasks = "buildSolarisInstaller"
+            name = "Deploy Solaris artifacts"
+            gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
+            jdkHome = "%env.ORACLE_JDK_18_x64%"
+        }
+        gradle {
+            tasks = "publish"
+            name = "Deploy artifacts to Nexus"
+            gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD% --info"
+            jdkHome = "%env.ORACLE_JDK_18_x64%"
+        }
+    }
 
+    // for this example deployed releases will always from from master
+    // you could choose any other valid branch filter.
+    triggers {
+        finishBuildTrigger {
+            buildType = "${Build.id}"
+            successfulOnly = true
+            branchFilter = """
+                +:<default>
+                +:refs/tags/*
+            """.trimIndent()
+        }
+    }
+
+    requirements {
+        contains("teamcity.agent.jvm.os.name", "Linux")
+    }
 })
 

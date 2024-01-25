@@ -5,10 +5,86 @@ plugins {
 }
 
 configurations {
-    jrex8664
-    nativesx8664
+    jre64
+    native64
 }
 
 dependencies {
-    implementation(project(":regi-headless-installer-common"))
+    implementation(project(":regi-headless"))
+    native64(libs.solaris.java.heclib)  {artifact {extension = "zip"}}
+//    jre64(libs.solaris.jre)
 }
+
+def getInstallFolder() {
+    return "$rootProject.buildDir/install"
+}
+
+def getLibFolder() {
+    return installFolder + "/lib"
+}
+
+tasks.register("copySolarisPython", Copy) {
+    duplicatesStrategy = DuplicatesStrategy.WARN
+    from "RegiHeadless-Solaris"
+    into installFolder
+
+    filePermissions {
+        unix(777)
+    }
+}
+
+tasks.register("copySolarisHeclib", Copy) {
+    configurations.native64.copyRecursive().asFileTree.each {file ->
+        it.from(zipTree(file))
+    }
+    into installFolder + "/lib64"
+    include "**/*.so"
+    filePermissions {
+        unix(777)
+    }
+}
+
+tasks.register("copySolarisJre", Copy) {
+    configurations.jre64.copyRecursive().asFileTree.each {file ->
+        it.from(zipTree(file))
+    }
+    into installFolder + "/jre64"
+    include "**/*.*"
+
+    filePermissions {
+        unix(777)
+    }
+}
+
+tasks.register('cleanSolarisInstall', Delete) {
+    delete installFolder
+}
+
+tasks.register('buildSolarisInstaller', Tar){
+    doFirst{
+        tasks.cleanSolarisInstall
+    }
+    dependsOn(project(':regi-headless-installer-common').tasks.copyDependencies)
+    dependsOn(tasks.copySolarisPython)
+    dependsOn(tasks.copySolarisHeclib)
+    dependsOn(tasks.copySolarisJre)
+
+    from installFolder
+    def headless = project(":regi-headless")
+    def baseName = 'Solaris-REGIHeadless'
+    def version = headless.version// + headless.getBuildID()
+    destinationDirectory = file("$buildDir")
+    archiveBaseName = baseName
+    archiveVersion = version
+    archiveExtension = 'tar.gz'
+    compression = Compression.GZIP
+
+    def buildSpecificSubdir = baseName + '-' + version
+    includeEmptyDirs false
+
+    eachFile { fileDetails ->
+        fileDetails.setRelativePath(fileDetails.getRelativePath().prepend(buildSpecificSubdir))
+    }
+}
+
+publish.dependsOn buildSolarisInstaller

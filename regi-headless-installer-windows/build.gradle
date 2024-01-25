@@ -11,7 +11,7 @@ configurations {
 
 dependencies {
     implementation(project(":regi-headless"))
-    native64(libs.java.heclib)  {artifact {extension = "zip"}}
+    native64(libs.win.java.heclib)  {artifact {extension = "zip"}}
     jre64(libs.windows.jre) {
         artifact {
             type = "zip"
@@ -27,13 +27,12 @@ def getLibFolder() {
     return installFolder + "/lib"
 }
 
-tasks.register("copyPython", Copy) {
-    duplicatesStrategy = DuplicatesStrategy.WARN
+tasks.register("copyWindowsPython", Copy) {
     from "RegiHeadless"
     into installFolder
 }
 
-tasks.register("copyHeclib", Copy) {
+tasks.register("copyWindowsHeclib", Copy) {
     configurations.native64.copyRecursive().asFileTree.each {file ->
         it.from(zipTree(file))
     }
@@ -41,7 +40,7 @@ tasks.register("copyHeclib", Copy) {
     include "**/*.dll"
 }
 
-tasks.register("copyJre", Copy) {
+tasks.register("copyWindowsJre", Copy) {
     configurations.jre64.copyRecursive().asFileTree.each {file ->
         it.from(zipTree(file))
     }
@@ -49,11 +48,16 @@ tasks.register("copyJre", Copy) {
     include "**/*.*"
 }
 
-tasks.register('zipInstaller', Zip){
-    dependsOn(tasks.copyPython)
-    dependsOn(project(':regi-headless-installer-common').tasks.copyDependencies)
-    dependsOn(tasks.copyHeclib)
-    dependsOn(tasks.copyJre)
+tasks.register('cleanWindowsInstall', Delete) {
+    delete installFolder
+}
+
+tasks.register('buildWindowsInstaller', Zip){
+    dependsOn tasks.cleanWindowsInstall
+    dependsOn project(':regi-headless-installer-common').tasks.copyDependencies
+    dependsOn tasks.copyWindowsPython
+    dependsOn tasks.copyWindowsHeclib
+    dependsOn tasks.copyWindowsJre
 
     from installFolder
     def headless = project(":regi-headless")
@@ -72,6 +76,4 @@ tasks.register('zipInstaller', Zip){
     }
 }
 
-tasks.register("buildWindowsInstaller") {
-    dependsOn(zipInstaller)
-}
+publish.dependsOn buildWindowsInstaller

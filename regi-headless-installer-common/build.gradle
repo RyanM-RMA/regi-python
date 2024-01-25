@@ -24,7 +24,7 @@ def getLibFolder() {
     return installFolder + "/lib"
 }
 
-tasks.register('copyCwmsDependencies', Sync) {
+tasks.register('copyCwmsDependencies', Copy) {
     duplicatesStrategy = DuplicatesStrategy.WARN
     from configurations.runtimeClasspath
     into libFolder + "/cwms"
@@ -37,7 +37,7 @@ tasks.register('copyCwmsDependencies', Sync) {
     }
 }
 
-tasks.register('copySysDependencies', Sync) {
+tasks.register('copySysDependencies', Copy) {
     duplicatesStrategy = DuplicatesStrategy.WARN
     from configurations.runtimeClasspath
     into libFolder + "/sys"
@@ -50,7 +50,7 @@ tasks.register('copySysDependencies', Sync) {
     }
 }
 
-tasks.register('copyRegiDependencies', Sync) {
+tasks.register('copyRegiDependencies', Copy) {
     duplicatesStrategy = DuplicatesStrategy.WARN
     from configurations.runtimeClasspath
     into libFolder + "/regi"
@@ -63,7 +63,7 @@ tasks.register('copyRegiDependencies', Sync) {
     }
 }
 
-tasks.register('copyConfig', Sync) {
+tasks.register('copyConfig', Copy) {
     duplicatesStrategy = DuplicatesStrategy.WARN
     from "config"
     into installFolder + "/config/properties"
