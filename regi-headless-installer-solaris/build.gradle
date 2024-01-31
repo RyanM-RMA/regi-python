@@ -64,7 +64,7 @@ tasks.register('buildSolarisInstaller', Tar){
     doFirst{
         tasks.cleanSolarisInstall
     }
-    dependsOn(project(':regi-headless-installer-common').tasks.copyDependencies)
+//    dependsOn(project(':regi-headless-installer-common').tasks.copyDependencies)
     dependsOn(tasks.copySolarisPython)
     dependsOn(tasks.copySolarisHeclib)
     dependsOn(tasks.copySolarisJre)

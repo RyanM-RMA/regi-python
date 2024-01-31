@@ -12,66 +12,54 @@ def isSys(artifact) {
     return libs.bundles.sys.get().stream().map(d -> d.getModule()).anyMatch(module -> artifact.getModuleVersion().id.getModule() == module)
 }
 
-def static isRegi(displayName) {
+def isRegi(displayName) {
     return displayName.startsWith('mil.army.wmist') || displayName.startsWith("project")
 }
 
-def getInstallFolder() {
-    return "$rootProject.buildDir/install"
+def copyCwmsDeps(CopySpec task) {
+    evaluationDependsOn ":regi-headless"
+    task.from configurations.runtimeClasspath.copyRecursive()
+//    task.include '**/*.jar'
+
+//    configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { ResolvedArtifact artifact ->
+//        if (isSys(artifact) || isRegi(artifact.id.componentIdentifier.displayName)) {
+//            task.exclude "**/${artifact.file.name}"
+//        }
+//    }
 }
 
-def getLibFolder() {
-    return installFolder + "/lib"
-}
-
-tasks.register('copyCwmsDependencies', Copy) {
-    duplicatesStrategy = DuplicatesStrategy.WARN
-    from configurations.runtimeClasspath
-    into libFolder + "/cwms"
-    include '**/*.jar'
-
-    configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { ResolvedArtifact artifact ->
-        if (isSys(artifact) || isRegi(artifact.id.componentIdentifier.displayName)) {
-            exclude "**/${artifact.file.name}"
-        }
-    }
-}
-
-tasks.register('copySysDependencies', Copy) {
-    duplicatesStrategy = DuplicatesStrategy.WARN
-    from configurations.runtimeClasspath
-    into libFolder + "/sys"
-    include '**/*.jar'
+def copySysDeps(CopySpec task) {
+    task.duplicatesStrategy = DuplicatesStrategy.WARN
+    task.from configurations.runtimeClasspath
+    task.include '**/*.jar'
 
     configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { ResolvedArtifact artifact ->
         if (!isSys(artifact)) {
-            exclude "**/${artifact.file.name}"
+            task.exclude "**/${artifact.file.name}"
         }
     }
 }
 
-tasks.register('copyRegiDependencies', Copy) {
-    duplicatesStrategy = DuplicatesStrategy.WARN
-    from configurations.runtimeClasspath
-    into libFolder + "/regi"
-    include '**/*.jar'
+def copyRegiDeps(CopySpec task) {
+    task.duplicatesStrategy = DuplicatesStrategy.WARN
+    task.from configurations.runtimeClasspath
+    task.include '**/*.jar'
 
     configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { ResolvedArtifact artifact ->
         if (!isRegi(artifact.id.componentIdentifier.displayName)) {
-            exclude "**/${artifact.file.name}"
+            task.exclude "**/${artifact.file.name}"
         }
     }
 }
 
-tasks.register('copyConfig', Copy) {
-    duplicatesStrategy = DuplicatesStrategy.WARN
-    from "config"
-    into installFolder + "/config/properties"
+def copyConfigs(Sync task) {
+    task.duplicatesStrategy = DuplicatesStrategy.WARN
+    task.from "config"
 }
 
-tasks.register('copyDependencies') {
-    dependsOn copyCwmsDependencies
-    dependsOn copySysDependencies
-    dependsOn copyRegiDependencies
-    dependsOn copyConfig
-}
+//tasks.register('copyDependencies') {
+//    dependsOn copyCwmsDependencies
+//    dependsOn copySysDependencies
+//    dependsOn copyRegiDependencies
+//    dependsOn copyConfig
+//}
