@@ -24,7 +24,9 @@ def libFolder = "lib"
 def cwmsLibFolder = libFolder + "/cwms"
 def regiLibFolder = libFolder + "/regi"
 def sysLibFolder = libFolder + "/sys"
+def jre64Folder = "jre64"
 def configFolder = "config"
+def heclibFolder = "amd64"
 
 def copyWindowsHeclib(CopySpec task) {
     configurations.native64.copyRecursive().asFileTree.each {file ->
@@ -63,11 +65,11 @@ tasks.register("buildWindowsInstallerFolder", Sync) { task ->
         common.copyConfigs(intoDir)
     }
 
-    task.into("amd64") { intoDir ->
+    task.into(heclibFolder) { intoDir ->
         copyWindowsHeclib(intoDir)
     }
 
-    task.into(libFolder + "/jre64") { intoDir ->
+    task.into(jre64Folder) { intoDir ->
         copyWindowsJre(intoDir)
     }
 }
