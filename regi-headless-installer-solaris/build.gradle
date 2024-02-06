@@ -12,7 +12,11 @@ configurations {
 dependencies {
     implementation(project(":regi-headless"))
     native64(libs.solaris.java.heclib)  {artifact {extension = "zip"}}
-//    jre64(libs.solaris.jre)
+    jre64(libs.solaris.jre) {
+        artifact {
+            type = "tar.gz"
+        }
+    }
 }
 
 def getInstallFolder() {
@@ -64,7 +68,6 @@ tasks.register('buildSolarisInstaller', Tar){
     doFirst{
         tasks.cleanSolarisInstall
     }
-//    dependsOn(project(':regi-headless-installer-common').tasks.copyDependencies)
     dependsOn(tasks.copySolarisPython)
     dependsOn(tasks.copySolarisHeclib)
     dependsOn(tasks.copySolarisJre)

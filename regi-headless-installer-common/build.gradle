@@ -17,20 +17,21 @@ def isRegi(displayName) {
 }
 
 def copyCwmsDeps(CopySpec task) {
+    task.duplicatesStrategy = DuplicatesStrategy.WARN
     evaluationDependsOn ":regi-headless"
     task.from configurations.runtimeClasspath.copyRecursive()
-//    task.include '**/*.jar'
+    task.include '**/*.jar'
 
-//    configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { ResolvedArtifact artifact ->
-//        if (isSys(artifact) || isRegi(artifact.id.componentIdentifier.displayName)) {
-//            task.exclude "**/${artifact.file.name}"
-//        }
-//    }
+    configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { ResolvedArtifact artifact ->
+        if (isSys(artifact) || isRegi(artifact.id.componentIdentifier.displayName)) {
+            task.exclude "**/${artifact.file.name}"
+        }
+    }
 }
 
 def copySysDeps(CopySpec task) {
     task.duplicatesStrategy = DuplicatesStrategy.WARN
-    task.from configurations.runtimeClasspath
+    task.from configurations.runtimeClasspath.copyRecursive()
     task.include '**/*.jar'
 
     configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { ResolvedArtifact artifact ->
@@ -42,7 +43,7 @@ def copySysDeps(CopySpec task) {
 
 def copyRegiDeps(CopySpec task) {
     task.duplicatesStrategy = DuplicatesStrategy.WARN
-    task.from configurations.runtimeClasspath
+    task.from configurations.runtimeClasspath.copyRecursive()
     task.include '**/*.jar'
 
     configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { ResolvedArtifact artifact ->
@@ -52,14 +53,7 @@ def copyRegiDeps(CopySpec task) {
     }
 }
 
-def copyConfigs(Sync task) {
+def copyConfigs(CopySpec task) {
     task.duplicatesStrategy = DuplicatesStrategy.WARN
-    task.from "config"
+    task.from "$projectDir/config"
 }
-
-//tasks.register('copyDependencies') {
-//    dependsOn copyCwmsDependencies
-//    dependsOn copySysDependencies
-//    dependsOn copyRegiDependencies
-//    dependsOn copyConfig
-//}

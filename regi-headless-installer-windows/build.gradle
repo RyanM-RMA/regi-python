@@ -19,79 +19,66 @@ dependencies {
     }
 }
 
-def getInstallFolder() {
-    return "$buildDir/install"
-}
+def installFolder = "$buildDir/install"
+def libFolder = "lib"
+def cwmsLibFolder = libFolder + "/cwms"
+def regiLibFolder = libFolder + "/regi"
+def sysLibFolder = libFolder + "/sys"
+def configFolder = "config"
 
-def getLibFolder() {
-    return installFolder + "/lib"
-}
-
-def getCmwsLibFolder() {
-    return libFolder + "/cwms"
-}
-
-def getRegiLibFolder() {
-    return libFolder + "/regi"
-}
-
-def getSysLibFolder() {
-    return libFolder + "/sys"
-}
-
-tasks.register("copyWindowsHeclib", Sync) {
+def copyWindowsHeclib(CopySpec task) {
     configurations.native64.copyRecursive().asFileTree.each {file ->
-        from(zipTree(file))
+        task.from(zipTree(file))
     }
-    into libFolder + "/amd64"
-    include "**/*.dll"
+    task.include "**/*.dll"
 }
 
 def copyWindowsJre(CopySpec task) {
     configurations.jre64.copyRecursive().asFileTree.each {file ->
         task.from(zipTree(file))
     }
-//    task.include "**/*.*"
 }
 
-task buildWindowsInstallerFolder(type: Sync) { task ->
+tasks.register("buildWindowsInstallerFolder", Sync) { task ->
     def headless = project(":regi-headless")
     def common = project(":regi-headless-installer-common")
-//    task.dependsOn headless.jar
-//    task.dependsOn copyWindowsHeclib
+    task.dependsOn headless.jar
 
-    task.destinationDir(file(installFolder))
+    task.destinationDir file(installFolder)
 
     task.from "RegiHeadless"
+    task.into(cwmsLibFolder) { intoDir ->
+        common.copyCwmsDeps(intoDir)
+    }
 
-//    task.into(cmwsLibFolder) { intoDir ->
-//        common.copyCwmsDeps(intoDir)
-//    }
-//
-//    task.into(regiLibFolder) { intoDir ->
-//        common.copyRegiDeps(intoDir)
-//    }
-//
-//    task.into(sysLibFolder) { intoDir ->
-//        common.copySysDeps(intoDir)
-//    }
+    task.into(regiLibFolder) { intoDir ->
+        common.copyRegiDeps(intoDir)
+    }
 
-//    task.into(libFolder + "/amd64") { intoDir ->
-//        copyWindowsHeclib(intoDir)
-//    }
-//
+    task.into(sysLibFolder) { intoDir ->
+        common.copySysDeps(intoDir)
+    }
+
+    task.into(configFolder) { intoDir ->
+        common.copyConfigs(intoDir)
+    }
+
+    task.into("amd64") { intoDir ->
+        copyWindowsHeclib(intoDir)
+    }
+
     task.into(libFolder + "/jre64") { intoDir ->
         copyWindowsJre(intoDir)
     }
 }
 
 tasks.register('buildWindowsInstaller', Zip) { task ->
-    dependsOn tasks.buildWindowsInstallerFolder
+    dependsOn buildWindowsInstallerFolder
     from installFolder
     destinationDirectory = file("$buildDir/distributions")
     def headless = project(":regi-headless")
     def baseName = 'REGIHeadless'
-    def version = headless.version// + headless.getBuildID()
+    def version = headless.version
     archiveBaseName = baseName
     archiveVersion = version
     archiveExtension = 'zip'

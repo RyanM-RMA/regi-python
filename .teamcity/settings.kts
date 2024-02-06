@@ -86,21 +86,21 @@ object Build : BuildType({
             // Just to be safe, clean first.
             tasks = "clean"
             gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
-            jdkHome = "%env.ORACLE_JDK_18_x64%"
+            jdkHome = "%env.JDK_11_x64%"
         }
         gradle {
             tasks = "build"
             name = "Build"
             gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
-            jdkHome = "%env.ORACLE_JDK_18_x64%"
+            jdkHome = "%env.JDK_11_x64%"
         }
-/*        gradle {
+        gradle {
             name = "Analysis"
             tasks = "sonarqube"
             buildFile = "build.gradle"
             gradleParams = "-Dsonar.login=%system.SONAR_TOKEN% -Dsonar.host.url=%system.SONAR_URL%"
-            jdkHome = "%env.ORACLE_JDK_18_x64%"
-        }*/
+            jdkHome = "%env.JDK_11_x64%"
+        }
     }
 
     triggers {
@@ -147,25 +147,25 @@ object DeployWindows : BuildType({
             // Just to be safe, clean first.
             tasks = "clean"
             gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
-            jdkHome = "%env.ORACLE_JDK_18_x64%"
+            jdkHome = "%env.JDK_11_x64%"
         }
         gradle {
             tasks = "build"
             name = "Build for Windows publish"
             gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
-            jdkHome = "%env.ORACLE_JDK_18_x64%"
+            jdkHome = "%env.JDK_11_x64%"
         }
         gradle {
             tasks = "buildWindowsInstaller"
             name = "Build Windows artifacts"
             gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
-            jdkHome = "%env.ORACLE_JDK_18_x64%"
+            jdkHome = "%env.JDK_11_x64%"
         }
         gradle {
             tasks = "publish"
             name = "Deploy artifacts to Nexus"
             gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD% --info"
-            jdkHome = "%env.ORACLE_JDK_18_x64%"
+            jdkHome = "%env.JDK_11_x64%"
         }
     }
 
@@ -203,25 +203,25 @@ object DeploySolaris : BuildType({
             // Just to be safe, clean first.
             tasks = "clean"
             gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
-            jdkHome = "%env.ORACLE_JDK_18_x64%"
+            jdkHome = "%env.JDK_11_x64%"
         }
         gradle {
             tasks = "build"
             name = "Build for Solaris publish"
             gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
-            jdkHome = "%env.ORACLE_JDK_18_x64%"
+            jdkHome = "%env.JDK_11_x64%"
         }
         gradle {
             tasks = "buildSolarisInstaller"
             name = "Deploy Solaris artifacts"
             gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
-            jdkHome = "%env.ORACLE_JDK_18_x64%"
+            jdkHome = "%env.JDK_11_x64%"
         }
         gradle {
             tasks = "publish"
             name = "Deploy artifacts to Nexus"
             gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD% --info"
-            jdkHome = "%env.ORACLE_JDK_18_x64%"
+            jdkHome = "%env.JDK_11_x64%"
         }
     }
 
