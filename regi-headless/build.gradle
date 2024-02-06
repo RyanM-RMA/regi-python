@@ -1,7 +1,6 @@
 plugins {
     id 'regi-headless.deps-conventions'
     id 'regi-headless.java-conventions'
-    id "org.ajoberstar.grgit" version "1.7.2"
 }
 
 dependencies {
