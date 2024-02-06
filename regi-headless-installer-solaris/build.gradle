@@ -19,69 +19,107 @@ dependencies {
     }
 }
 
-def getInstallFolder() {
-    return "$rootProject.buildDir/install"
-}
+def installFolder = "$buildDir/install"
+def libFolder = "lib"
+def cwmsLibFolder = libFolder + "/cwms"
+def regiLibFolder = libFolder + "/regi"
+def sysLibFolder = libFolder + "/sys"
+def jreFolder = "jre64"
+def configFolder = "config"
+def heclibFolder = "lib64"
 
-def getLibFolder() {
-    return installFolder + "/lib"
-}
-
-tasks.register("copySolarisPython", Copy) {
-    duplicatesStrategy = DuplicatesStrategy.WARN
-    from "RegiHeadless-Solaris"
-    into installFolder
-
-    filePermissions {
-        unix(777)
-    }
-}
-
-tasks.register("copySolarisHeclib", Copy) {
+def copySolarisHeclib(CopySpec task) {
     configurations.native64.copyRecursive().asFileTree.each {file ->
-        it.from(zipTree(file))
+        task.from(zipTree(file))
     }
-    into installFolder + "/lib64"
-    include "**/*.so"
-    filePermissions {
-        unix(777)
+    task.filePermissions {
+        unix("r--r--r--")
     }
 }
 
-tasks.register("copySolarisJre", Copy) {
+def copySolarisJre(CopySpec task) {
     configurations.jre64.copyRecursive().asFileTree.each {file ->
-        it.from(zipTree(file))
+        task.from(tarTree(file))
     }
-    into installFolder + "/jre64"
-    include "**/*.*"
-
-    filePermissions {
-        unix(777)
+    task.filePermissions {
+        unix("r-xr-xr-x")
     }
 }
 
-tasks.register('cleanSolarisInstall', Delete) {
-    delete installFolder
+def copyExamples(CopySpec task) {
+    task.from("RegiHeadless-Solaris") {
+        exclude "**/*.py"
+        filePermissions { perms ->
+            perms.unix("rw-r--r--")
+        }
+    }
+    task.from("RegiHeadless-Solaris") {
+        include "**/*.py"
+        filePermissions { perms ->
+            perms.unix("rwxr--r--")
+        }
+    }
 }
 
-tasks.register('buildSolarisInstaller', Tar){
-    doFirst{
-        tasks.cleanSolarisInstall
-    }
-    dependsOn(tasks.copySolarisPython)
-    dependsOn(tasks.copySolarisHeclib)
-    dependsOn(tasks.copySolarisJre)
+tasks.register("buildSolarisInstallerFolder", Sync) { task ->
+    def headless = project(":regi-headless")
+    def common = project(":regi-headless-installer-common")
+    task.dependsOn headless.jar
 
+    task.destinationDir file(installFolder)
+
+    task.into("") { intoDir ->
+        copyExamples(intoDir)
+    }
+
+    task.into(cwmsLibFolder) { intoDir ->
+        common.copyCwmsDeps(intoDir)
+        intoDir.filePermissions { perms ->
+            perms.unix("r--r--r--")
+        }
+    }
+
+    task.into(regiLibFolder) { intoDir ->
+        common.copyRegiDeps(intoDir)
+        intoDir.filePermissions { perms ->
+            perms.unix("r--r--r--")
+        }
+    }
+
+    task.into(sysLibFolder) { intoDir ->
+        common.copySysDeps(intoDir)
+        intoDir.filePermissions { perms ->
+            perms.unix("r--r--r--")
+        }
+    }
+
+    task.into(configFolder) { intoDir ->
+        common.copyConfigs(intoDir)
+        intoDir.filePermissions { perms ->
+            perms.unix("rw-r--r--")
+        }
+    }
+
+    task.into(heclibFolder) { intoDir ->
+        copySolarisHeclib(intoDir)
+    }
+
+    task.into(jreFolder) { intoDir ->
+        copySolarisJre(intoDir)
+    }
+}
+
+tasks.register('buildSolarisInstaller', Tar) {task ->
+    dependsOn buildSolarisInstallerFolder
     from installFolder
     def headless = project(":regi-headless")
     def baseName = 'Solaris-REGIHeadless'
-    def version = headless.version// + headless.getBuildID()
-    destinationDirectory = file("$buildDir")
+    def version = headless.version
+    destinationDirectory = file("$buildDir/distributions")
     archiveBaseName = baseName
     archiveVersion = version
     archiveExtension = 'tar.gz'
     compression = Compression.GZIP
-
     def buildSpecificSubdir = baseName + '-' + version
     includeEmptyDirs false
 
@@ -89,5 +127,3 @@ tasks.register('buildSolarisInstaller', Tar){
         fileDetails.setRelativePath(fileDetails.getRelativePath().prepend(buildSpecificSubdir))
     }
 }
-
-publish.dependsOn buildSolarisInstaller
