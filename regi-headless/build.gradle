@@ -4,7 +4,7 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.bundles.cwms)
+    implementation(libs.bundles.hec)
     implementation(libs.jython.standalone)
     implementation(libs.args4j)
     implementation(libs.bundles.regi)

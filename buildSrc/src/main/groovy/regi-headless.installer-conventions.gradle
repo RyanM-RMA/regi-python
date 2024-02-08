@@ -1,17 +1,3 @@
-// Referenced from:  https://bitbucket.hecdev.net/projects/DSSVUE/repos/hec-dssvue/browse/buildSrc/src/main/groovy/dssvue.installer-conventions.gradle?until=3c808282bfa859f17345a74c716a67d355b0dd18&untilPath=buildSrc%2Fsrc%2Fmain%2Fgroovy%2Fdssvue.installer-conventions.gradle
-
 plugins {
-    id "java"
+    id "base"
 }
-
-// We need the Java plugin only for the configuration setup (implementation, runtime, etc)
-// Disable all the other tasks as there is no java source in this project
-// https://docs.gradle.org/current/userguide/java_plugin.html#sec:java_tasks
-tasks.compileJava.enabled = false
-tasks.processResources.enabled = false
-tasks.classes.enabled = false
-tasks.compileTestJava.enabled = false
-tasks.processTestResources.enabled = false
-tasks.testClasses.enabled = false
-tasks.jar.enabled = false
-tasks.javadoc.enabled = false

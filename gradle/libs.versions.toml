@@ -70,7 +70,7 @@ regi-tools = [
     "regi-tools-regi-dao",
     "regi-tools-regi-data"
 ]
-cwms = [
+hec = [
     "hec-core"
 ]
 sys = [

@@ -5,6 +5,7 @@ plugins {
 }
 
 configurations {
+    implementation
     jre64
     native64
 }
@@ -27,6 +28,7 @@ def sysLibFolder = libFolder + "/sys"
 def jreFolder = "jre64"
 def configFolder = "config"
 def heclibFolder = "lib64"
+def distFolder = "$buildDir/distributions"
 
 def copySolarisHeclib(CopySpec task) {
     configurations.native64.copyRecursive().asFileTree.each {file ->
@@ -115,7 +117,7 @@ tasks.register('buildSolarisInstaller', Tar) {task ->
     def headless = project(":regi-headless")
     def baseName = 'Solaris-REGIHeadless'
     def version = headless.version
-    destinationDirectory = file("$buildDir/distributions")
+    destinationDirectory = file(distFolder)
     archiveBaseName = baseName
     archiveVersion = version
     archiveExtension = 'tar.gz'

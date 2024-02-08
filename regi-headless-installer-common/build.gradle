@@ -1,7 +1,10 @@
 plugins {
-    id "java"
     id "regi-headless.deps-conventions"
     id "regi-headless.installer-conventions"
+}
+
+configurations {
+    implementation
 }
 
 dependencies {
@@ -30,6 +33,7 @@ def copyCwmsDeps(CopySpec task) {
 }
 
 def copySysDeps(CopySpec task) {
+    evaluationDependsOn ":regi-headless"
     task.duplicatesStrategy = DuplicatesStrategy.WARN
     task.from configurations.runtimeClasspath.copyRecursive()
     task.include '**/*.jar'
@@ -42,6 +46,7 @@ def copySysDeps(CopySpec task) {
 }
 
 def copyRegiDeps(CopySpec task) {
+    evaluationDependsOn ":regi-headless"
     task.duplicatesStrategy = DuplicatesStrategy.WARN
     task.from configurations.runtimeClasspath.copyRecursive()
     task.include '**/*.jar'
@@ -54,6 +59,7 @@ def copyRegiDeps(CopySpec task) {
 }
 
 def copyConfigs(CopySpec task) {
+    evaluationDependsOn ":regi-headless"
     task.duplicatesStrategy = DuplicatesStrategy.WARN
     task.from "$projectDir/config"
 }
