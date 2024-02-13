@@ -1,7 +1,7 @@
 [versions]
 
 # HEC Dependencies
-service-annotations = "1.2"
+service-annotations = "1.2.2"
 win-java-heclib = "7-IR-6-win-x86_64"
 solaris-java-heclib = "7-IR-6-SunOS-SPARC_64"
 hec-core = "6.1-SNAPSHOT" # required for PasswordFileEditor
