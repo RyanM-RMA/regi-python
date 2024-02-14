@@ -20,7 +20,7 @@ def isRegi(displayName) {
 }
 
 def copyCwmsDeps(CopySpec task) {
-    task.duplicatesStrategy = DuplicatesStrategy.WARN
+    task.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     evaluationDependsOn ":regi-headless"
     task.from configurations.implementation.copyRecursive()
     task.include '**/*.jar'
@@ -34,7 +34,7 @@ def copyCwmsDeps(CopySpec task) {
 
 def copySysDeps(CopySpec task) {
     evaluationDependsOn ":regi-headless"
-    task.duplicatesStrategy = DuplicatesStrategy.WARN
+    task.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     task.from configurations.implementation.copyRecursive()
     task.include '**/*.jar'
 
@@ -47,7 +47,7 @@ def copySysDeps(CopySpec task) {
 
 def copyRegiDeps(CopySpec task) {
     evaluationDependsOn ":regi-headless"
-    task.duplicatesStrategy = DuplicatesStrategy.WARN
+    task.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     task.from configurations.implementation.copyRecursive()
     task.include '**/*.jar'
 
@@ -60,6 +60,6 @@ def copyRegiDeps(CopySpec task) {
 
 def copyConfigs(CopySpec task) {
     evaluationDependsOn ":regi-headless"
-    task.duplicatesStrategy = DuplicatesStrategy.WARN
+    task.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     task.from "$projectDir/config"
 }
