@@ -93,3 +93,11 @@ tasks.register('buildWindowsInstaller', Zip) { task ->
         fileDetails.setRelativePath(fileDetails.getRelativePath().prepend(buildSpecificSubdir))
     }
 }
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifact source: buildWindowsInstaller, extension: 'zip'
+        }
+    }
+}

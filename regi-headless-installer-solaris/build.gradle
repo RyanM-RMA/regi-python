@@ -129,3 +129,11 @@ tasks.register('buildSolarisInstaller', Tar) {task ->
         fileDetails.setRelativePath(fileDetails.getRelativePath().prepend(buildSpecificSubdir))
     }
 }
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifact source: buildSolarisInstaller, extension: 'tar.gz'
+        }
+    }
+}
