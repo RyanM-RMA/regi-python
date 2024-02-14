@@ -22,10 +22,10 @@ def isRegi(displayName) {
 def copyCwmsDeps(CopySpec task) {
     task.duplicatesStrategy = DuplicatesStrategy.WARN
     evaluationDependsOn ":regi-headless"
-    task.from configurations.runtimeClasspath.copyRecursive()
+    task.from configurations.implementation.copyRecursive()
     task.include '**/*.jar'
 
-    configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { ResolvedArtifact artifact ->
+    configurations.implementation.resolvedConfiguration.resolvedArtifacts.each { ResolvedArtifact artifact ->
         if (isSys(artifact) || isRegi(artifact.id.componentIdentifier.displayName)) {
             task.exclude "**/${artifact.file.name}"
         }
@@ -35,10 +35,10 @@ def copyCwmsDeps(CopySpec task) {
 def copySysDeps(CopySpec task) {
     evaluationDependsOn ":regi-headless"
     task.duplicatesStrategy = DuplicatesStrategy.WARN
-    task.from configurations.runtimeClasspath.copyRecursive()
+    task.from configurations.implementation.copyRecursive()
     task.include '**/*.jar'
 
-    configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { ResolvedArtifact artifact ->
+    configurations.implementation.resolvedConfiguration.resolvedArtifacts.each { ResolvedArtifact artifact ->
         if (!isSys(artifact)) {
             task.exclude "**/${artifact.file.name}"
         }
@@ -48,10 +48,10 @@ def copySysDeps(CopySpec task) {
 def copyRegiDeps(CopySpec task) {
     evaluationDependsOn ":regi-headless"
     task.duplicatesStrategy = DuplicatesStrategy.WARN
-    task.from configurations.runtimeClasspath.copyRecursive()
+    task.from configurations.implementation.copyRecursive()
     task.include '**/*.jar'
 
-    configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { ResolvedArtifact artifact ->
+    configurations.implementation.resolvedConfiguration.resolvedArtifacts.each { ResolvedArtifact artifact ->
         if (!isRegi(artifact.id.componentIdentifier.displayName)) {
             task.exclude "**/${artifact.file.name}"
         }
