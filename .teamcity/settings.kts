@@ -91,16 +91,16 @@ object Build : BuildType({
         gradle {
             tasks = "build"
             name = "Build"
-            gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD% -PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
+            gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
             jdkHome = "%env.JDK_11_x64%"
         }
-//        gradle {
-//            name = "Analysis"
-//            tasks = "sonarqube"
-//            buildFile = "build.gradle"
-//            gradleParams = "-Dsonar.login=%system.SONAR_TOKEN% -Dsonar.host.url=%system.SONAR_URL%"
-//            jdkHome = "%env.JDK_11_x64%"
-//        }
+        gradle {
+            name = "Analysis"
+            tasks = "sonarqube"
+            buildFile = "build.gradle"
+            gradleParams = "-Dsonar.login=%system.SONAR_TOKEN% -Dsonar.host.url=%system.SONAR_URL% -PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
+            jdkHome = "%env.JDK_11_x64%"
+        }
     }
 
     triggers {
