@@ -135,7 +135,7 @@ object DeployWindows : BuildType({
     name = "Deploy Windows to Nexus"
 
     artifactRules = """
-         distributions/*.zip
+         **/distributions/*.zip
     """.trimIndent()
 
     vcs {
@@ -191,7 +191,7 @@ object DeploySolaris : BuildType({
     name = "Deploy Solaris to Nexus"
 
     artifactRules = """
-        distributions/*.tar.gz 
+        **/distributions/*.tar.gz 
     """.trimIndent()
 
     vcs {
