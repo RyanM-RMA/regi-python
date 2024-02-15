@@ -162,7 +162,7 @@ object DeployWindows : BuildType({
             jdkHome = "%env.JDK_11_x64%"
         }
         gradle {
-            tasks = "publish"
+            tasks = ":regi-headless-installer-windows:publish"
             name = "Deploy artifacts to Nexus"
             gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD% --info"
             jdkHome = "%env.JDK_11_x64%"
@@ -218,7 +218,7 @@ object DeploySolaris : BuildType({
             jdkHome = "%env.JDK_11_x64%"
         }
         gradle {
-            tasks = "publish"
+            tasks = ":regi-headless-installer-solaris:publish"
             name = "Deploy artifacts to Nexus"
             gradleParams = "-PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD% --info"
             jdkHome = "%env.JDK_11_x64%"
