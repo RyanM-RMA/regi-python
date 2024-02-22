@@ -11,6 +11,6 @@ def versionLabel(gitInfo) {
 }
 
 allprojects {
-    group = 'mil.army.wmist.regi.headless'
+    group = 'mil.army.wmist.regi-headless'
     version = versionLabel(versionDetails())
 }
