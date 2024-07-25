@@ -17,6 +17,7 @@ args4j = "2.32"
 # Natives
 windows-jre = "1.8.0_201"
 solaris-jre = "1.8.0_202-Solaris-SPARC"
+jython-starter = "2.2.4.0"
 
 # Test
 junit4 = "4.13.2"
@@ -49,6 +50,7 @@ args4j = {module = "args4j:args4j", version.ref = "args4j"}
 # Natives
 windows_jre = { module = "com.oracle:oracle-jre", version.ref = "windows-jre" }
 solaris_jre = { module = "com.oracle:jre", version.ref = "solaris-jre" }
+jython-starter = { module = 'mil.army.usace.hec.javastarter:javastarter-Jython', version.ref = "jython-starter"}
 
 # Test
 junit4 = { module = "junit:junit", version.ref = "junit4" }

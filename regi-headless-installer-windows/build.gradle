@@ -8,6 +8,7 @@ configurations {
     implementation
     jre64
     native64
+    jythonStarter
 }
 
 dependencies {
@@ -16,6 +17,11 @@ dependencies {
     jre64(libs.windows.jre) {
         artifact {
             type = "zip"
+        }
+    }
+    jythonStarter(libs.jython.starter) {
+        artifact {
+            extension = "exe"
         }
     }
 }
@@ -29,6 +35,14 @@ def jre64Folder = "jre64"
 def configFolder = "config"
 def heclibFolder = "amd64"
 def distFolder = "$buildDir/distributions"
+
+def copyJythonStarter(CopySpec task) {
+    configurations.jythonStarter.copyRecursive().asFileTree.each {file ->
+        task.from(file)
+    }
+    task.rename (".*.exe", "password_editor.exe")
+    task.include "*.exe"
+}
 
 def copyWindowsHeclib(CopySpec task) {
     configurations.native64.copyRecursive().asFileTree.each {file ->
@@ -51,6 +65,11 @@ tasks.register("buildWindowsInstallerFolder", Sync) { task ->
     task.destinationDir file(installFolder)
 
     task.from "RegiHeadless"
+
+    task.into(".") { intoDir ->
+        copyJythonStarter(intoDir)
+    }
+
     task.into(cwmsLibFolder) { intoDir ->
         common.copyCwmsDeps(intoDir)
     }
