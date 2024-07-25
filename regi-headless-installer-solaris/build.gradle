@@ -50,15 +50,15 @@ def copySolarisJre(CopySpec task) {
 
 def copyExamples(CopySpec task) {
     task.from("RegiHeadless-Solaris") {
-        exclude "**/*.py"
+        exclude "**/*.sh"
         filePermissions { perms ->
-            perms.unix("rw-r--r--")
+            perms.unix("rwxr--r--")
         }
     }
     task.from("RegiHeadless-Solaris") {
-        include "**/*.py"
+        include "**/*.sh"
         filePermissions { perms ->
-            perms.unix("rwxr--r--")
+            perms.unix("rw-r--r--")
         }
     }
 }
