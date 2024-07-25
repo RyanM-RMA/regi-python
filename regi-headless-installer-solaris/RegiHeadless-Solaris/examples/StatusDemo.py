@@ -38,15 +38,15 @@ def headless_examples():
     #   with a single chart template
     #   and write to specified file.
     #print "Demonstrating a call to generateStreamStatusImage"
-    streamFilepath = "J:/temp/headless/StatusGraphics/streamStatus.jpg"
+    streamFilepath = "../headless/StatusGraphics/streamStatus.jpg"
     streamStatus.generateStreamStatusImage("SWF", "RSRT2", "Flood Control Focus View", startCal.getTime(), 800, 600, streamFilepath)
 
     #print "Demonstrating a call  to generateReservoirStatusImage"
-    #reservoirFilePath = "J:/temp/headless/StatusGraphics/reservoirStatus.jpg"
+    #reservoirFilePath = "../headless/StatusGraphics/reservoirStatus.jpg"
     #streamStatus.generateReservoirStatusImage("SWF", "GPVT2", "Flood Control Focus View", startCal.getTime(), 800, 600, reservoirFilePath)
 
     print "Demonstrating a call to generateReleasesStatusImage"
-    #releasesFilePath = "J:/temp/headless/StatusGraphics/releasesStatus.jpg"
+    #releasesFilePath = "../headless/StatusGraphics/releasesStatus.jpg"
     #streamStatus.generateReleasesStatusImage("SWF", "WTYT2", "Flood Control Focus View", startCal.getTime(), 800, 600, releasesFilePath)
     
 if __name__ == "__builtin__":
