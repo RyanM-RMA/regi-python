@@ -50,13 +50,13 @@ def copySolarisJre(CopySpec task) {
 
 def copyExamples(CopySpec task) {
     task.from("RegiHeadless-Solaris") {
-        exclude "**/*.sh"
+        include "**/*.sh"
         filePermissions { perms ->
             perms.unix("rwxr--r--")
         }
     }
     task.from("RegiHeadless-Solaris") {
-        include "**/*.sh"
+        exclude "**/*.sh"
         filePermissions { perms ->
             perms.unix("rw-r--r--")
         }
@@ -67,6 +67,9 @@ tasks.register("buildSolarisInstallerFolder", Sync) { task ->
     def headless = project(":regi-headless")
     def common = project(":regi-headless-installer-common")
     task.dependsOn headless.jar
+    task.filePermissions {perms ->
+        perms.unix("r--r--r--")
+    }
 
     task.destinationDir file(installFolder)
 
@@ -75,31 +78,31 @@ tasks.register("buildSolarisInstallerFolder", Sync) { task ->
     }
 
     task.into(cwmsLibFolder) { intoDir ->
-        common.copyCwmsDeps(intoDir)
         intoDir.filePermissions { perms ->
             perms.unix("r--r--r--")
         }
+        common.copyCwmsDeps(intoDir)
     }
 
     task.into(regiLibFolder) { intoDir ->
-        common.copyRegiDeps(intoDir)
         intoDir.filePermissions { perms ->
             perms.unix("r--r--r--")
         }
+        common.copyRegiDeps(intoDir)
     }
 
     task.into(sysLibFolder) { intoDir ->
-        common.copySysDeps(intoDir)
         intoDir.filePermissions { perms ->
             perms.unix("r--r--r--")
         }
+        common.copySysDeps(intoDir)
     }
 
     task.into(configFolder) { intoDir ->
-        common.copyConfigs(intoDir)
         intoDir.filePermissions { perms ->
             perms.unix("rw-r--r--")
         }
+        common.copyConfigs(intoDir)
     }
 
     task.into(heclibFolder) { intoDir ->
