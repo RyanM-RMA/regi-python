@@ -48,6 +48,7 @@ public class RegiCLI
 		catch (DbConnectionException | DbPluginNotFoundException | InvalidDbConnectionException ex)
 		{
 			LOGGER.log(Level.SEVERE, "Headless error connecting to database.", ex);
+			System.exit(-1);
 			return;
 		}
 		catch (CmdLineException | RuntimeException e)
@@ -55,10 +56,11 @@ public class RegiCLI
 			LOGGER.log(Level.SEVERE, "Error running headless", e);
 			System.err.println("java -jar myprogram.jar [options...] arguments...");
 			parser.printUsage(System.err);
+			System.exit(-1);
 			return;
 		}
 
-		LOGGER.info("Exitting.");
+		LOGGER.info("Exiting.");
 		System.exit(0);
 	}
 	

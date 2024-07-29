@@ -5,9 +5,11 @@ NOT_FOUND="notFound"
 PROG_ROOT=".."
 JAR_DIR=$PROG_ROOT/lib
 SYS=$JAR_DIR/sys
-EXT=$JAR_DIR/ext
+CWMS=$JAR_DIR/cwms
 REGI=$JAR_DIR/regi
 LIB_PATH=$PROG_ROOT/lib64
+JAVA_EXE=$PROG_ROOT/jre64/bin/java
+ARGS=("$@")
 
 ORA_INST=$(getProp cwms.dbi.ConnectUsingUrl @${NOT_FOUND} dbi.properties|cut -d@ -f2)
 if [ $ORA_INST = $NOT_FOUND ]
@@ -33,24 +35,42 @@ then
 	echo "Unable to locate password file in Cwms configuration. Will be taken from credentials.properties"
 fi
 
+SCRIPT=""
+NAME_FOUND=false
 
-JAVA_CMD="../jre64/bin/java -cp $JAR_DIR/*:$EXT/*:$REGI/*:$CWMS/*:$SYS/*:" \
-" -Doracle.url=jdbc:oracle:thin:@${ORA_INST}" \
-" -Doracle.officeId=$OFFICE_ID" \
-" -Dhec.passwd=$PASS_FILE" \
-" -Djava.library.path=$LIB_PATH" \
-" -DPLUGINS=$EXT" \
-" -Doracle.metrics.clientid=\"CWMS REGI-Headless-v5.0\"" \
-" -Djava.util.logging.config.file=../config/properties/logging.properties" \
-" -Drowcps.timezone=America/Chicago" \
-" -p ..//examples//credentials.properties" \
-" usace.rowcps.headless.RegiCLI"
+for PARAMETER in "${ARGS[@]}"
+do
+  PARAM_NAME=$(echo "$PARAMETER" | cut -d= -f1 | tr \[a-z\] \[A-Z\])
+  if [ "$NAME_FOUND" ] ; then
+    BASENAME="$(basename "${PARAMETER}")" #Get only the base file name.
+    SCRIPT="${BASENAME%%.*}" #Remove the extension
+    break
+  elif [ "$PARAM_NAME" = "f" ] ; then
+    NAME_FOUND=true
+  fi
+done
 
-OUTFILE=$CWMS_HOME/cronjobs/headless/logs/$(getStartFN headless-"$SCRIPT")
+
+JAVA_CMD="-cp $JAR_DIR/*:$REGI/*:$CWMS/*:$SYS/*:"\
+" -Doracle.url=jdbc:oracle:thin:@${ORA_INST}"\
+" -Doracle.officeId=$OFFICE_ID"\
+" -Dhec.passwd=$PASS_FILE"\
+" -Djava.library.path=$LIB_PATH"\
+" -DPLUGINS=$EXT"\
+" -Doracle.metrics.clientid=\"CWMS REGI-Headless-v5.0\""\
+" -Djava.util.logging.config.file=../config/properties/logging.properties"\
+" -Drowcps.timezone=America/Chicago"\
+" usace.rowcps.headless.RegiCLI"\
+" -p ..//examples//credentials.properties"\
+" ${ARGS[*]}"
+
+OUTFILE=$CWMS_HOME/cronjobs/headless/logs/$(getStartFN regi-headless-"$SCRIPT")
 
 echo "Running jython $SCRIPT"
 echo "Output going to: $OUTFILE"
-echo "$JAVA_CMD"
-#$JAVA_CMD "$ARGS" &> "$OUTFILE"
+echo "Java Command:"
+echo "$JAVA_EXE $JAVA_CMD"
+eval "$JAVA_EXE" $JAVA_CMD &> "$OUTFILE"
+STATUS=$?
 
-echo "$SCRIPT process exited with code $?"
+echo "$SCRIPT process exited with code $STATUS"
