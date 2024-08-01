@@ -37,7 +37,7 @@ def headless_examples():
     #   at single date,
     #   with a single chart template
     #   and write to specified file.
-    #print "Demonstrating a call to generateStreamStatusImage"
+    print "Demonstrating a call to generateStreamStatusImage"
     streamFilepath = "../headless/StatusGraphics/streamStatus.jpg"
     streamStatus.generateStreamStatusImage("SWF", "RSRT2", "Flood Control Focus View", startCal.getTime(), 800, 600, streamFilepath)
 
@@ -45,7 +45,7 @@ def headless_examples():
     #reservoirFilePath = "../headless/StatusGraphics/reservoirStatus.jpg"
     #streamStatus.generateReservoirStatusImage("SWF", "GPVT2", "Flood Control Focus View", startCal.getTime(), 800, 600, reservoirFilePath)
 
-    print "Demonstrating a call to generateReleasesStatusImage"
+    #print "Demonstrating a call to generateReleasesStatusImage"
     #releasesFilePath = "../headless/StatusGraphics/releasesStatus.jpg"
     #streamStatus.generateReleasesStatusImage("SWF", "WTYT2", "Flood Control Focus View", startCal.getTime(), 800, 600, releasesFilePath)
     
