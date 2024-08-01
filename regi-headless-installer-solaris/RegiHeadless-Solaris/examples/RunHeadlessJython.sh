@@ -42,7 +42,7 @@ for PARAMETER in "${ARGS[@]}"
 do
   PARAM_NAME=$(echo "$PARAMETER" | cut -d= -f1 | tr \[a-z\] \[A-Z\])
   if [ "$NAME_FOUND" ] ; then
-    # Get the script name for log file name
+    # Use the script name as the base file name for the log file
     BASENAME="$(basename "${PARAMETER}")" # Get only the base file name.
     SCRIPT="${BASENAME%%.*}" # Remove the extension
     break

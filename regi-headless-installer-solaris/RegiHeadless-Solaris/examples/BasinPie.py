@@ -41,7 +41,7 @@ def headless_examples():
 
     # If the filepath does not end in .jpg then the image will be saved in png format.
     filepath = "../headless/basin.jpg"
-    #filepath = "../headless/20180307/basin.png"
+    #filepath = "../headless/basin.png"
 
     # Generate a single image,
     #   at a single location within a basin,
@@ -76,7 +76,7 @@ def headless_examples():
     # Will generate the following files:
     #       ../headless/SWF_Trinity_R_Basin_RSRT2_Conservation Pool (static)_2016-04-02T00_00_00Z.png
 
-    filepath = "../headless/20180307/%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png"
+    filepath = "../headless/%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png"
 
     # Generate a basin pie image,
     #   for each of the specified locations in the specified basin,
