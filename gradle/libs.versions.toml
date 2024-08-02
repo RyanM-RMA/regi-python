@@ -7,7 +7,7 @@ solaris-java-heclib = "7-IR-6-SunOS-SPARC_64"
 hec-core = "6.1-SNAPSHOT" # required for PasswordFileEditor
 
 # REGI Dependencies
-regi-tools = "3.4.1"
+regi-tools = "3.4.2"
 regi = "3.4.4"
 
 # Third Party
