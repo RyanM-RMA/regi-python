@@ -77,11 +77,11 @@ def headless_examples():
     #     %basin_id%
     #     %image_format%
     # Example: filepath like:
-    #       "J:\\temp\\headless\\%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png"
+    #       "headless\\%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png"
     # Will generate the following files:
-    #       J:\\temp\\headless\\SWF_Trinity_R_Basin_RSRT2_Conservation Pool (static)_2016-04-02T00_00_00Z.png
+    #       headless\\SWF_Trinity_R_Basin_RSRT2_Conservation Pool (static)_2016-04-02T00_00_00Z.png
 
-    filepath = "C:\\Users\\rmaresults\\Desktop\\headless\\20180307\\%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png"
+    filepath = "\\headless\\%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png"
 
     # Generate a basin pie image,
     #   for each of the specified locations in the specified basin,
@@ -103,22 +103,22 @@ def headless_examples():
     #   and write each image to its generated filepath
 
     print "Demonstrating a call to generateBasinPieImageForGroup"    
-    generateBasinPieImageForGroup("SWF", "DAWT2", "Trinity", startCal.getTime(), 700, 807,"Design Capacity","J:\\temp\\headless\\generateBasinPieImageForGroup\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
+    generateBasinPieImageForGroup("SWF", "DAWT2", "Trinity", startCal.getTime(), 700, 807,"Design Capacity","headless\\generateBasinPieImageForGroup\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
     
     print "Demonstrating a call to generateBasinPieImagesForGroup"
-    generateBasinPieImagesForGroup("SWF", ["LVNT2","STIT2"], "XYZ", [startCal.getTime()], 700, 807,["Design Capacity"],"J:\\temp\\headless\\generateBasinPieImagesForGroup\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
+    generateBasinPieImagesForGroup("SWF", ["LVNT2","STIT2"], "XYZ", [startCal.getTime()], 700, 807,["Design Capacity"],"headless\\generateBasinPieImagesForGroup\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
 
     print "Demonstrating a call to generateBasinPieImageForBasin"
-    generateBasinPieImageForBasin("SWF", "DAWT2", "Trinity_R_Basin", startCal.getTime(), 700, 807,"Design Capacity","J:\\temp\\headless\\generateBasinPieImageForBasin\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
+    generateBasinPieImageForBasin("SWF", "DAWT2", "Trinity_R_Basin", startCal.getTime(), 700, 807,"Design Capacity","headless\\generateBasinPieImageForBasin\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
 
     print "Demonstrating a call to generateBasinPieImagesForBasin"
-    generateBasinPieImagesForBasin("SWF", ["LOLT2","DAWT2"], "Trinity_R_Basin", [startCal.getTime()], 700, 807,["Design Capacity"],"J:\\temp\\headless\\generateBasinPieImagesForBasin\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
+    generateBasinPieImagesForBasin("SWF", ["LOLT2","DAWT2"], "Trinity_R_Basin", [startCal.getTime()], 700, 807,["Design Capacity"],"headless\\generateBasinPieImagesForBasin\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
 
     print "Demonstrating a call to generateAllBasinPieImagesForBasin"
-    generateAllBasinPieImagesForBasin("SWF", "Trinity_R_Basin", [startCal.getTime()], 800, 600, ["Conservation Pool (static)"], "J:\\temp\\headless\\generateAllForBasin\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
+    generateAllBasinPieImagesForBasin("SWF", "Trinity_R_Basin", [startCal.getTime()], 800, 600, ["Conservation Pool (static)"], "headless\\generateAllForBasin\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
 
     print "Demonstrating a call to generateAllBasinPieImagesForGroup"
-    generateAllBasinPieImagesForGroup("SWF", "XYZ", [startCal.getTime()], 800, 600, ["Conservation Pool (static)"], "J:\\temp\\headless\\generateAllForGroup\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
+    generateAllBasinPieImagesForGroup("SWF", "XYZ", [startCal.getTime()], 800, 600, ["Conservation Pool (static)"], "headless\\generateAllForGroup\\test_%office_id%_%basin_id%_%location_id%_%chart_template_id%_%date%.png")
 
 
 def generateBasinPieImageForBasin(office_id, location_id, basin_id,

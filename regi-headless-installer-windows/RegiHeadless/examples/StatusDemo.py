@@ -63,7 +63,7 @@ def headless_examples():
     #   and write to specified file.
     #   Supports PNG and jpg output
     
-    path = "J:\\temp\\headless\\StatusGraphics\\"
+    path = "headless\\StatusGraphics\\"
     
     print "Demonstrating a call to generateStreamStatusImage"
     streamStatus.generateStreamStatusImage("SWF", "RSRT2", "Flood Control Focus View", startCal.getTime(), 800, 600, path + "streamStatus.jpg")
