@@ -1,20 +1,17 @@
 package usace.rowcps.headless.calculator.poolpercent;
 
-import hec.data.location.LocationTemplate;
 import hec.data.TimeWindow;
+import hec.data.location.LocationTemplate;
+import hec.data.project.IProject;
 import hec.db.DbConnectionException;
 import hec.db.DbIoException;
-import java.util.Date;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import usace.metrics.services.Metrics;
-import usace.rowcps.headless.calculator.AbstractScriptableCalc;
-import usace.rowcps.headless.interfaces.ScriptableCalc;
 import usace.rowcps.computation.pool.DbCommitPoolCalc;
-import usace.rowcps.data.pool.RegiPool;
 import usace.rowcps.data.pool.DbPool;
 import usace.rowcps.data.pool.PoolTimeSeries;
+import usace.rowcps.data.pool.RegiPool;
+import usace.rowcps.headless.calculator.AbstractScriptableCalc;
+import usace.rowcps.headless.interfaces.ScriptableCalc;
 import usace.rowcps.metrics.RegiMetricsService;
 import usace.rowcps.regi.model.CacheUsage;
 import usace.rowcps.regi.model.ManagerId;
@@ -22,6 +19,11 @@ import usace.rowcps.regi.model.OptionalParams;
 import usace.rowcps.regi.model.RegiDomain;
 import usace.rowcps.regi.pool.AtPoolManager;
 import usace.rowcps.regi.status.AtProjectManager;
+
+import java.util.Date;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -47,9 +49,18 @@ public class ScriptablePoolPercentImpl extends AbstractScriptableCalc implements
 		LOGGER.log(Level.INFO, "Calculating Pool Percents for {0} from: {1} to: {2}", new Object[]{locRef, startDate, endDate});
 		DbCommitPoolCalc poolCalc = new DbCommitPoolCalc();
 		AtPoolManager poolMan = regiDomain.getAtPoolManager(managerId);
-		
+		AtProjectManager projectMan = regiDomain.getAtProjectManager(managerId);
+
 		try
 		{
+			//Retrieval of the project also fills in the associations, this is required for the pool calculations.
+			IProject project = projectMan.getIProject(locRef, CacheUsage.NORMAL);
+			if (project == null)
+			{
+				LOGGER.log(Level.SEVERE, () -> "Unable to calculate pool time series.  Project " + locRef + " does not exist.");
+				return;
+			}
+
 			Set<RegiPool> pools = poolMan.retrievePools(locRef, CacheUsage.NORMAL, funcParams);
 			pools.stream()
 					.filter(pool -> pool.getTsId() == null)
