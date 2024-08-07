@@ -33,7 +33,7 @@ def regiLibFolder = libFolder + "/regi"
 def sysLibFolder = libFolder + "/sys"
 def jre64Folder = "jre64"
 def configFolder = "config"
-def heclibFolder = "amd64"
+def heclibFolder = "lib64"
 def distFolder = "$buildDir/distributions"
 
 def copyJythonStarter(CopySpec task) {
