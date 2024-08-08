@@ -38,18 +38,20 @@ fi
 SCRIPT=""
 NAME_FOUND=false
 
-for PARAMETER in "${ARGS[@]}"
+for ((i=0; i < ${#ARGS[@]}; i++))
 do
-  PARAM_NAME=$(echo "$PARAMETER" | cut -d= -f1 | tr \[a-z\] \[A-Z\])
-  if [ "$NAME_FOUND" ] ; then
+  PARAM_NAME=$(echo "${ARGS[$i]}" | tr '[:lower:]' '[:upper:]')
+
+  if [ "$NAME_FOUND" = true ] ; then
     # Use the script name as the base file name for the log file
-    BASENAME="$(basename "${PARAM_NAME}")" # Get only the base file name.
+    BASENAME="$(basename "${ARGS[$i]}")" # Get only the base file name.
     SCRIPT="${BASENAME%%.*}" # Remove the extension
     break
-  elif [ "$PARAM_NAME" = "f" ] ; then
+  elif [ "$PARAM_NAME" = "-F" ] ; then
     NAME_FOUND=true
   fi
 done
+
 
 
 JAVA_COMMAND="-cp $JAR_DIR/*:$REGI/*:$CWMS/*:$SYS/*:"\
