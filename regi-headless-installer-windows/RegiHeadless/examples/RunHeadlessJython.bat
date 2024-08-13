@@ -31,7 +31,7 @@ set JAVA_COMMAND=-cp %JAR_DIR%\*;%REGI%\*;%CWMS%\*;%SYS%\*; ^
 -Dhec.passwd=%CWMS_HOME%\config\properties\dbi.conf ^
 -Djava.library.path=%LIBRARY_PATH% ^
 -DPLUGINS=%JAR_DIR%\ext ^
--Doracle.metrics.clientid="CWMS REGI-Headless-v4.0" ^
+-Doracle.metrics.clientid="CWMS REGI-Headless-v5.0" ^
 -Djava.util.logging.config.file=%PROGRAM_ROOT%\config\properties\logging.properties ^
 -Drowcps.timezone=America\Chicago ^
 usace.rowcps.headless.RegiCLI ^
