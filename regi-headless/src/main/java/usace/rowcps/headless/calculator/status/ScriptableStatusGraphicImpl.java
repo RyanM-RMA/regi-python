@@ -229,7 +229,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
         }
 
         BasinTreeSelectionData selectionData = BasinTreeSelectionService.getBasinTreeSelectionData(getManagerIdProvider().getManagerId());
-        if (selectionData == null)
+        if (selectionData != _selectionData)
         {
             //_selectionData needs to be a class member, because both key and value are weak references.
             BasinTreeSelectionService.registerBasinTreeSelectionData(getManagerIdProvider().getManagerId(), _selectionData);
