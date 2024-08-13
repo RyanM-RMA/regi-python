@@ -2,7 +2,7 @@
 
 NOT_FOUND="notFound"
 
-PROGRAM_ROOT=".."
+PROGRAM_ROOT=$(realpath ..)
 JAR_DIR=$PROGRAM_ROOT/lib
 SYS=$JAR_DIR/sys
 CWMS=$JAR_DIR/cwms
@@ -10,6 +10,9 @@ REGI=$JAR_DIR/regi
 LIBRARY_PATH=$PROGRAM_ROOT/lib64
 JAVA_EXE=$PROGRAM_ROOT/jre64/bin/java
 ARGS=("$@")
+
+export LD_LIBRARY_PATH=$LIBRARY_PATH:$LD_LIBRARY_PATH
+echo "LD_LIBRARY_PATH updated to $LD_LIBRARY_PATH"
 
 ORACLE_URL=$(getProp cwms.dbi.ConnectUsingUrl @${NOT_FOUND} dbi.properties|cut -d@ -f2)
 if [ $ORACLE_URL = $NOT_FOUND ]
