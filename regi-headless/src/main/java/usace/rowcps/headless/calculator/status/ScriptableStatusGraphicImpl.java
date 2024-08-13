@@ -16,6 +16,9 @@ import java.util.List;
 import java.util.logging.Logger;
 import usace.rowcps.data.maptemplate.IMapTemplate;
 import usace.rowcps.data.maptemplate.streamplot.StreamGageGraphicOptionData;
+import usace.rowcps.decisionsupport.ui.basintree.BasinTreeSelectionData;
+import usace.rowcps.decisionsupport.ui.basintree.BasinTreeSelectionService;
+import usace.rowcps.decisionsupport.ui.basintree.SimpleBasinTreeSelectionData;
 import usace.rowcps.decisionsupport.ui.mappanel.template.impl.TimeInfoSource;
 import usace.rowcps.decisionsupport.ui.streamplot.StreamData;
 import usace.rowcps.decisionsupport.ui.streamplot.StreamPlotPanel;
@@ -107,6 +110,7 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 {
     private static final Logger LOGGER = Logger.getLogger(ScriptableStatusGraphicImpl.class.getName());
     public final static String LATCH_SECONDS = "rowcps.latchseconds";
+    private final BasinTreeSelectionData _selectionData = new SimpleBasinTreeSelectionData(new ArrayList<>(), new LocationGroup());
 
     public ScriptableStatusGraphicImpl(RegiDomain regiDomain, ManagerId manId)
     {
@@ -222,6 +226,13 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
                           + "For example, public-package-jars\\usace-rowcps-regi.jar contains implementation classes "
                           + "but not the service definitions.";
             LOGGER.warning(mesg);
+        }
+
+        BasinTreeSelectionData selectionData = BasinTreeSelectionService.getBasinTreeSelectionData(getManagerIdProvider().getManagerId());
+        if (selectionData == null)
+        {
+            //_selectionData needs to be a class member, because both key and value are weak references.
+            BasinTreeSelectionService.registerBasinTreeSelectionData(getManagerIdProvider().getManagerId(), _selectionData);
         }
 
         return hasCalcFlow && hasProjectChild;
