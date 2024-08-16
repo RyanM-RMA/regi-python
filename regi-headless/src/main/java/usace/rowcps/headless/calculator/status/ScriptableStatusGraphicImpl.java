@@ -228,13 +228,6 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
             LOGGER.warning(mesg);
         }
 
-        BasinTreeSelectionData selectionData = BasinTreeSelectionService.getBasinTreeSelectionData(getManagerIdProvider().getManagerId());
-        if (selectionData != _selectionData)
-        {
-            //_selectionData needs to be a class member, because both key and value are weak references.
-            BasinTreeSelectionService.registerBasinTreeSelectionData(getManagerIdProvider().getManagerId(), _selectionData);
-        }
-
         return hasCalcFlow && hasProjectChild;
     }
 
@@ -490,10 +483,16 @@ public class ScriptableStatusGraphicImpl extends AbstractScriptableCalc
 
     private MapTemplateLayer getMapTemplateLayer(String templateName) throws DbIoException, DbConnectionException
     {
+        //Map template layer will require this if we have an annotation layer.
+        BasinTreeSelectionData selectionData = BasinTreeSelectionService.getBasinTreeSelectionData(getManagerIdProvider().getManagerId());
+        if (selectionData != _selectionData)
+        {
+            //_selectionData needs to be a class member, because both key and value are weak references.
+            BasinTreeSelectionService.registerBasinTreeSelectionData(getManagerIdProvider().getManagerId(), _selectionData);
+        }
+
         MapTemplateLayer retval = null;
-
         List<IMapTemplate> mapTemplates = getMapTemplates();
-
         IMapTemplate matching = find(templateName, mapTemplates);
 
         if (matching != null)
