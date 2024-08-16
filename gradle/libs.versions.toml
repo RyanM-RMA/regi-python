@@ -7,7 +7,7 @@ solaris-java-heclib = "7-IE-Solaris64"
 hec-core = "6.1-SNAPSHOT" # required for PasswordFileEditor
 
 # REGI Dependencies
-regi-tools = "3.4.2"
+regi-tools = "3.4.3"
 regi = "3.4.4"
 
 # Third Party
