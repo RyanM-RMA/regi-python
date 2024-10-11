@@ -98,7 +98,7 @@ object Build : BuildType({
             name = "Analysis"
             tasks = "sonar"
             buildFile = "build.gradle"
-            gradleParams = "-Dsonar.login=%system.SONAR_TOKEN% -Dsonar.host.url=%system.SONAR_URL% -PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
+            gradleParams = "--info -Dsonar.login=%system.SONAR_TOKEN% -Dsonar.host.url=%system.SONAR_URL% -PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
             jdkHome = "%env.JDK_11_x64%"
         }
     }
