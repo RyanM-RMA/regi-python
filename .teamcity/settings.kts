@@ -96,7 +96,7 @@ object Build : BuildType({
         }
         gradle {
             name = "Analysis"
-            tasks = "sonarqube"
+            tasks = "sonar"
             buildFile = "build.gradle"
             gradleParams = "-Dsonar.login=%system.SONAR_TOKEN% -Dsonar.host.url=%system.SONAR_URL% -PnexusUser=%env.NEXUS_USER% -PnexusPassword=%env.NEXUS_PASSWORD%"
             jdkHome = "%env.JDK_11_x64%"

@@ -120,3 +120,10 @@ publishing {
         }
     }
 }
+
+sonarqube {
+    properties {
+        property "sonar.sources", "REGIHeadless"
+        property "sonar.python.version", "2.7"
+    }
+}
