@@ -146,4 +146,8 @@ sonarqube {
         property "sonar.sources", "RegiHeadless-Solaris"
         property "sonar.python.version", "2.7"
     }
+    doFirst{
+        def message = "##teamcity[buildStatus text='SonarQube Results' description='Available at https://sonarqube.hecdev.net/dashboard?id=mil.army.wmist.regi-headless%3Aregi-headless-parent']"
+        logger.info(message)
+    }
 }
