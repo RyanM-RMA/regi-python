@@ -123,7 +123,7 @@ publishing {
 
 sonarqube {
     properties {
-        property "sonar.sources", "REGIHeadless"
+        property "sonar.sources", "RegiHeadless"
         property "sonar.python.version", "2.7"
     }
 }
