@@ -147,12 +147,3 @@ sonarqube {
         property "sonar.python.version", "2.7"
     }
 }
-
-tasks.register('logTeamCityBuildStatus') {
-    doLast {
-        def message = "##teamcity[buildStatus text='SonarQube Results' description='Available at https://sonarqube.hecdev.net/dashboard?id=mil.army.wmist.regi-headless%3Aregi-headless-parent']"
-        logger.info(message)
-    }
-}
-
-sonar.finalizedBy logTeamCityBuildStatus
