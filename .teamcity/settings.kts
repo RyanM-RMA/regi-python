@@ -70,6 +70,7 @@ object Build : BuildType({
     // artifacts rules place your generated output in a place it can be downloaded or sent to another Build configuration
     artifactRules = """
         **/target/*.jar => 
+        build/sonar/report-task.txt => report-task.txt
     """.trimIndent()
 
 
