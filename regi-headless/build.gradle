@@ -4,6 +4,10 @@ plugins {
     id 'application'
 }
 
+configurations {
+    otelAgent
+}
+
 dependencies {
     implementation(libs.bundles.hec)
     implementation(libs.bundles.serversuite)
@@ -15,6 +19,7 @@ dependencies {
     implementation(libs.bundles.regi.tools) {artifact {extension = "jar"} }
     implementation(libs.otel)
     runtimeOnly(libs.hec.cwms.ratings.cda)
+    otelAgent("io.opentelemetry.javaagent:opentelemetry-javaagent:2.23.0")
 
 
     testImplementation(libs.bundles.junit.api)
@@ -62,3 +67,72 @@ distributions {
     }
 }
 
+task bundlePython(type: Sync) {
+    description = 'Bundles Python scripts and creates the java_lib directory'
+    into "${buildDir}/install/${project.name}/"
+    from('src/main/python') {
+        include 'pyproject.toml'
+        filter { line -> line.replaceAll('@VERSION@', project.version.toString()) }
+    }
+    
+    from('src/main/python') {
+        exclude 'pyproject.toml'
+    }
+
+    into('regi_cli/lib') {
+        from configurations.runtimeClasspath
+        from jar.archiveFile
+        exclude "**/*.nbm"
+    }
+
+    from(configurations.otelAgent) {
+        into "regi_cli/lib"
+        rename { "opentelemetry-javaagent.jar" }
+    }
+}
+
+task buildPythonWheel(type: Exec) {
+    group = 'distribution'
+    description = 'Builds a Python .whl file from the installDist output'
+    dependsOn bundlePython
+
+    workingDir "${buildDir}/install/${project.name}"
+
+    commandLine 'python', '-m', 'build', '--wheel'
+
+    doLast {
+        println "Python Wheel built in: ${workingDir}/dist"
+    }
+}
+
+tasks.register('testPythonWheel') {
+    group = 'verification'
+    description = 'Creates a venv, installs the wheel, and runs a test script.'
+    dependsOn buildPythonWheel
+
+    doLast {
+        def venvName = "test_venv"
+        def wheelDir = "${projectDir}/build/install/regi-headless/dist"
+        def testScript = "src\\test\\resources\\usace\\rowcps\\headless\\examples\\GateFlowCalc2_Jpype.py"
+
+        // 1. Create VENV if it doesn't exist
+        exec {
+            commandLine 'cmd', '/c', "python -m venv ${venvName}"
+        }
+
+        // 2. Install Wheel and Run Script
+        // We chain these using '&&' so they run in the same shell session where the venv is active
+        exec {
+            workingDir projectDir
+            def wheelFile = fileTree(dir: wheelDir, include: '*.whl').singleFile.absolutePath
+            def venvActivate = file("${venvName}/Scripts/activate.bat").absolutePath
+            environment 'CDA_URL', project.findProperty('CDA_URL') ?: ""
+            environment 'API_KEY', project.findProperty('API_KEY') ?: ""
+            environment 'OFFICE_ID', project.findProperty('OFFICE_ID') ?: ""
+            environment 'JAVA_HOME', System.getProperty('java.home')
+            commandLine 'cmd', '/c', "\"${venvActivate}\" && pip install --force-reinstall \"${wheelFile}\" && python -u  ${testScript}"
+            standardOutput = System.out
+            errorOutput = System.err
+        }
+    }
+}

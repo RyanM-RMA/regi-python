@@ -10,16 +10,16 @@ gateCalc = registry.getCalculation(1.0, "Gate Flow")
 timeZone = TimeZone.getTimeZone("US/Central")
 startCal = Calendar.getInstance(timeZone)
 startCal.clear()
-startCal.set(Calendar.YEAR, 2015)
+startCal.set(Calendar.YEAR, 2022)
 startCal.set(Calendar.MONTH, 4)
 
 endCal = Calendar.getInstance(timeZone)
 endCal.clear()
-endCal.set(Calendar.YEAR, 2015)
+endCal.set(Calendar.YEAR, 2022)
 endCal.set(Calendar.MONTH, 6)
 
 #gateCalc.computeFlowGroup("SWF", "LEWT2",  startCal.getTimeInMillis(), endCal.getTimeInMillis(), "Flow.LEWT2.ConduitGate_Total")
 
-gateCalc.computeAll("SWF", "LEWT2",  startCal.getTimeInMillis(), endCal.getTimeInMillis())
+gateCalc.computeAll("SWT", "TENK",  startCal.getTimeInMillis(), endCal.getTimeInMillis())
 
 

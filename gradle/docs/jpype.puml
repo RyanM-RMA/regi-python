@@ -1,0 +1,34 @@
+@startuml
+autonumber
+skinparam BoxPadding 10
+
+box "Python Environment (CPython)" #LightBlue
+    participant "test_script.py" as Test
+    participant "regi_cli" as Pkg
+    participant "JPype Engine" as JPype
+end box
+
+box "Java Virtual Machine" #LightYellow
+    participant "JVM Internal" as JVM
+    participant "regi-headless.jar" as Jar
+end box
+
+Note over Test: env variables set externally \nJAVA_HOME\nCDA_URL\nAPI_KEY\nOFFICE_ID
+
+Test -> Pkg: import regi_cli
+Pkg -> JPype: startJVM(classpath=["lib/*"])
+
+group JVM Initialization
+    JVM -> Jar: Scan Classpath
+    JVM --> Pkg: JVM Started Successfully
+end group
+
+Test -> JPype: Call Java-backed functions (ex. registry.getCalculation(1.0, "Gate Flow"))
+JPype -> Jar: Reflect & Load Class
+
+JPype -> Jar: Instantiate Object / Call Method
+activate Jar #DarkSalmon
+Note right of Jar: Java Logic Executes
+deactivate Jar
+
+@enduml

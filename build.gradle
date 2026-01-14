@@ -4,7 +4,7 @@ plugins {
 
 allprojects {
     group = 'mil.army.wmist.regi-headless'
-    version = project.findProperty('projectVersion') ?: "unversioned"
+    version = project.findProperty('projectVersion') ?: "99.99.99+unversioned"
 }
 
 tasks.register('logTeamCityBuildStatus') {

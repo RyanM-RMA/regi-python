@@ -1,0 +1,64 @@
+name: regi-headless-java
+
+services:
+  app:
+    build: .
+    environment:
+      - OTEL_SERVICE_NAME=regi-headless
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_METRICS_EXPORTER=otlp
+      - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_BSP_SCHEDULE_DELAY=1000
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_INSTRUMENTATION_OKHTTP_ENABLED=true
+      - OTEL_INSTRUMENTATION_METHODS_ENABLED=true
+#      - REGI_HEADLESS_OPTS=-javaagent:/app/opentelemetry-javaagent.jar
+      - JAVA_TOOL_OPTIONS=-javaagent:/app/opentelemetry-javaagent.jar
+      - CDA_URL=http://host.docker.internal:7001/swt-data
+      - API_KEY=apikey M5HECTEST
+      - OFFICE_ID=SWT
+      - SCRIPT=/scripts/GateFlowCalc2.py
+    depends_on:
+      - otel-collector
+    volumes:
+      - ./otel-config.yaml:/etc/otel-collector-config.yaml
+      - ./regi-headless/src/test/resources/usace/rowcps/headless/examples/GateFlowCalc2.py:/scripts/GateFlowCalc2.py
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-config.yaml:/etc/otel-collector-config.yaml
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    depends_on:
+      - prometheus
+      - jaeger
+      - loki
